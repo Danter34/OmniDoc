@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Core/">
+    <Project Path="src/Core/OmniDoc.Application/OmniDoc.Application.csproj" />
+    <Project Path="src/Core/OmniDoc.Domain/OmniDoc.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Infrastructure/">
+    <Project Path="src/Infrastructure/OmniDoc.Infrastructure/OmniDoc.Infrastructure.csproj" />
+    <Project Path="src/Infrastructure/OmniDoc.Persistence/OmniDoc.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/src/Presentation/">
+    <Project Path="src/Presentation/OmniDoc.API/OmniDoc.API.csproj" />
+  </Folder>
+</Solution>

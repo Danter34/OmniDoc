@@ -1,0 +1,49 @@
+
+## 1. .NET & Visual Studio
+
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+appsettings.Production.json
+
+
+## 2. Node & Next.js
+
+node_modules/
+.next/
+out/
+build/
+dist/
+.npm
+*.tsbuildinfo
+next-env.d.ts
+
+
+## 3. Environment & Secrets
+
+.env
+.env*.local
+
+## 4. Docker & Database Files
+
+*.db
+*.sqlite
+postgres_data/
+redis_data/
+
+## 5. OS & IDEs
+
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
