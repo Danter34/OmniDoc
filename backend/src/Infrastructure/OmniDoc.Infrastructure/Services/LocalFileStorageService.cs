@@ -16,7 +16,9 @@ public class LocalFileStorageService : IFileStorageService
         var configuredRoot = configuration["FileStorage:RootPath"];
         var resolvedRoot = string.IsNullOrWhiteSpace(configuredRoot) ? "uploads" : configuredRoot;
 
-        _rootPath = Path.GetFullPath(resolvedRoot, AppContext.BaseDirectory);
+        // Relative roots resolve against the content root, not the binary output
+        // directory, so stored files survive a rebuild that clears bin/.
+        _rootPath = Path.GetFullPath(resolvedRoot, Directory.GetCurrentDirectory());
         _logger = logger;
     }
 

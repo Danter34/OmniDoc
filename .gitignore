@@ -37,6 +37,10 @@ next-env.d.ts
 postgres_data/
 redis_data/
 
+## 5. Uploaded documents
+
+uploads/
+
 ## 5. OS & IDEs
 
 .DS_Store
