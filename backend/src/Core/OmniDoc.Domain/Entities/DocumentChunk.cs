@@ -14,5 +14,7 @@ public class DocumentChunk : BaseAuditableEntity
 
     public string? BoundingBoxJson { get; set; }
 
+    public float[]? Embedding { get; set; }
+
     public Document? Document { get; set; }
 }

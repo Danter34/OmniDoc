@@ -1,0 +1,86 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using OmniDoc.Domain.Entities;
+using Pgvector;
+
+namespace OmniDoc.Persistence.Contexts;
+
+public class ApplicationDbContext : DbContext
+{
+    public const int EmbeddingDimensions = 1536;
+
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options)
+    {
+    }
+
+    public DbSet<Workspace> Workspaces => Set<Workspace>();
+    public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
+    public DbSet<Document> Documents => Set<Document>();
+    public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.HasPostgresExtension("vector");
+
+        modelBuilder.Entity<Workspace>(builder =>
+        {
+            builder.Property(x => x.Name).HasMaxLength(256).IsRequired();
+            builder.Property(x => x.Description).HasMaxLength(1024);
+            builder.HasMany(x => x.Members).WithOne(x => x.Workspace).HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+            builder.HasMany(x => x.Documents).WithOne(x => x.Workspace).HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+            builder.HasMany(x => x.Conversations).WithOne(x => x.Workspace).HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<WorkspaceMember>(builder =>
+        {
+            builder.Property(x => x.UserId).HasMaxLength(256).IsRequired();
+            builder.HasIndex(x => new { x.WorkspaceId, x.UserId }).IsUnique();
+        });
+
+        modelBuilder.Entity<Document>(builder =>
+        {
+            builder.Property(x => x.Title).HasMaxLength(512).IsRequired();
+            builder.Property(x => x.FileName).HasMaxLength(512).IsRequired();
+            builder.Property(x => x.ContentType).HasMaxLength(256).IsRequired();
+            builder.Property(x => x.StoragePath).HasMaxLength(1024).IsRequired();
+            builder.HasIndex(x => new { x.WorkspaceId, x.Status });
+            builder.HasMany(x => x.Chunks).WithOne(x => x.Document).HasForeignKey(x => x.DocumentId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<DocumentChunk>(builder =>
+        {
+            builder.Property(x => x.Content).IsRequired();
+            builder.HasIndex(x => new { x.DocumentId, x.ChunkIndex }).IsUnique();
+            builder.Property(x => x.Embedding)
+                .HasColumnType($"vector({EmbeddingDimensions})")
+                .HasConversion(EmbeddingConverter, EmbeddingComparer);
+        });
+
+        modelBuilder.Entity<Conversation>(builder =>
+        {
+            builder.Property(x => x.Title).HasMaxLength(512).IsRequired();
+            builder.HasMany(x => x.Messages).WithOne(x => x.Conversation).HasForeignKey(x => x.ConversationId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ChatMessage>(builder =>
+        {
+            builder.Property(x => x.Content).IsRequired();
+            builder.HasIndex(x => new { x.ConversationId, x.CreatedAtUtc });
+        });
+    }
+
+    private static readonly ValueConverter<float[]?, Vector?> EmbeddingConverter =
+        new(value => value == null ? null : new Vector(value),
+            value => value == null ? null : value.Memory.ToArray());
+
+    private static readonly ValueComparer<float[]?> EmbeddingComparer =
+        new((left, right) => left == null ? right == null : right != null && left.SequenceEqual(right),
+            value => value == null ? 0 : value.Aggregate(0, (hash, item) => HashCode.Combine(hash, item.GetHashCode())),
+            value => value == null ? null : value.ToArray());
+}
