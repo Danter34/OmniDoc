@@ -1,3 +1,4 @@
+using OmniDoc.Application;
 using OmniDoc.Persistence;
 using Scalar.AspNetCore;
 
@@ -6,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddApplicationServices();
 builder.Services.AddPersistenceServices(builder.Configuration);
 
 var app = builder.Build();
