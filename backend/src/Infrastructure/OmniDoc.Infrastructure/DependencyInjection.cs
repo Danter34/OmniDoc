@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<IPdfParserService, PdfPigParserService>();
         services.AddSingleton<ITextChunkerService, RecursiveTextChunkerService>();
         services.AddScoped<IEmbeddingService, MockEmbeddingService>();
+        services.AddScoped<IRetrievalService, VectorRetrievalService>();
 
         return services;
     }

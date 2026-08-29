@@ -1,5 +1,5 @@
 
-## 1. .NET & Visual Studio
+## NET & Visual Studio
 
 [Bb]in/
 [Oo]bj/
@@ -13,7 +13,7 @@
 appsettings.Production.json
 
 
-## 2. Node & Next.js
+## Node & Next.js
 
 node_modules/
 .next/
@@ -25,23 +25,23 @@ dist/
 next-env.d.ts
 
 
-## 3. Environment & Secrets
+## Environment & Secrets
 
 .env
 .env*.local
 
-## 4. Docker & Database Files
+## Docker & Database Files
 
 *.db
 *.sqlite
 postgres_data/
 redis_data/
 
-## 5. Uploaded documents
+## Uploaded documents
 
 uploads/
 
-## 5. OS & IDEs
+## OS & IDEs
 
 .DS_Store
 Thumbs.db
@@ -52,7 +52,7 @@ Thumbs.db
 !.vscode/launch.json
 !.vscode/extensions.json
 
-## 6.Agents
+## Agents
 
 .claude/
 .claude.json
