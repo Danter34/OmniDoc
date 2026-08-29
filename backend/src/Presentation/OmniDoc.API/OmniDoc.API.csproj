@@ -8,10 +8,15 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Scalar.AspNetCore" Version="2.17.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Core\OmniDoc.Application\OmniDoc.Application.csproj" />
     <ProjectReference Include="..\..\Infrastructure\OmniDoc.Persistence\OmniDoc.Persistence.csproj" />
     <ProjectReference Include="..\..\Infrastructure\OmniDoc.Infrastructure\OmniDoc.Infrastructure.csproj" />
   </ItemGroup>

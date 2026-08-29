@@ -1,12 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Domain.Entities;
 using Pgvector;
 
 namespace OmniDoc.Persistence.Contexts;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     public const int EmbeddingDimensions = 1536;
 
