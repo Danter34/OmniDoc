@@ -1,4 +1,5 @@
 using OmniDoc.Application;
+using OmniDoc.Infrastructure;
 using OmniDoc.Persistence;
 using Scalar.AspNetCore;
 
@@ -9,6 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddApplicationServices();
 builder.Services.AddPersistenceServices(builder.Configuration);
+builder.Services.AddInfrastructureServices(builder.Configuration);
 
 var app = builder.Build();
 
