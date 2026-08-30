@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using OmniDoc.Application.Common.Interfaces;
@@ -10,6 +11,14 @@ namespace OmniDoc.Infrastructure.Services;
 public partial class MockChatCompletionService : IChatCompletionService
 {
     private const int SentencesPerSource = 2;
+    private const int MinWordsPerChunk = 1;
+    private const int MaxWordsPerChunk = 3;
+    private const int MinDelayMs = 30;
+    private const int MaxDelayMs = 50;
+
+    /// Fixed seed: the split points must be reproducible so a failing stream test can be
+    /// replayed, while still being irregular enough to exercise the state machine.
+    private const int SplitSeed = 20260830;
 
     public Task<string> GenerateResponseAsync(
         IReadOnlyList<ChatPromptMessage> messages,
@@ -17,6 +26,31 @@ public partial class MockChatCompletionService : IChatCompletionService
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        return Task.FromResult(BuildAnswer(messages));
+    }
+
+    /// Replays the same answer the synchronous path would return, but chopped at arbitrary
+    /// offsets — including inside "[Doc: ..., Trang N]" tags — so the citation state machine
+    /// is exercised against the token-splitting it has to survive in production.
+    public async IAsyncEnumerable<string> StreamResponseAsync(
+        IReadOnlyList<ChatPromptMessage> messages,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var answer = BuildAnswer(messages);
+        var random = new Random(SplitSeed);
+
+        foreach (var chunk in SplitIntoChunks(answer, random))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            await Task.Delay(random.Next(MinDelayMs, MaxDelayMs + 1), cancellationToken).ConfigureAwait(false);
+
+            yield return chunk;
+        }
+    }
+
+    private static string BuildAnswer(IReadOnlyList<ChatPromptMessage> messages)
+    {
         var systemPrompt = messages
             .LastOrDefault(m => string.Equals(m.Role, "System", StringComparison.OrdinalIgnoreCase))
             ?.Content ?? string.Empty;
@@ -27,9 +61,78 @@ public partial class MockChatCompletionService : IChatCompletionService
 
         var sources = ParseSources(systemPrompt);
 
-        return Task.FromResult(sources.Count == 0
+        return sources.Count == 0
             ? BuildNoContextAnswer(question)
-            : BuildGroundedAnswer(question, sources));
+            : BuildGroundedAnswer(question, sources);
+    }
+
+    /// Emits 1-3 words at a time, then splits roughly every other chunk again at a random
+    /// character offset. The second pass is what produces the interesting cases: citation
+    /// tags arriving as "[Doc: " / "BaoCao.pdf, " / "Trang 1]".
+    private static IEnumerable<string> SplitIntoChunks(string answer, Random random)
+    {
+        if (answer.Length == 0)
+        {
+            yield break;
+        }
+
+        foreach (var group in GroupWords(answer, random))
+        {
+            if (group.Length > 3 && random.Next(2) == 0)
+            {
+                var cut = random.Next(1, group.Length);
+
+                yield return group[..cut];
+                yield return group[cut..];
+            }
+            else
+            {
+                yield return group;
+            }
+        }
+    }
+
+    /// Splits on whitespace while keeping every separator attached to the preceding word, so
+    /// concatenating the chunks reproduces the answer byte for byte.
+    private static IEnumerable<string> GroupWords(string answer, Random random)
+    {
+        var builder = new StringBuilder();
+        var wordsInGroup = 0;
+        var target = random.Next(MinWordsPerChunk, MaxWordsPerChunk + 1);
+        var index = 0;
+
+        while (index < answer.Length)
+        {
+            var wordStart = index;
+
+            while (index < answer.Length && !char.IsWhiteSpace(answer[index]))
+            {
+                index++;
+            }
+
+            while (index < answer.Length && char.IsWhiteSpace(answer[index]))
+            {
+                index++;
+            }
+
+            builder.Append(answer[wordStart..index]);
+            wordsInGroup++;
+
+            if (wordsInGroup < target)
+            {
+                continue;
+            }
+
+            yield return builder.ToString();
+            builder.Clear();
+            wordsInGroup = 0;
+            target = random.Next(MinWordsPerChunk, MaxWordsPerChunk + 1);
+        }
+
+        if (builder.Length > 0)
+        {
+            yield return builder.ToString();
+        }
     }
 
     private static string BuildNoContextAnswer(string question)

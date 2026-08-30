@@ -11,4 +11,7 @@
   <Folder Name="/src/Presentation/">
     <Project Path="src/Presentation/OmniDoc.API/OmniDoc.API.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OmniDoc.UnitTests/OmniDoc.UnitTests.csproj" />
+  </Folder>
 </Solution>

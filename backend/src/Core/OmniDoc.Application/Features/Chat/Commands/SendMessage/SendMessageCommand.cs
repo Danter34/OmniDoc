@@ -1,11 +1,10 @@
-using System.Text;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Common.Models;
 using OmniDoc.Application.Features.Chat.DTOs;
-using OmniDoc.Application.Features.Retrieval.DTOs;
+using OmniDoc.Application.Features.Chat.Services;
 using OmniDoc.Domain.Entities;
 using OmniDoc.Domain.Enums;
 
@@ -30,7 +29,6 @@ public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
 public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Result<ChatResponseDto>>
 {
     private const int TitleLength = 30;
-    private const int HistoryMessageLimit = 10;
     private const int ExcerptLength = 400;
     private const float MinSimilarityScore = 0.0f;
 
@@ -89,7 +87,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
             _context.Conversations.Add(conversation);
         }
 
-        var history = await LoadRecentHistoryAsync(conversation.Id, cancellationToken);
+        var history = await _context.LoadRecentHistoryAsync(conversation.Id, cancellationToken: cancellationToken);
 
         var matches = await _retrievalService.SearchSimilarChunksAsync(
             request.WorkspaceId,
@@ -98,13 +96,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
             MinSimilarityScore,
             cancellationToken);
 
-        var prompt = new List<ChatPromptMessage>
-        {
-            new(nameof(MessageRole.System), BuildSystemPrompt(matches))
-        };
-
-        prompt.AddRange(history);
-        prompt.Add(new ChatPromptMessage(nameof(MessageRole.User), request.Message));
+        var prompt = RagPromptBuilder.BuildPrompt(matches, history, request.Message);
 
         var answer = await _chatCompletion.GenerateResponseAsync(prompt, cancellationToken);
 
@@ -146,50 +138,6 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
             assistantMessage.ToDto());
 
         return Result<ChatResponseDto>.Success(response);
-    }
-
-    private async Task<List<ChatPromptMessage>> LoadRecentHistoryAsync(
-        Guid conversationId,
-        CancellationToken cancellationToken)
-    {
-        var recent = await _context.ChatMessages
-            .AsNoTracking()
-            .Where(m => m.ConversationId == conversationId && m.Role != MessageRole.System)
-            .OrderByDescending(m => m.CreatedAtUtc)
-            .Take(HistoryMessageLimit)
-            .Select(m => new { m.Role, m.Content, m.CreatedAtUtc })
-            .ToListAsync(cancellationToken);
-
-        return recent
-            .OrderBy(m => m.CreatedAtUtc)
-            .Select(m => new ChatPromptMessage(m.Role.ToString(), m.Content))
-            .ToList();
-    }
-
-    private static string BuildSystemPrompt(IReadOnlyList<SearchResultDto> matches)
-    {
-        var builder = new StringBuilder();
-
-        builder.AppendLine("Bạn là trợ lý AI OmniDoc. Hãy trả lời câu hỏi của người dùng CHỈ dựa trên các tài liệu được cung cấp dưới đây.");
-        builder.AppendLine("Nếu không tìm thấy thông tin trong tài liệu, hãy nói rõ rằng bạn không biết.");
-        builder.AppendLine("---");
-        builder.AppendLine("NGỮ CẢNH TÀI LIỆU:");
-
-        if (matches.Count == 0)
-        {
-            builder.AppendLine("(Không tìm thấy tài liệu liên quan trong workspace này.)");
-            return builder.ToString();
-        }
-
-        for (var i = 0; i < matches.Count; i++)
-        {
-            var match = matches[i];
-            builder.AppendLine($"[Nguồn {i + 1}: {match.DocumentTitle} - Trang {match.PageNumber}]");
-            builder.AppendLine(match.Content);
-            builder.AppendLine();
-        }
-
-        return builder.ToString();
     }
 
     private static string BuildTitle(string message)
