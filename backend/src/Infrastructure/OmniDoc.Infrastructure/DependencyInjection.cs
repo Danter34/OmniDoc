@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddSingleton<ITextChunkerService, RecursiveTextChunkerService>();
         services.AddScoped<IEmbeddingService, MockEmbeddingService>();
         services.AddScoped<IRetrievalService, VectorRetrievalService>();
+        services.AddScoped<IChatCompletionService, MockChatCompletionService>();
 
         return services;
     }

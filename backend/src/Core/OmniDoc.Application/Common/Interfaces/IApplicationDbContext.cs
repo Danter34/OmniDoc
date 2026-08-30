@@ -11,6 +11,7 @@ public interface IApplicationDbContext
     DbSet<DocumentChunk> DocumentChunks { get; }
     DbSet<Conversation> Conversations { get; }
     DbSet<ChatMessage> ChatMessages { get; }
+    DbSet<Citation> Citations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

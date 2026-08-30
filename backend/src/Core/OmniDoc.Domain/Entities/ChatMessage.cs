@@ -11,7 +11,7 @@ public class ChatMessage : BaseAuditableEntity
 
     public string Content { get; set; } = string.Empty;
 
-    public string? CitationsJson { get; set; }
-
     public Conversation? Conversation { get; set; }
+
+    public ICollection<Citation> Citations { get; set; } = new List<Citation>();
 }

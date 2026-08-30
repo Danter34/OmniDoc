@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<Citation> Citations => Set<Citation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -73,6 +74,14 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         {
             builder.Property(x => x.Content).IsRequired();
             builder.HasIndex(x => new { x.ConversationId, x.CreatedAtUtc });
+            builder.HasMany(x => x.Citations).WithOne(x => x.ChatMessage).HasForeignKey(x => x.ChatMessageId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Citation>(builder =>
+        {
+            builder.Property(x => x.DocumentTitle).HasMaxLength(512).IsRequired();
+            builder.Property(x => x.Excerpt).IsRequired();
+            builder.HasIndex(x => x.ChatMessageId);
         });
     }
 
