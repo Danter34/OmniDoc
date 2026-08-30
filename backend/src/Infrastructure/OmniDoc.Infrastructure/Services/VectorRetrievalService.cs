@@ -28,7 +28,7 @@ public class VectorRetrievalService : IRetrievalService
         Guid workspaceId,
         string query,
         int topK = 5,
-        float minSimilarityScore = 0.3f,
+        float minSimilarityScore = 0.0f,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(query))

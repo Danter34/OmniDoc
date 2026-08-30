@@ -80,7 +80,7 @@ public class DocumentProcessingJob : IDocumentProcessingJob
             {
                 var batch = chunks.Skip(offset).Take(EmbeddingBatchSize).ToList();
 
-                var embeddings = await _embeddingService.GenerateBatchEmbeddingsAsync(
+                var embeddings = await _embeddingService.GenerateEmbeddingsAsync(
                     batch.Select(c => c.Content).ToList(),
                     cancellationToken);
 

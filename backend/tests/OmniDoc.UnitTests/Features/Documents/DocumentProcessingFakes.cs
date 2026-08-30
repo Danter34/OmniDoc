@@ -47,7 +47,7 @@ internal sealed class FakeEmbeddingService : IEmbeddingService
     public Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default) =>
         Task.FromResult(Vector(text));
 
-    public Task<IReadOnlyList<float[]>> GenerateBatchEmbeddingsAsync(IReadOnlyList<string> texts, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<float[]>> GenerateEmbeddingsAsync(IReadOnlyList<string> texts, CancellationToken cancellationToken = default)
     {
         BatchSizes.Add(texts.Count);
 

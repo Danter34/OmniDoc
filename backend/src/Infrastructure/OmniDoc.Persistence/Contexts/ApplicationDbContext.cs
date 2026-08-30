@@ -9,7 +9,7 @@ namespace OmniDoc.Persistence.Contexts;
 
 public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
-    public const int EmbeddingDimensions = 1536;
+    public const int EmbeddingDimensions = 768;
 
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)

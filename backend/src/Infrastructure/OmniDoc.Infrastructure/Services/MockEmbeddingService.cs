@@ -8,7 +8,7 @@ namespace OmniDoc.Infrastructure.Services;
 /// always yields the same unit vector. Swap for a real provider once configured.
 public class MockEmbeddingService : IEmbeddingService
 {
-    private const int Dimensions = 1536;
+    private const int Dimensions = 768;
 
     public Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
     {
@@ -16,7 +16,7 @@ public class MockEmbeddingService : IEmbeddingService
         return Task.FromResult(CreateDeterministicUnitVector(text));
     }
 
-    public Task<IReadOnlyList<float[]>> GenerateBatchEmbeddingsAsync(IReadOnlyList<string> texts, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<float[]>> GenerateEmbeddingsAsync(IReadOnlyList<string> texts, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
