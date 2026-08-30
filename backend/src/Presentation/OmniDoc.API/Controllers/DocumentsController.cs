@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using OmniDoc.Application.Features.Documents.Commands.ProcessDocument;
 using OmniDoc.Application.Features.Documents.Commands.UploadDocument;
 using OmniDoc.Application.Features.Documents.DTOs;
 using OmniDoc.Application.Features.Documents.Queries.GetDocumentById;
@@ -31,16 +30,9 @@ public class DocumentsController : BaseApiController
             file.Length,
             title);
 
-        var uploadResult = await Sender.Send(uploadCommand, cancellationToken);
-
-        if (!uploadResult.IsSuccess || uploadResult.Data is null)
-        {
-            return HandleResult(uploadResult);
-        }
-
-        var processResult = await Sender.Send(new ProcessDocumentCommand(uploadResult.Data.Id), cancellationToken);
-
-        return HandleResult(processResult);
+        // Ingestion runs as a Hangfire job; the document comes back Pending and progress
+        // arrives over the DocumentProgressHub.
+        return HandleResult(await Sender.Send(uploadCommand, cancellationToken));
     }
 
     [HttpGet("/api/workspaces/{workspaceId:guid}/documents")]

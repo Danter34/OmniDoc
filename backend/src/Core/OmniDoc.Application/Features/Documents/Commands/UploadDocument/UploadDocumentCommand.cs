@@ -1,4 +1,5 @@
 using FluentValidation;
+using Hangfire;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OmniDoc.Application.Common.Interfaces;
@@ -41,11 +42,16 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
 {
     private readonly IApplicationDbContext _context;
     private readonly IFileStorageService _fileStorage;
+    private readonly IBackgroundJobClient _backgroundJobClient;
 
-    public UploadDocumentCommandHandler(IApplicationDbContext context, IFileStorageService fileStorage)
+    public UploadDocumentCommandHandler(
+        IApplicationDbContext context,
+        IFileStorageService fileStorage,
+        IBackgroundJobClient backgroundJobClient)
     {
         _context = context;
         _fileStorage = fileStorage;
+        _backgroundJobClient = backgroundJobClient;
     }
 
     public async Task<Result<DocumentDto>> Handle(UploadDocumentCommand request, CancellationToken cancellationToken)
@@ -73,6 +79,9 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
 
         _context.Documents.Add(document);
         await _context.SaveChangesAsync(cancellationToken);
+
+        // Enqueued after the save so the worker cannot pick up an id that is not committed yet.
+        _backgroundJobClient.Enqueue<IDocumentProcessingJob>(job => job.ProcessDocumentAsync(document.Id, CancellationToken.None));
 
         return Result<DocumentDto>.Success(document.ToDto(), 201);
     }
