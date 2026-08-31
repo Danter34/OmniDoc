@@ -36,7 +36,8 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
         var payload = new
         {
             model = modelName,
-            content = CreateContent(text)
+            content = CreateContent(text),
+            embedContentConfig = CreateEmbeddingConfig()
         };
 
         using var request = CreateRequest(
@@ -77,7 +78,8 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
                 model = modelName,
                 content = CreateContent(text ?? throw new ArgumentException(
                     "Embedding input cannot contain null values.",
-                    nameof(texts)))
+                    nameof(texts))),
+                embedContentConfig = CreateEmbeddingConfig()
             }).ToArray()
         };
 
@@ -106,14 +108,25 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
         }
     };
 
-    private static HttpRequestMessage CreateRequest<T>(string endpoint, T payload) =>
-        new(HttpMethod.Post, endpoint)
+    private static object CreateEmbeddingConfig() => new
+    {
+        outputDimensionality = EmbeddingDimensions
+    };
+
+    private HttpRequestMessage CreateRequest<T>(string endpoint, T payload)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
             Content = new StringContent(
                 JsonSerializer.Serialize(payload),
                 Encoding.UTF8,
                 "application/json")
         };
+
+        request.Headers.Add("x-goog-api-key", _settings.ApiKey);
+
+        return request;
+    }
 
     private async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
@@ -257,8 +270,7 @@ public sealed class GeminiEmbeddingService : IEmbeddingService
     }
 
     private string BuildEndpoint(string operation) =>
-        $"v1beta/models/{Uri.EscapeDataString(GetModelId())}:{operation}" +
-        $"?key={Uri.EscapeDataString(_settings.ApiKey)}";
+        $"v1beta/models/{Uri.EscapeDataString(GetModelId())}:{operation}";
 
     private string GetModelResourceName() => $"models/{GetModelId()}";
 

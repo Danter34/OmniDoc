@@ -140,14 +140,20 @@ public sealed class GeminiChatCompletionService : IChatCompletionService
         }
     }
 
-    private static HttpRequestMessage CreateRequest<T>(string endpoint, T payload) =>
-        new(HttpMethod.Post, endpoint)
+    private HttpRequestMessage CreateRequest<T>(string endpoint, T payload)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
             Content = new StringContent(
                 JsonSerializer.Serialize(payload, JsonOptions),
                 Encoding.UTF8,
                 "application/json")
         };
+
+        request.Headers.Add("x-goog-api-key", _settings.ApiKey);
+
+        return request;
+    }
 
     private async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
@@ -305,15 +311,9 @@ public sealed class GeminiChatCompletionService : IChatCompletionService
 
     private string BuildEndpoint(string operation, bool useSse = false)
     {
-        var endpoint =
-            $"v1beta/models/{Uri.EscapeDataString(GetModelId())}:{operation}?";
+        var endpoint = $"v1beta/models/{Uri.EscapeDataString(GetModelId())}:{operation}";
 
-        if (useSse)
-        {
-            endpoint += "alt=sse&";
-        }
-
-        return endpoint + $"key={Uri.EscapeDataString(_settings.ApiKey)}";
+        return useSse ? endpoint + "?alt=sse" : endpoint;
     }
 
     private string GetModelId() =>

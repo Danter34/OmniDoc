@@ -13,7 +13,7 @@ public sealed class GeminiSettings
 {
     public string ApiKey { get; set; } = string.Empty;
 
-    public string ChatModel { get; set; } = "gemini-2.5-flash";
+    public string ChatModel { get; set; } = "gemini-3.6-flash";
 
-    public string EmbeddingModel { get; set; } = "text-embedding-004";
+    public string EmbeddingModel { get; set; } = "gemini-embedding-2";
 }
