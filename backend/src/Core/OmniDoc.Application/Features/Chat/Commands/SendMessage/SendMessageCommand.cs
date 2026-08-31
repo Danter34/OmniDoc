@@ -35,25 +35,29 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
     private readonly IApplicationDbContext _context;
     private readonly IRetrievalService _retrievalService;
     private readonly IChatCompletionService _chatCompletion;
+    private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
     public SendMessageCommandHandler(
         IApplicationDbContext context,
         IRetrievalService retrievalService,
-        IChatCompletionService chatCompletion)
+        IChatCompletionService chatCompletion,
+        IWorkspaceAuthorizationService workspaceAuthorization)
     {
         _context = context;
         _retrievalService = retrievalService;
         _chatCompletion = chatCompletion;
+        _workspaceAuthorization = workspaceAuthorization;
     }
 
     public async Task<Result<ChatResponseDto>> Handle(SendMessageCommand request, CancellationToken cancellationToken)
     {
-        var workspaceExists = await _context.Workspaces
-            .AnyAsync(w => w.Id == request.WorkspaceId, cancellationToken);
+        var access = await _workspaceAuthorization.AuthorizeAsync(
+            request.WorkspaceId,
+            cancellationToken);
 
-        if (!workspaceExists)
+        if (!access.IsSuccess)
         {
-            return Result<ChatResponseDto>.Failure($"Workspace '{request.WorkspaceId}' was not found.", 404);
+            return Result<ChatResponseDto>.Failure(access.Errors, access.StatusCode);
         }
 
         Conversation conversation;

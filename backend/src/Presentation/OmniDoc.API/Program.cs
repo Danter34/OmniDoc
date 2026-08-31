@@ -9,7 +9,7 @@ using Scalar.AspNetCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-builder.Services.AddPresentationServices();
+builder.Services.AddPresentationServices(builder.Configuration);
 builder.Services.AddApplicationServices();
 builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
@@ -18,6 +18,7 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())

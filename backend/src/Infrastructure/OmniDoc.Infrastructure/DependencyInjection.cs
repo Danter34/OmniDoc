@@ -1,5 +1,6 @@
 using Hangfire;
 using Hangfire.PostgreSql;
+using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OmniDoc.Application.Common.Interfaces;
@@ -7,6 +8,7 @@ using OmniDoc.Infrastructure.Common.Settings;
 using OmniDoc.Infrastructure.Jobs;
 using OmniDoc.Infrastructure.Services;
 using OmniDoc.Infrastructure.Services.Ai;
+using OmniDoc.Infrastructure.Services.Security;
 
 namespace OmniDoc.Infrastructure;
 
@@ -19,6 +21,24 @@ public static class DependencyInjection
         services.AddSingleton<ITextChunkerService, RecursiveTextChunkerService>();
         services.AddScoped<IRetrievalService, VectorRetrievalService>();
         services.AddScoped<IDocumentProcessingJob, DocumentProcessingJob>();
+        services.AddScoped<IPasswordHasher, PasswordHasher>();
+        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
+        services.AddOptions<JwtSettings>()
+            .Bind(configuration.GetSection(JwtSettings.SectionName))
+            .Validate(
+                settings => Encoding.UTF8.GetByteCount(settings.Secret) >= 32,
+                "JwtSettings:Secret must be at least 32 bytes.")
+            .Validate(
+                settings => !string.IsNullOrWhiteSpace(settings.Issuer),
+                "JwtSettings:Issuer is required.")
+            .Validate(
+                settings => !string.IsNullOrWhiteSpace(settings.Audience),
+                "JwtSettings:Audience is required.")
+            .Validate(
+                settings => settings.ExpiryMinutes > 0,
+                "JwtSettings:ExpiryMinutes must be greater than zero.")
+            .ValidateOnStart();
 
         var aiSettingsSection = configuration.GetSection(AiSettings.SectionName);
         services.Configure<AiSettings>(aiSettingsSection);

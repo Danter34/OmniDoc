@@ -8,6 +8,8 @@ public class Workspace : BaseAuditableEntity
 
     public string? Description { get; set; }
 
+    public Guid OwnerId { get; set; }
+
     public ICollection<WorkspaceMember> Members { get; set; } = new List<WorkspaceMember>();
 
     public ICollection<Document> Documents { get; set; } = new List<Document>();

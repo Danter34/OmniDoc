@@ -11,22 +11,35 @@ public record GetDocumentByIdQuery(Guid DocumentId) : IRequest<Result<DocumentDt
 public class GetDocumentByIdQueryHandler : IRequestHandler<GetDocumentByIdQuery, Result<DocumentDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
-    public GetDocumentByIdQueryHandler(IApplicationDbContext context)
+    public GetDocumentByIdQueryHandler(
+        IApplicationDbContext context,
+        IWorkspaceAuthorizationService workspaceAuthorization)
     {
         _context = context;
+        _workspaceAuthorization = workspaceAuthorization;
     }
 
     public async Task<Result<DocumentDto>> Handle(GetDocumentByIdQuery request, CancellationToken cancellationToken)
     {
         var document = await _context.Documents
             .AsNoTracking()
-            .Where(d => d.Id == request.DocumentId)
-            .Select(DocumentMapping.Projection)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(item => item.Id == request.DocumentId, cancellationToken);
 
-        return document is null
-            ? Result<DocumentDto>.Failure($"Document '{request.DocumentId}' was not found.", 404)
-            : Result<DocumentDto>.Success(document);
+        if (document is null)
+        {
+            return Result<DocumentDto>.Failure(
+                $"Document '{request.DocumentId}' was not found.",
+                404);
+        }
+
+        var access = await _workspaceAuthorization.AuthorizeAsync(
+            document.WorkspaceId,
+            cancellationToken);
+
+        return access.IsSuccess
+            ? Result<DocumentDto>.Success(document.ToDto())
+            : Result<DocumentDto>.Failure(access.Errors, access.StatusCode);
     }
 }

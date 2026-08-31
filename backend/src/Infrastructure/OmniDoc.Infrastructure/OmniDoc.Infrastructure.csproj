@@ -11,6 +11,7 @@
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.9.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
     <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.80.0" />
@@ -19,6 +20,7 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <PackageReference Include="PdfPig" Version="0.1.16" />
     <PackageReference Include="Pgvector.EntityFrameworkCore" Version="0.3.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
   </ItemGroup>
 
   <PropertyGroup>

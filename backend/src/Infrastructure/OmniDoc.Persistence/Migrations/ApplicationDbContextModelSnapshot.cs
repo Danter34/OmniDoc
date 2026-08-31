@@ -246,6 +246,38 @@ namespace OmniDoc.Persistence.Migrations
                     b.ToTable("DocumentChunks");
                 });
 
+            modelBuilder.Entity("OmniDoc.Domain.Entities.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("OmniDoc.Domain.Entities.Workspace", b =>
                 {
                     b.Property<Guid>("Id")
@@ -267,6 +299,9 @@ namespace OmniDoc.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -274,43 +309,29 @@ namespace OmniDoc.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
 
                     b.ToTable("Workspaces");
                 });
 
             modelBuilder.Entity("OmniDoc.Domain.Entities.WorkspaceMember", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<Guid>("WorkspaceId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text");
+                    b.Property<DateTime>("JoinedAtUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                    b.HasKey("WorkspaceId", "UserId");
 
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<Guid>("WorkspaceId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WorkspaceId", "UserId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("WorkspaceMembers");
                 });
@@ -370,13 +391,30 @@ namespace OmniDoc.Persistence.Migrations
                     b.Navigation("Document");
                 });
 
+            modelBuilder.Entity("OmniDoc.Domain.Entities.Workspace", b =>
+                {
+                    b.HasOne("OmniDoc.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("OmniDoc.Domain.Entities.WorkspaceMember", b =>
                 {
+                    b.HasOne("OmniDoc.Domain.Entities.User", "User")
+                        .WithMany("WorkspaceMemberships")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("OmniDoc.Domain.Entities.Workspace", "Workspace")
                         .WithMany("Members")
                         .HasForeignKey("WorkspaceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("User");
 
                     b.Navigation("Workspace");
                 });
@@ -394,6 +432,11 @@ namespace OmniDoc.Persistence.Migrations
             modelBuilder.Entity("OmniDoc.Domain.Entities.Document", b =>
                 {
                     b.Navigation("Chunks");
+                });
+
+            modelBuilder.Entity("OmniDoc.Domain.Entities.User", b =>
+                {
+                    b.Navigation("WorkspaceMemberships");
                 });
 
             modelBuilder.Entity("OmniDoc.Domain.Entities.Workspace", b =>

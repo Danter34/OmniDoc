@@ -11,14 +11,27 @@ public record GetDocumentsByWorkspaceQuery(Guid WorkspaceId) : IRequest<Result<L
 public class GetDocumentsByWorkspaceQueryHandler : IRequestHandler<GetDocumentsByWorkspaceQuery, Result<List<DocumentDto>>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
-    public GetDocumentsByWorkspaceQueryHandler(IApplicationDbContext context)
+    public GetDocumentsByWorkspaceQueryHandler(
+        IApplicationDbContext context,
+        IWorkspaceAuthorizationService workspaceAuthorization)
     {
         _context = context;
+        _workspaceAuthorization = workspaceAuthorization;
     }
 
     public async Task<Result<List<DocumentDto>>> Handle(GetDocumentsByWorkspaceQuery request, CancellationToken cancellationToken)
     {
+        var access = await _workspaceAuthorization.AuthorizeAsync(
+            request.WorkspaceId,
+            cancellationToken);
+
+        if (!access.IsSuccess)
+        {
+            return Result<List<DocumentDto>>.Failure(access.Errors, access.StatusCode);
+        }
+
         var documents = await _context.Documents
             .AsNoTracking()
             .Where(d => d.WorkspaceId == request.WorkspaceId)

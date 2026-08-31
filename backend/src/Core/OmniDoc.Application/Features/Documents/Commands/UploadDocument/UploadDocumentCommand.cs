@@ -1,7 +1,6 @@
 using FluentValidation;
 using Hangfire;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Common.Models;
 using OmniDoc.Application.Features.Documents.DTOs;
@@ -43,25 +42,29 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
     private readonly IApplicationDbContext _context;
     private readonly IFileStorageService _fileStorage;
     private readonly IBackgroundJobClient _backgroundJobClient;
+    private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
     public UploadDocumentCommandHandler(
         IApplicationDbContext context,
         IFileStorageService fileStorage,
-        IBackgroundJobClient backgroundJobClient)
+        IBackgroundJobClient backgroundJobClient,
+        IWorkspaceAuthorizationService workspaceAuthorization)
     {
         _context = context;
         _fileStorage = fileStorage;
         _backgroundJobClient = backgroundJobClient;
+        _workspaceAuthorization = workspaceAuthorization;
     }
 
     public async Task<Result<DocumentDto>> Handle(UploadDocumentCommand request, CancellationToken cancellationToken)
     {
-        var workspaceExists = await _context.Workspaces
-            .AnyAsync(w => w.Id == request.WorkspaceId, cancellationToken);
+        var access = await _workspaceAuthorization.AuthorizeAsync(
+            request.WorkspaceId,
+            cancellationToken);
 
-        if (!workspaceExists)
+        if (!access.IsSuccess)
         {
-            return Result<DocumentDto>.Failure($"Workspace '{request.WorkspaceId}' was not found.", 404);
+            return Result<DocumentDto>.Failure(access.Errors, access.StatusCode);
         }
 
         var storagePath = await _fileStorage.SaveFileAsync(request.FileStream, request.FileName, request.WorkspaceId, cancellationToken);

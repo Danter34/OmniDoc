@@ -34,17 +34,20 @@ public class StreamMessageQueryHandler : IStreamRequestHandler<StreamMessageQuer
     private readonly IRetrievalService _retrievalService;
     private readonly IChatCompletionService _chatCompletion;
     private readonly CitationStreamStateMachine _stateMachine;
+    private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
     public StreamMessageQueryHandler(
         IApplicationDbContext context,
         IRetrievalService retrievalService,
         IChatCompletionService chatCompletion,
-        CitationStreamStateMachine stateMachine)
+        CitationStreamStateMachine stateMachine,
+        IWorkspaceAuthorizationService workspaceAuthorization)
     {
         _context = context;
         _retrievalService = retrievalService;
         _chatCompletion = chatCompletion;
         _stateMachine = stateMachine;
+        _workspaceAuthorization = workspaceAuthorization;
     }
 
     public async IAsyncEnumerable<ChatStreamEvent> Handle(
@@ -161,13 +164,13 @@ public class StreamMessageQueryHandler : IStreamRequestHandler<StreamMessageQuer
             return StreamSetup.Failed("TopK phải nằm trong khoảng từ 1 đến 20.");
         }
 
-        var workspaceExists = await _context.Workspaces
-            .AnyAsync(w => w.Id == request.WorkspaceId, cancellationToken)
+        var access = await _workspaceAuthorization
+            .AuthorizeAsync(request.WorkspaceId, cancellationToken)
             .ConfigureAwait(false);
 
-        if (!workspaceExists)
+        if (!access.IsSuccess)
         {
-            return StreamSetup.Failed($"Workspace '{request.WorkspaceId}' was not found.");
+            return StreamSetup.Failed(access.Error ?? "Workspace access was denied.");
         }
 
         Conversation conversation;

@@ -2,6 +2,8 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using OmniDoc.Application.Common.Behaviors;
+using OmniDoc.Application.Common.Interfaces;
+using OmniDoc.Application.Common.Services;
 using OmniDoc.Application.Features.Chat.Services;
 
 namespace OmniDoc.Application;
@@ -15,6 +17,7 @@ public static class DependencyInjection
         services.AddMediatR(configuration => configuration.RegisterServicesFromAssembly(assembly));
         services.AddValidatorsFromAssembly(assembly);
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        services.AddScoped<IWorkspaceAuthorizationService, WorkspaceAuthorizationService>();
 
         // Stateless between calls — all scanner state lives in ProcessStreamAsync locals.
         services.AddSingleton<CitationStreamStateMachine>();

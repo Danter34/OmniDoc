@@ -2,7 +2,6 @@ namespace OmniDoc.Domain.Enums;
 
 public enum WorkspaceRole
 {
-    Member = 0,
-    Admin = 1,
-    Owner = 2
+    Owner = 1,
+    Member = 2
 }

@@ -12,22 +12,38 @@ public class GetConversationMessagesQueryHandler
     : IRequestHandler<GetConversationMessagesQuery, Result<List<ChatMessageDto>>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
-    public GetConversationMessagesQueryHandler(IApplicationDbContext context)
+    public GetConversationMessagesQueryHandler(
+        IApplicationDbContext context,
+        IWorkspaceAuthorizationService workspaceAuthorization)
     {
         _context = context;
+        _workspaceAuthorization = workspaceAuthorization;
     }
 
     public async Task<Result<List<ChatMessageDto>>> Handle(
         GetConversationMessagesQuery request,
         CancellationToken cancellationToken)
     {
-        var conversationExists = await _context.Conversations
-            .AnyAsync(c => c.Id == request.ConversationId, cancellationToken);
+        var conversation = await _context.Conversations
+            .AsNoTracking()
+            .Where(item => item.Id == request.ConversationId)
+            .Select(item => new { item.WorkspaceId })
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!conversationExists)
+        if (conversation is null)
         {
             return Result<List<ChatMessageDto>>.Failure($"Conversation '{request.ConversationId}' was not found.", 404);
+        }
+
+        var access = await _workspaceAuthorization.AuthorizeAsync(
+            conversation.WorkspaceId,
+            cancellationToken);
+
+        if (!access.IsSuccess)
+        {
+            return Result<List<ChatMessageDto>>.Failure(access.Errors, access.StatusCode);
         }
 
         var messages = await _context.ChatMessages

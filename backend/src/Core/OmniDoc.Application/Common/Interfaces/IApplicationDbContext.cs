@@ -5,6 +5,7 @@ namespace OmniDoc.Application.Common.Interfaces;
 
 public interface IApplicationDbContext
 {
+    DbSet<User> Users { get; }
     DbSet<Workspace> Workspaces { get; }
     DbSet<WorkspaceMember> WorkspaceMembers { get; }
     DbSet<Document> Documents { get; }

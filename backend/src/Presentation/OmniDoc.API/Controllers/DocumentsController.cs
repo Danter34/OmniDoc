@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OmniDoc.Application.Features.Documents.Commands.UploadDocument;
 using OmniDoc.Application.Features.Documents.DTOs;
@@ -6,6 +7,7 @@ using OmniDoc.Application.Features.Documents.Queries.GetDocumentsByWorkspace;
 
 namespace OmniDoc.API.Controllers;
 
+[Authorize]
 public class DocumentsController : BaseApiController
 {
     [HttpPost("/api/workspaces/{workspaceId:guid}/documents/upload")]

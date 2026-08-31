@@ -12,22 +12,27 @@ public class GetConversationsByWorkspaceQueryHandler
     : IRequestHandler<GetConversationsByWorkspaceQuery, Result<List<ConversationDto>>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
-    public GetConversationsByWorkspaceQueryHandler(IApplicationDbContext context)
+    public GetConversationsByWorkspaceQueryHandler(
+        IApplicationDbContext context,
+        IWorkspaceAuthorizationService workspaceAuthorization)
     {
         _context = context;
+        _workspaceAuthorization = workspaceAuthorization;
     }
 
     public async Task<Result<List<ConversationDto>>> Handle(
         GetConversationsByWorkspaceQuery request,
         CancellationToken cancellationToken)
     {
-        var workspaceExists = await _context.Workspaces
-            .AnyAsync(w => w.Id == request.WorkspaceId, cancellationToken);
+        var access = await _workspaceAuthorization.AuthorizeAsync(
+            request.WorkspaceId,
+            cancellationToken);
 
-        if (!workspaceExists)
+        if (!access.IsSuccess)
         {
-            return Result<List<ConversationDto>>.Failure($"Workspace '{request.WorkspaceId}' was not found.", 404);
+            return Result<List<ConversationDto>>.Failure(access.Errors, access.StatusCode);
         }
 
         var conversations = await _context.Conversations

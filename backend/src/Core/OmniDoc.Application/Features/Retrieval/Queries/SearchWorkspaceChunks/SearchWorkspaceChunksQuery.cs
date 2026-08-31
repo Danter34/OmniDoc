@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Common.Models;
 using OmniDoc.Application.Features.Retrieval.DTOs;
@@ -25,23 +24,26 @@ public class SearchWorkspaceChunksQueryValidator : AbstractValidator<SearchWorks
 
 public class SearchWorkspaceChunksQueryHandler : IRequestHandler<SearchWorkspaceChunksQuery, Result<List<SearchResultDto>>>
 {
-    private readonly IApplicationDbContext _context;
     private readonly IRetrievalService _retrievalService;
+    private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
-    public SearchWorkspaceChunksQueryHandler(IApplicationDbContext context, IRetrievalService retrievalService)
+    public SearchWorkspaceChunksQueryHandler(
+        IRetrievalService retrievalService,
+        IWorkspaceAuthorizationService workspaceAuthorization)
     {
-        _context = context;
         _retrievalService = retrievalService;
+        _workspaceAuthorization = workspaceAuthorization;
     }
 
     public async Task<Result<List<SearchResultDto>>> Handle(SearchWorkspaceChunksQuery request, CancellationToken cancellationToken)
     {
-        var workspaceExists = await _context.Workspaces
-            .AnyAsync(w => w.Id == request.WorkspaceId, cancellationToken);
+        var access = await _workspaceAuthorization.AuthorizeAsync(
+            request.WorkspaceId,
+            cancellationToken);
 
-        if (!workspaceExists)
+        if (!access.IsSuccess)
         {
-            return Result<List<SearchResultDto>>.Failure($"Workspace '{request.WorkspaceId}' was not found.", 404);
+            return Result<List<SearchResultDto>>.Failure(access.Errors, access.StatusCode);
         }
 
         var matches = await _retrievalService.SearchSimilarChunksAsync(

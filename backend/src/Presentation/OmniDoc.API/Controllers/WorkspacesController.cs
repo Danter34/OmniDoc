@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OmniDoc.Application.Features.Workspaces.Commands.CreateWorkspace;
 using OmniDoc.Application.Features.Workspaces.DTOs;
@@ -5,6 +6,7 @@ using OmniDoc.Application.Features.Workspaces.Queries.GetWorkspaces;
 
 namespace OmniDoc.API.Controllers;
 
+[Authorize]
 public class WorkspacesController : BaseApiController
 {
     [HttpPost]
@@ -14,8 +16,8 @@ public class WorkspacesController : BaseApiController
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<WorkspaceDto>>> GetAll([FromQuery] string? userId, CancellationToken cancellationToken)
+    public async Task<ActionResult<List<WorkspaceDto>>> GetAll(CancellationToken cancellationToken)
     {
-        return HandleResult(await Sender.Send(new GetWorkspacesQuery(userId), cancellationToken));
+        return HandleResult(await Sender.Send(new GetWorkspacesQuery(), cancellationToken));
     }
 }

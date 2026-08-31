@@ -8,7 +8,9 @@ using OmniDoc.Domain.Enums;
 
 namespace OmniDoc.Application.Features.Workspaces.Commands.CreateWorkspace;
 
-public record CreateWorkspaceCommand(string Name, string? Description, string? UserId) : IRequest<Result<WorkspaceDto>>;
+public record CreateWorkspaceCommand(
+    string Name,
+    string? Description) : IRequest<Result<WorkspaceDto>>;
 
 public class CreateWorkspaceCommandValidator : AbstractValidator<CreateWorkspaceCommand>
 {
@@ -21,29 +23,36 @@ public class CreateWorkspaceCommandValidator : AbstractValidator<CreateWorkspace
 public class CreateWorkspaceCommandHandler : IRequestHandler<CreateWorkspaceCommand, Result<WorkspaceDto>>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUser;
 
-    public CreateWorkspaceCommandHandler(IApplicationDbContext context)
+    public CreateWorkspaceCommandHandler(
+        IApplicationDbContext context,
+        ICurrentUserService currentUser)
     {
         _context = context;
+        _currentUser = currentUser;
     }
 
     public async Task<Result<WorkspaceDto>> Handle(CreateWorkspaceCommand request, CancellationToken cancellationToken)
     {
-        var userId = request.UserId ?? "system-user";
+        if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
+        {
+            return Result<WorkspaceDto>.Failure("Authentication is required.", 401);
+        }
 
         var workspace = new Workspace
         {
             Name = request.Name,
             Description = request.Description,
-            CreatedBy = userId
+            OwnerId = userId,
+            CreatedBy = userId.ToString()
         };
 
         workspace.Members.Add(new WorkspaceMember
         {
             WorkspaceId = workspace.Id,
             UserId = userId,
-            Role = WorkspaceRole.Owner,
-            CreatedBy = userId
+            Role = WorkspaceRole.Owner
         });
 
         _context.Workspaces.Add(workspace);

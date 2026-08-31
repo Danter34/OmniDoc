@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OmniDoc.Application.Features.Chat.Commands.SendMessage;
 using OmniDoc.Application.Features.Chat.DTOs;
@@ -12,6 +13,7 @@ namespace OmniDoc.API.Controllers;
 
 public record SendMessageRequest(Guid? ConversationId, string Message, int TopK = 4);
 
+[Authorize]
 public class ChatController : BaseApiController
 {
     private static readonly JsonSerializerOptions StreamJsonOptions = new(JsonSerializerDefaults.Web)

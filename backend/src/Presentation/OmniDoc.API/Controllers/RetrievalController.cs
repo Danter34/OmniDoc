@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OmniDoc.Application.Features.Retrieval.DTOs;
 using OmniDoc.Application.Features.Retrieval.Queries.SearchWorkspaceChunks;
@@ -6,6 +7,7 @@ namespace OmniDoc.API.Controllers;
 
 public record SearchRequest(string Query, int TopK = 5, float MinScore = 0.0f);
 
+[Authorize]
 public class RetrievalController : BaseApiController
 {
     [HttpPost("/api/workspaces/{workspaceId:guid}/search")]

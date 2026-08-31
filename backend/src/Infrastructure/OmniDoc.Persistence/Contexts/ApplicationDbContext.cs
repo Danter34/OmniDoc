@@ -16,6 +16,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     {
     }
 
+    public DbSet<User> Users => Set<User>();
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
     public DbSet<Document> Documents => Set<Document>();
@@ -29,20 +30,19 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.HasPostgresExtension("vector");
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
         modelBuilder.Entity<Workspace>(builder =>
         {
             builder.Property(x => x.Name).HasMaxLength(256).IsRequired();
             builder.Property(x => x.Description).HasMaxLength(1024);
-            builder.HasMany(x => x.Members).WithOne(x => x.Workspace).HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+            builder.HasIndex(x => x.OwnerId);
+            builder.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.OwnerId)
+                .OnDelete(DeleteBehavior.Restrict);
             builder.HasMany(x => x.Documents).WithOne(x => x.Workspace).HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
             builder.HasMany(x => x.Conversations).WithOne(x => x.Workspace).HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<WorkspaceMember>(builder =>
-        {
-            builder.Property(x => x.UserId).HasMaxLength(256).IsRequired();
-            builder.HasIndex(x => new { x.WorkspaceId, x.UserId }).IsUnique();
         });
 
         modelBuilder.Entity<Document>(builder =>
