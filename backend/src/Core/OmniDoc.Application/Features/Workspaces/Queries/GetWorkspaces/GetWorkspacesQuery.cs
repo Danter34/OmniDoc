@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Common.Models;
 using OmniDoc.Application.Features.Workspaces.DTOs;
+using OmniDoc.Domain.Enums;
 
 namespace OmniDoc.Application.Features.Workspaces.Queries.GetWorkspaces;
 
@@ -28,14 +29,37 @@ public class GetWorkspacesQueryHandler : IRequestHandler<GetWorkspacesQuery, Res
             return Result<List<WorkspaceDto>>.Failure("Authentication is required.", 401);
         }
 
-        var workspaces = await _context.Workspaces
+        var workspaceRows = await _context.Workspaces
             .AsNoTracking()
             .Where(workspace =>
                 workspace.OwnerId == userId ||
                 workspace.Members.Any(member => member.UserId == userId))
             .OrderByDescending(w => w.CreatedAtUtc)
-            .Select(w => new WorkspaceDto(w.Id, w.Name, w.Description, w.CreatedAtUtc, w.Documents.Count))
+            .Select(workspace => new
+            {
+                workspace.Id,
+                workspace.Name,
+                workspace.Description,
+                workspace.CreatedAtUtc,
+                DocumentCount = workspace.Documents.Count,
+                Role = workspace.OwnerId == userId
+                    ? WorkspaceRole.Owner
+                    : workspace.Members
+                        .Where(member => member.UserId == userId)
+                        .Select(member => member.Role)
+                        .FirstOrDefault()
+            })
             .ToListAsync(cancellationToken);
+
+        var workspaces = workspaceRows
+            .Select(workspace => new WorkspaceDto(
+                workspace.Id,
+                workspace.Name,
+                workspace.Description,
+                workspace.CreatedAtUtc,
+                workspace.DocumentCount,
+                workspace.Role.ToString()))
+            .ToList();
 
         return Result<List<WorkspaceDto>>.Success(workspaces);
     }

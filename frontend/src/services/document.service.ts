@@ -14,7 +14,7 @@ export const documentService = {
     body.append("file", file);
 
     return apiRequest<DocumentDto>(
-      `/api/workspaces/${workspaceId}/documents/upload`,
+      `/api/workspaces/${workspaceId}/documents`,
       {
         method: "POST",
         body,

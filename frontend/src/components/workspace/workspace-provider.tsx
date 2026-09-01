@@ -35,15 +35,6 @@ export const WorkspaceContext = createContext<
   WorkspaceContextValue | undefined
 >(undefined);
 
-function normalizeWorkspace(workspace: Workspace): Workspace {
-  return {
-    ...workspace,
-    // The current API does not serialize Role yet. Existing creation and access
-    // flows create owned workspaces, while the optional field is forward-compatible.
-    role: workspace.role ?? "Owner",
-  };
-}
-
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
@@ -59,16 +50,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const storeWorkspaces = useCallback((items: Workspace[]) => {
-    const normalizedItems = items.map(normalizeWorkspace);
-    setWorkspaces(normalizedItems);
+    setWorkspaces(items);
     setActiveWorkspaceIdState((current) => {
       const stored = window.localStorage.getItem(ACTIVE_WORKSPACE_KEY);
       const candidate = current ?? stored;
       const nextId =
         candidate &&
-        normalizedItems.some((item) => item.id === candidate)
+        items.some((item) => item.id === candidate)
           ? candidate
-          : (normalizedItems[0]?.id ?? null);
+          : (items[0]?.id ?? null);
 
       if (nextId) {
         window.localStorage.setItem(ACTIVE_WORKSPACE_KEY, nextId);
@@ -134,7 +124,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const createWorkspace = useCallback(
     async (payload: CreateWorkspaceRequest) => {
-      const created = normalizeWorkspace(await workspaceService.create(payload));
+      const created = await workspaceService.create(payload);
       setWorkspaces((current) => [created, ...current]);
       setActiveWorkspaceId(created.id);
       return created;

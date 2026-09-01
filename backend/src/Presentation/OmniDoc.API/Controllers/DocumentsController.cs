@@ -10,6 +10,7 @@ namespace OmniDoc.API.Controllers;
 [Authorize]
 public class DocumentsController : BaseApiController
 {
+    [HttpPost("/api/workspaces/{workspaceId:guid}/documents")]
     [HttpPost("/api/workspaces/{workspaceId:guid}/documents/upload")]
     public async Task<ActionResult<DocumentDto>> Upload(
         Guid workspaceId,

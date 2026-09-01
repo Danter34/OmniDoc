@@ -58,7 +58,13 @@ public class CreateWorkspaceCommandHandler : IRequestHandler<CreateWorkspaceComm
         _context.Workspaces.Add(workspace);
         await _context.SaveChangesAsync(cancellationToken);
 
-        var dto = new WorkspaceDto(workspace.Id, workspace.Name, workspace.Description, workspace.CreatedAtUtc, 0);
+        var dto = new WorkspaceDto(
+            workspace.Id,
+            workspace.Name,
+            workspace.Description,
+            workspace.CreatedAtUtc,
+            0,
+            WorkspaceRole.Owner.ToString());
 
         return Result<WorkspaceDto>.Success(dto, 201);
     }

@@ -5,4 +5,5 @@ public record WorkspaceDto(
     string Name,
     string? Description,
     DateTime CreatedAtUtc,
-    int DocumentCount);
+    int DocumentCount,
+    string Role);

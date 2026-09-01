@@ -1,6 +1,7 @@
 using OmniDoc.Application.Common.Services;
 using OmniDoc.Application.Features.Documents.Queries.GetDocumentsByWorkspace;
 using OmniDoc.Application.Features.Workspaces.Commands.CreateWorkspace;
+using OmniDoc.Application.Features.Workspaces.Queries.GetWorkspaces;
 using OmniDoc.Domain.Entities;
 using OmniDoc.Domain.Enums;
 using OmniDoc.UnitTests.Features.Documents;
@@ -85,6 +86,7 @@ public sealed class WorkspaceAuthorizationTests
             CancellationToken.None);
 
         Assert.True(result.IsSuccess);
+        Assert.Equal(WorkspaceRole.Owner.ToString(), result.Data?.Role);
 
         var workspace = Assert.Single(context.Workspaces);
         Assert.Equal(userId, workspace.OwnerId);
@@ -93,6 +95,31 @@ public sealed class WorkspaceAuthorizationTests
         Assert.Equal(workspace.Id, membership.WorkspaceId);
         Assert.Equal(userId, membership.UserId);
         Assert.Equal(WorkspaceRole.Owner, membership.Role);
+    }
+
+    [Fact]
+    public async Task GetWorkspaces_ReturnsRoleForOwnerAndMember()
+    {
+        var ownerId = Guid.NewGuid();
+        var memberId = Guid.NewGuid();
+        await using var context = await SeedWorkspaceAsync(ownerId, memberId);
+
+        var ownerResult = await new GetWorkspacesQueryHandler(
+            context,
+            AuthenticatedUser(ownerId))
+            .Handle(new GetWorkspacesQuery(), CancellationToken.None);
+
+        var memberResult = await new GetWorkspacesQueryHandler(
+            context,
+            AuthenticatedUser(memberId))
+            .Handle(new GetWorkspacesQuery(), CancellationToken.None);
+
+        Assert.Equal(
+            WorkspaceRole.Owner.ToString(),
+            Assert.Single(ownerResult.Data!).Role);
+        Assert.Equal(
+            WorkspaceRole.Member.ToString(),
+            Assert.Single(memberResult.Data!).Role);
     }
 
     [Fact]

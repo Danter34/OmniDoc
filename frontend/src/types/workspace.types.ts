@@ -6,7 +6,7 @@ export interface Workspace {
   description: string | null;
   createdAtUtc: string;
   documentCount: number;
-  role?: WorkspaceRole;
+  role: WorkspaceRole;
 }
 
 export interface CreateWorkspaceRequest {
