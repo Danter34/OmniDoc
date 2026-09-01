@@ -3,6 +3,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OmniDoc.Application.Features.Chat.Commands.CreateConversation;
+using OmniDoc.Application.Features.Chat.Commands.DeleteConversation;
 using OmniDoc.Application.Features.Chat.Commands.SendMessage;
 using OmniDoc.Application.Features.Chat.DTOs;
 using OmniDoc.Application.Features.Chat.Queries.GetConversationMessages;
@@ -12,6 +14,7 @@ using OmniDoc.Application.Features.Chat.Streaming.StreamMessage;
 namespace OmniDoc.API.Controllers;
 
 public record SendMessageRequest(Guid? ConversationId, string Message, int TopK = 4);
+public record CreateConversationRequest(string Title);
 
 [Authorize]
 public class ChatController : BaseApiController
@@ -91,11 +94,37 @@ public class ChatController : BaseApiController
         return HandleResult(await Sender.Send(new GetConversationsByWorkspaceQuery(workspaceId), cancellationToken));
     }
 
-    [HttpGet("/api/conversations/{conversationId:guid}/messages")]
-    public async Task<ActionResult<List<ChatMessageDto>>> GetMessages(
+    [HttpPost("/api/workspaces/{workspaceId:guid}/conversations")]
+    public async Task<ActionResult<ConversationDto>> CreateConversation(
+        Guid workspaceId,
+        CreateConversationRequest request,
+        CancellationToken cancellationToken)
+    {
+        return HandleResult(await Sender.Send(
+            new CreateConversationCommand(workspaceId, request.Title),
+            cancellationToken));
+    }
+
+    [HttpDelete("/api/workspaces/{workspaceId:guid}/conversations/{conversationId:guid}")]
+    public async Task<ActionResult<bool>> DeleteConversation(
+        Guid workspaceId,
         Guid conversationId,
         CancellationToken cancellationToken)
     {
-        return HandleResult(await Sender.Send(new GetConversationMessagesQuery(conversationId), cancellationToken));
+        return HandleResult(await Sender.Send(
+            new DeleteConversationCommand(workspaceId, conversationId),
+            cancellationToken));
+    }
+
+    [HttpGet("/api/workspaces/{workspaceId:guid}/conversations/{conversationId:guid}/messages")]
+    [HttpGet("/api/conversations/{conversationId:guid}/messages")]
+    public async Task<ActionResult<List<ChatMessageDto>>> GetMessages(
+        Guid? workspaceId,
+        Guid conversationId,
+        CancellationToken cancellationToken)
+    {
+        return HandleResult(await Sender.Send(
+            new GetConversationMessagesQuery(conversationId, workspaceId),
+            cancellationToken));
     }
 }

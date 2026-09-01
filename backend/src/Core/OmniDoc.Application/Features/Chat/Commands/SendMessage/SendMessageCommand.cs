@@ -131,6 +131,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
         // inside the same clock tick, since history is ordered by CreatedAtUtc. The
         // offset has to exceed Postgres' microsecond precision to survive the round-trip.
         assistantMessage.CreatedAtUtc = userMessage.CreatedAtUtc.AddMilliseconds(1);
+        conversation.UpdatedAtUtc = assistantMessage.CreatedAtUtc;
 
         _context.ChatMessages.AddRange(userMessage, assistantMessage);
 

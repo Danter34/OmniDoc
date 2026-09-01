@@ -6,7 +6,9 @@ using OmniDoc.Application.Features.Chat.DTOs;
 
 namespace OmniDoc.Application.Features.Chat.Queries.GetConversationMessages;
 
-public record GetConversationMessagesQuery(Guid ConversationId) : IRequest<Result<List<ChatMessageDto>>>;
+public record GetConversationMessagesQuery(
+    Guid ConversationId,
+    Guid? WorkspaceId = null) : IRequest<Result<List<ChatMessageDto>>>;
 
 public class GetConversationMessagesQueryHandler
     : IRequestHandler<GetConversationMessagesQuery, Result<List<ChatMessageDto>>>
@@ -35,6 +37,14 @@ public class GetConversationMessagesQueryHandler
         if (conversation is null)
         {
             return Result<List<ChatMessageDto>>.Failure($"Conversation '{request.ConversationId}' was not found.", 404);
+        }
+
+        if (request.WorkspaceId is { } workspaceId &&
+            conversation.WorkspaceId != workspaceId)
+        {
+            return Result<List<ChatMessageDto>>.Failure(
+                $"Conversation '{request.ConversationId}' was not found in workspace '{workspaceId}'.",
+                404);
         }
 
         var access = await _workspaceAuthorization.AuthorizeAsync(

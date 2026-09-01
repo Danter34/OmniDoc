@@ -1,4 +1,6 @@
 using OmniDoc.Application.Common.Services;
+using OmniDoc.Application.Features.Chat.Commands.CreateConversation;
+using OmniDoc.Application.Features.Chat.Commands.DeleteConversation;
 using OmniDoc.Application.Features.Documents.Queries.GetDocumentsByWorkspace;
 using OmniDoc.Application.Features.Workspaces.Commands.CreateWorkspace;
 using OmniDoc.Application.Features.Workspaces.Queries.GetWorkspaces;
@@ -135,6 +137,59 @@ public sealed class WorkspaceAuthorizationTests
 
         Assert.False(result.IsSuccess);
         Assert.Equal(403, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateConversation_CreatesConversationForWorkspaceMember()
+    {
+        var ownerId = Guid.NewGuid();
+        var memberId = Guid.NewGuid();
+        await using var context = await SeedWorkspaceAsync(ownerId, memberId);
+        var workspace = Assert.Single(context.Workspaces);
+        var handler = new CreateConversationCommandHandler(
+            context,
+            CreateAuthorizationService(context, memberId));
+
+        var result = await handler.Handle(
+            new CreateConversationCommand(workspace.Id, "  Contract review  "),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Contract review", result.Data?.Title);
+        Assert.Equal(workspace.Id, result.Data?.WorkspaceId);
+        Assert.Single(context.Conversations);
+    }
+
+    [Fact]
+    public async Task DeleteConversation_RemovesConversationAndMessages()
+    {
+        var ownerId = Guid.NewGuid();
+        await using var context = await SeedWorkspaceAsync(ownerId);
+        var workspace = Assert.Single(context.Workspaces);
+        var conversation = new Conversation
+        {
+            WorkspaceId = workspace.Id,
+            Title = "Delete me"
+        };
+        conversation.Messages.Add(new ChatMessage
+        {
+            ConversationId = conversation.Id,
+            Role = MessageRole.User,
+            Content = "Temporary question"
+        });
+        context.Conversations.Add(conversation);
+        await context.SaveChangesAsync();
+
+        var handler = new DeleteConversationCommandHandler(
+            context,
+            CreateAuthorizationService(context, ownerId));
+        var result = await handler.Handle(
+            new DeleteConversationCommand(workspace.Id, conversation.Id),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Empty(context.Conversations);
+        Assert.Empty(context.ChatMessages);
     }
 
     private static WorkspaceAuthorizationService CreateAuthorizationService(

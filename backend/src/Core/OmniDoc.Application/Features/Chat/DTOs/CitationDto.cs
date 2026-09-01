@@ -3,6 +3,7 @@ namespace OmniDoc.Application.Features.Chat.DTOs;
 public record CitationDto(
     Guid ChunkId,
     Guid DocumentId,
-    string DocumentTitle,
+    string DocumentName,
     int PageNumber,
-    string Excerpt);
+    string Snippet,
+    float SimilarityScore);

@@ -231,7 +231,8 @@ public partial class CitationStreamStateMachine
             chunk.DocumentId,
             chunk.DocumentTitle,
             chunk.PageNumber,
-            Truncate(chunk.Content, ExcerptLength));
+            Truncate(chunk.Content, ExcerptLength),
+            chunk.SimilarityScore);
     }
 
     private static SearchResultDto? ResolveChunk(

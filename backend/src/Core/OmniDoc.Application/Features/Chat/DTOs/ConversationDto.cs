@@ -4,4 +4,5 @@ public record ConversationDto(
     Guid Id,
     Guid WorkspaceId,
     string Title,
-    DateTime CreatedAtUtc);
+    DateTime CreatedAtUtc,
+    DateTime LastActivityAtUtc);

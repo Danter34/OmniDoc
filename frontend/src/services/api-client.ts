@@ -52,10 +52,10 @@ async function readResponseBody(response: Response) {
   return text || null;
 }
 
-export async function apiRequest<T>(
+export async function apiFetch(
   path: string,
   init: RequestInit = {},
-): Promise<T> {
+) {
   const headers = new Headers(init.headers);
   const token = tokenStorage.get();
 
@@ -67,10 +67,17 @@ export async function apiRequest<T>(
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(getRequestUrl(path), {
+  return fetch(getRequestUrl(path), {
     ...init,
     headers,
   });
+}
+
+export async function apiRequest<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const response = await apiFetch(path, init);
   const body: unknown = await readResponseBody(response);
 
   if (!response.ok) {

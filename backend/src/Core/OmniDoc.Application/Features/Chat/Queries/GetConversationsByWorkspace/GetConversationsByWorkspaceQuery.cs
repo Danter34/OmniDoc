@@ -38,7 +38,7 @@ public class GetConversationsByWorkspaceQueryHandler
         var conversations = await _context.Conversations
             .AsNoTracking()
             .Where(c => c.WorkspaceId == request.WorkspaceId)
-            .OrderByDescending(c => c.CreatedAtUtc)
+            .OrderByDescending(c => c.UpdatedAtUtc ?? c.CreatedAtUtc)
             .Select(ChatMapping.ConversationProjection)
             .ToListAsync(cancellationToken);
 

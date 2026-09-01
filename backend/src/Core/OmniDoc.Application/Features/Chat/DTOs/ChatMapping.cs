@@ -10,7 +10,8 @@ public static class ChatMapping
             conversation.Id,
             conversation.WorkspaceId,
             conversation.Title,
-            conversation.CreatedAtUtc);
+            conversation.CreatedAtUtc,
+            conversation.UpdatedAtUtc ?? conversation.CreatedAtUtc);
 
     public static readonly Expression<Func<ChatMessage, ChatMessageDto>> MessageProjection =
         message => new ChatMessageDto(
@@ -25,7 +26,8 @@ public static class ChatMapping
                     citation.DocumentId,
                     citation.DocumentTitle,
                     citation.PageNumber,
-                    citation.Excerpt))
+                    citation.Excerpt,
+                    citation.SimilarityScore))
                 .ToList());
 
     public static ChatMessageDto ToDto(this ChatMessage message) => new(
@@ -40,6 +42,7 @@ public static class ChatMapping
                 citation.DocumentId,
                 citation.DocumentTitle,
                 citation.PageNumber,
-                citation.Excerpt))
+                citation.Excerpt,
+                citation.SimilarityScore))
             .ToList());
 }

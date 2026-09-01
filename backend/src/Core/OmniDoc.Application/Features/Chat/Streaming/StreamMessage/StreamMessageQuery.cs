@@ -118,8 +118,7 @@ public class StreamMessageQueryHandler : IStreamRequestHandler<StreamMessageQuer
                 conversation.Id,
                 setup.UserMessageCreatedAtUtc,
                 answer.ToString(),
-                citations,
-                matches).ConfigureAwait(false);
+                citations).ConfigureAwait(false);
         }
 
         if (failure.Exception is { } streamException)
@@ -216,6 +215,7 @@ public class StreamMessageQueryHandler : IStreamRequestHandler<StreamMessageQuer
             Content = request.Message
         };
 
+        conversation.UpdatedAtUtc = userMessage.CreatedAtUtc;
         _context.ChatMessages.Add(userMessage);
 
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -240,17 +240,12 @@ public class StreamMessageQueryHandler : IStreamRequestHandler<StreamMessageQuer
         Guid conversationId,
         DateTime userMessageCreatedAtUtc,
         string answer,
-        IReadOnlyList<CitationDto> citations,
-        IReadOnlyList<SearchResultDto> matches)
+        IReadOnlyList<CitationDto> citations)
     {
         if (answer.Length == 0 && citations.Count == 0)
         {
             return null;
         }
-
-        var scoresByChunk = matches
-            .GroupBy(match => match.ChunkId)
-            .ToDictionary(group => group.Key, group => group.First().SimilarityScore);
 
         var assistantMessage = new ChatMessage
         {
@@ -261,10 +256,10 @@ public class StreamMessageQueryHandler : IStreamRequestHandler<StreamMessageQuer
             {
                 ChunkId = citation.ChunkId,
                 DocumentId = citation.DocumentId,
-                DocumentTitle = citation.DocumentTitle,
+                DocumentTitle = citation.DocumentName,
                 PageNumber = citation.PageNumber,
-                Excerpt = Truncate(citation.Excerpt, ExcerptLength),
-                SimilarityScore = scoresByChunk.TryGetValue(citation.ChunkId, out var score) ? score : 0f
+                Excerpt = Truncate(citation.Snippet, ExcerptLength),
+                SimilarityScore = citation.SimilarityScore
             }).ToList()
         };
 

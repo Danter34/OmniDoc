@@ -19,9 +19,10 @@ public class CitationStreamStateMachineTests
         var citation = Assert.Single(events.Citations());
         Assert.Equal(StreamTestHelpers.BaoCao.ChunkId, citation.ChunkId);
         Assert.Equal(StreamTestHelpers.BaoCao.DocumentId, citation.DocumentId);
-        Assert.Equal("BaoCao.pdf", citation.DocumentTitle);
+        Assert.Equal("BaoCao.pdf", citation.DocumentName);
         Assert.Equal(1, citation.PageNumber);
-        Assert.Equal(StreamTestHelpers.BaoCao.Content, citation.Excerpt);
+        Assert.Equal(StreamTestHelpers.BaoCao.Content, citation.Snippet);
+        Assert.Equal(StreamTestHelpers.BaoCao.SimilarityScore, citation.SimilarityScore);
 
         // The markup itself must not reach the prose, but every surrounding word must.
         Assert.Equal("Theo tài liệu  doanh thu tăng.", events.VisibleText());
@@ -287,7 +288,7 @@ public class CitationStreamStateMachineTests
             [longChunk]);
 
         var citation = Assert.Single(events.Citations());
-        Assert.Equal(403, citation.Excerpt.Length);
-        Assert.EndsWith("...", citation.Excerpt, StringComparison.Ordinal);
+        Assert.Equal(403, citation.Snippet.Length);
+        Assert.EndsWith("...", citation.Snippet, StringComparison.Ordinal);
     }
 }
