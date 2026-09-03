@@ -4,12 +4,21 @@ import {
   ArrowDown,
   BookOpenCheck,
   Bot,
+  FileText,
   Menu,
   MessageSquareText,
+  PanelLeftOpen,
   Radio,
   Sparkles,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessageItem } from "@/components/chat/chat-message-item";
@@ -18,6 +27,10 @@ import {
   type SelectedCitation,
 } from "@/components/chat/citation-panel";
 import { ConversationSidebar } from "@/components/chat/conversation-sidebar";
+import {
+  PdfViewer,
+  type PdfPageTarget,
+} from "@/components/document/PdfViewer";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useChatStream } from "@/hooks/use-chat-stream";
@@ -62,6 +75,15 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [selectedCitation, setSelectedCitation] =
     useState<SelectedCitation | null>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
+    null,
+  );
+  const [pdfTarget, setPdfTarget] = useState<PdfPageTarget | null>(null);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [pdfPaneWidth, setPdfPaneWidth] = useState(48);
+  const [isResizingPdf, setIsResizingPdf] = useState(false);
+  const splitAreaRef = useRef<HTMLDivElement>(null);
+  const navigationRequestIdRef = useRef(0);
   const [loadedConversationId, setLoadedConversationId] = useState<
     string | null
   >(null);
@@ -136,6 +158,11 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
   const indexedDocuments = useMemo(
     () => documents.filter((document) => document.status === "Indexed"),
     [documents],
+  );
+  const selectedDocument = useMemo(
+    () =>
+      documents.find((document) => document.id === selectedDocumentId) ?? null,
+    [documents, selectedDocumentId],
   );
   const hasIndexedDocuments = indexedDocuments.length > 0;
   const lastMessage = messages.at(-1);
@@ -225,12 +252,68 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     sendMessage,
   ]);
 
-  const selectCitation = useCallback(
-    (citation: Citation, index: number) => {
-      setSelectedCitation({ citation, index });
+  const openDocument = useCallback(
+    (documentId: string, pageNumber = 1, fromCitation = false) => {
+      navigationRequestIdRef.current += 1;
+      setSelectedDocumentId(documentId);
+      setPdfTarget({
+        pageNumber: Math.max(1, pageNumber),
+        requestId: navigationRequestIdRef.current,
+        fromCitation,
+      });
+      setPdfViewerOpen(true);
     },
     [],
   );
+
+  const selectCitation = useCallback(
+    (citation: Citation, index: number) => {
+      setSelectedCitation({ citation, index });
+      openDocument(citation.documentId, citation.pageNumber, true);
+    },
+    [openDocument],
+  );
+
+  const viewCitationInDocument = useCallback(
+    (citation: Citation) => {
+      openDocument(citation.documentId, citation.pageNumber, true);
+      setSelectedCitation(null);
+    },
+    [openDocument],
+  );
+
+  useEffect(() => {
+    if (!isResizingPdf) {
+      return;
+    }
+
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const bounds = splitAreaRef.current?.getBoundingClientRect();
+
+      if (!bounds) {
+        return;
+      }
+
+      const nextWidth = ((event.clientX - bounds.left) / bounds.width) * 100;
+      setPdfPaneWidth(Math.min(68, Math.max(30, nextWidth)));
+    };
+    const stopResizing = () => setIsResizingPdf(false);
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", stopResizing);
+
+    return () => {
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [isResizingPdf]);
 
   const historyUnavailable = Boolean(
     activeConversationId && (!historyReady || messagesLoading),
@@ -264,7 +347,60 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
           onSelect={selectConversationAndReset}
         />
 
-        <div className="flex min-h-0 min-w-0 flex-col">
+        <div
+          className="relative flex min-h-0 min-w-0"
+          ref={splitAreaRef}
+          style={
+            {
+              "--pdf-pane-width": `${pdfPaneWidth}%`,
+            } as CSSProperties
+          }
+        >
+          {pdfViewerOpen && selectedDocument ? (
+            <aside className="absolute inset-0 z-30 w-full min-w-0 border-r border-slate-200 bg-white lg:relative lg:z-auto lg:w-[var(--pdf-pane-width)] lg:shrink-0">
+              <PdfViewer
+                document={selectedDocument}
+                documents={documents}
+                key={selectedDocument.id}
+                onClose={() => setPdfViewerOpen(false)}
+                onDocumentSelect={(documentId) => openDocument(documentId)}
+                target={pdfTarget}
+                workspaceId={workspace.id}
+              />
+            </aside>
+          ) : null}
+
+          {pdfViewerOpen && selectedDocument ? (
+            <div
+              aria-label="Thay đổi độ rộng trình xem PDF"
+              aria-orientation="vertical"
+              aria-valuemax={68}
+              aria-valuemin={30}
+              aria-valuenow={Math.round(pdfPaneWidth)}
+              className={cn(
+                "group relative z-10 hidden w-2 shrink-0 cursor-col-resize items-center justify-center bg-slate-100 transition-colors hover:bg-blue-100 focus-visible:bg-blue-100 focus-visible:outline-none lg:flex",
+                isResizingPdf && "bg-blue-100",
+              )}
+              onDoubleClick={() => setPdfPaneWidth(48)}
+              onKeyDown={(event) => {
+                if (event.key === "ArrowLeft") {
+                  event.preventDefault();
+                  setPdfPaneWidth((value) => Math.max(30, value - 2));
+                } else if (event.key === "ArrowRight") {
+                  event.preventDefault();
+                  setPdfPaneWidth((value) => Math.min(68, value + 2));
+                }
+              }}
+              onMouseDown={() => setIsResizingPdf(true)}
+              role="separator"
+              tabIndex={0}
+              title="Kéo để thay đổi kích thước · Nhấp đúp để đặt lại"
+            >
+              <span className="h-10 w-0.5 rounded-full bg-slate-300 transition group-hover:bg-blue-400" />
+            </div>
+          ) : null}
+
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <header className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-200 px-4 sm:px-5">
             <Button
               aria-label="Mở danh sách hội thoại"
@@ -286,9 +422,57 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
                 {indexedDocuments.length} tài liệu sẵn sàng
               </p>
             </div>
+            <div className="hidden min-w-0 items-center gap-1.5 md:flex">
+              <label className="sr-only" htmlFor="chat-document-selector">
+                Chọn tài liệu PDF
+              </label>
+              <select
+                className="h-9 max-w-44 rounded-lg border border-slate-200 bg-white pl-3 pr-2 text-xs text-slate-600 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 xl:max-w-56"
+                disabled={documentsLoading || documents.length === 0}
+                id="chat-document-selector"
+                onChange={(event) => {
+                  if (event.target.value) {
+                    openDocument(event.target.value);
+                  }
+                }}
+                value={selectedDocumentId ?? ""}
+              >
+                <option value="">Chọn tài liệu PDF</option>
+                {documents.map((document) => (
+                  <option key={document.id} value={document.id}>
+                    {document.title || document.fileName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button
+              aria-label={pdfViewerOpen ? "Đóng trình xem PDF" : "Mở trình xem PDF"}
+              className="size-9 shrink-0 px-0"
+              disabled={documentsLoading || documents.length === 0}
+              onClick={() => {
+                if (pdfViewerOpen) {
+                  setPdfViewerOpen(false);
+                  return;
+                }
+
+                const documentId = selectedDocumentId ?? documents[0]?.id;
+                if (documentId) {
+                  openDocument(documentId, pdfTarget?.pageNumber ?? 1);
+                }
+              }}
+              title={pdfViewerOpen ? "Đóng trình xem PDF" : "Mở trình xem PDF"}
+              variant="secondary"
+            >
+              {pdfViewerOpen ? (
+                <FileText className="size-4 text-blue-600" />
+              ) : (
+                <PanelLeftOpen className="size-4" />
+              )}
+            </Button>
             <span
               className={cn(
-                "hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset sm:inline-flex",
+                "hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset",
+                !pdfViewerOpen && "sm:inline-flex",
                 realtimeStatus === "connected"
                   ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
                   : "bg-slate-100 text-slate-500 ring-slate-200",
@@ -374,11 +558,13 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
             onStop={stopGenerating}
             value={input}
           />
+          </div>
         </div>
       </section>
 
       <CitationPanel
         onClose={() => setSelectedCitation(null)}
+        onViewInDocument={viewCitationInDocument}
         selected={selectedCitation}
       />
     </>

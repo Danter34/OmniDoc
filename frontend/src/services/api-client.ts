@@ -52,6 +52,28 @@ async function readResponseBody(response: Response) {
   return text || null;
 }
 
+function createApiError(response: Response, body: unknown) {
+  const errors =
+    body &&
+    typeof body === "object" &&
+    "errors" in body &&
+    Array.isArray(body.errors)
+      ? body.errors.filter(
+          (item: unknown): item is string => typeof item === "string",
+        )
+      : [];
+  const fallbackMessage =
+    typeof body === "string" && body.trim()
+      ? body
+      : `Yêu cầu thất bại (${response.status}).`;
+
+  if (response.status === 401 && typeof window !== "undefined") {
+    window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
+  }
+
+  return new ApiError(errors[0] ?? fallbackMessage, response.status, errors);
+}
+
 export async function apiFetch(
   path: string,
   init: RequestInit = {},
@@ -81,28 +103,23 @@ export async function apiRequest<T>(
   const body: unknown = await readResponseBody(response);
 
   if (!response.ok) {
-    const errors =
-      body &&
-      typeof body === "object" &&
-      "errors" in body &&
-      Array.isArray(body.errors)
-        ? body.errors.filter(
-            (item: unknown): item is string => typeof item === "string",
-          )
-        : [];
-    const fallbackMessage =
-      typeof body === "string" && body.trim()
-        ? body
-        : `Yêu cầu thất bại (${response.status}).`;
-
-    if (response.status === 401 && typeof window !== "undefined") {
-      window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
-    }
-
-    throw new ApiError(errors[0] ?? fallbackMessage, response.status, errors);
+    throw createApiError(response, body);
   }
 
   return body as T;
+}
+
+export async function apiBlobRequest(
+  path: string,
+  init: RequestInit = {},
+): Promise<Blob> {
+  const response = await apiFetch(path, init);
+
+  if (!response.ok) {
+    throw createApiError(response, await readResponseBody(response));
+  }
+
+  return response.blob();
 }
 
 export function getErrorMessage(error: unknown) {

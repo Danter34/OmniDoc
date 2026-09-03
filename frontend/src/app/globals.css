@@ -55,6 +55,22 @@ button:not(:disabled) {
   }
 }
 
+@keyframes citation-notice {
+  0%,
+  70% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 0.5rem);
+  }
+}
+
+.pdf-citation-notice {
+  animation: citation-notice 2.6s ease-out forwards;
+}
+
 .progress-shimmer::after {
   position: absolute;
   inset: 0;

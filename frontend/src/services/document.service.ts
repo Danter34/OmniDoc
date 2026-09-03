@@ -1,4 +1,4 @@
-import { apiRequest } from "@/services/api-client";
+import { apiBlobRequest, apiRequest } from "@/services/api-client";
 import type { DocumentDto } from "@/types/document.types";
 
 export const documentService = {
@@ -19,6 +19,17 @@ export const documentService = {
         method: "POST",
         body,
       },
+    );
+  },
+
+  getContent(
+    workspaceId: string,
+    documentId: string,
+    signal?: AbortSignal,
+  ) {
+    return apiBlobRequest(
+      `/api/workspaces/${workspaceId}/documents/${documentId}/content`,
+      { signal },
     );
   },
 };

@@ -2,6 +2,7 @@
 
 import {
   BookOpenText,
+  ExternalLink,
   FileText,
   Quote,
   Sparkles,
@@ -20,9 +21,11 @@ export interface SelectedCitation {
 export function CitationPanel({
   selected,
   onClose,
+  onViewInDocument,
 }: {
   selected: SelectedCitation | null;
   onClose: () => void;
+  onViewInDocument: (citation: Citation) => void;
 }) {
   useEffect(() => {
     if (!selected) {
@@ -105,6 +108,15 @@ export function CitationPanel({
                 </p>
               </div>
             </div>
+            <Button
+              className="mt-4 w-full"
+              icon={<ExternalLink className="size-4" />}
+              onClick={() => onViewInDocument(citation)}
+              size="sm"
+              variant="secondary"
+            >
+              Xem vị trí trong tài liệu
+            </Button>
           </section>
 
           <section>
