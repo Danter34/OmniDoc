@@ -8,6 +8,7 @@ public interface IApplicationDbContext
     DbSet<User> Users { get; }
     DbSet<Workspace> Workspaces { get; }
     DbSet<WorkspaceMember> WorkspaceMembers { get; }
+    DbSet<WorkspaceInvitation> WorkspaceInvitations { get; }
     DbSet<Document> Documents { get; }
     DbSet<DocumentChunk> DocumentChunks { get; }
     DbSet<Conversation> Conversations { get; }

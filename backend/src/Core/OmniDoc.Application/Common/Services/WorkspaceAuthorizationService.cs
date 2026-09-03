@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Common.Models;
+using OmniDoc.Domain.Enums;
 
 namespace OmniDoc.Application.Common.Services;
 
@@ -52,5 +53,35 @@ public sealed class WorkspaceAuthorizationService : IWorkspaceAuthorizationServi
         return workspace.OwnerId == userId || workspace.IsMember
             ? Result.Success()
             : Result.Failure("You do not have access to this workspace.", 403);
+    }
+
+    public async Task<Result> AuthorizeOwnerAsync(
+        Guid workspaceId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
+        {
+            return Result.Failure("Authentication is required.", 401);
+        }
+
+        var workspace = await _context.Workspaces
+            .AsNoTracking()
+            .Where(item => item.Id == workspaceId)
+            .Select(item => new
+            {
+                IsOwner = item.Members.Any(member =>
+                    member.UserId == userId &&
+                    member.Role == WorkspaceRole.Owner)
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (workspace is null)
+        {
+            return Result.Failure($"Workspace '{workspaceId}' was not found.", 404);
+        }
+
+        return workspace.IsOwner
+            ? Result.Success()
+            : Result.Failure("Workspace owner permission is required.", 403);
     }
 }

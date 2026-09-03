@@ -13,4 +13,6 @@ public class User
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
     public ICollection<WorkspaceMember> WorkspaceMemberships { get; set; } = new List<WorkspaceMember>();
+
+    public ICollection<WorkspaceInvitation> SentWorkspaceInvitations { get; set; } = new List<WorkspaceInvitation>();
 }

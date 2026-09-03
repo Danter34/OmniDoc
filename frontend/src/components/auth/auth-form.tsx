@@ -52,7 +52,13 @@ function validate(
   return errors;
 }
 
-export function AuthForm({ mode }: { mode: AuthMode }) {
+export function AuthForm({
+  mode,
+  redirectTo = "/workspaces",
+}: {
+  mode: AuthMode;
+  redirectTo?: string;
+}) {
   const isRegister = mode === "register";
   const { user, isLoading, login, register } = useAuth();
   const router = useRouter();
@@ -68,9 +74,9 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
 
   useEffect(() => {
     if (!isLoading && user) {
-      router.replace("/workspaces");
+      router.replace(redirectTo);
     }
-  }, [isLoading, router, user]);
+  }, [isLoading, redirectTo, router, user]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -98,7 +104,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         });
       }
 
-      router.replace("/workspaces");
+      router.replace(redirectTo);
     } catch (error) {
       setRequestError(getErrorMessage(error));
     } finally {
@@ -276,7 +282,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
           {isRegister ? "Đã có tài khoản?" : "Chưa có tài khoản?"}{" "}
           <Link
             className="font-medium text-blue-600 transition hover:text-blue-700"
-            href={isRegister ? "/login" : "/register"}
+            href={`${isRegister ? "/login" : "/register"}?redirect=${encodeURIComponent(redirectTo)}`}
           >
             {isRegister ? "Đăng nhập" : "Đăng ký ngay"}
           </Link>

@@ -18,6 +18,7 @@ internal sealed class TestApplicationDbContext : DbContext, IApplicationDbContex
     public DbSet<User> Users => Set<User>();
     public DbSet<Workspace> Workspaces => Set<Workspace>();
     public DbSet<WorkspaceMember> WorkspaceMembers => Set<WorkspaceMember>();
+    public DbSet<WorkspaceInvitation> WorkspaceInvitations => Set<WorkspaceInvitation>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
@@ -42,6 +43,20 @@ internal sealed class TestApplicationDbContext : DbContext, IApplicationDbContex
             .HasOne(member => member.User)
             .WithMany(user => user.WorkspaceMemberships)
             .HasForeignKey(member => member.UserId);
+
+        modelBuilder.Entity<WorkspaceInvitation>()
+            .HasIndex(invitation => invitation.Token)
+            .IsUnique();
+
+        modelBuilder.Entity<WorkspaceInvitation>()
+            .HasOne(invitation => invitation.Workspace)
+            .WithMany(workspace => workspace.Invitations)
+            .HasForeignKey(invitation => invitation.WorkspaceId);
+
+        modelBuilder.Entity<WorkspaceInvitation>()
+            .HasOne(invitation => invitation.Inviter)
+            .WithMany(user => user.SentWorkspaceInvitations)
+            .HasForeignKey(invitation => invitation.InviterId);
     }
 
     public new Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>

@@ -6,6 +6,16 @@ export const metadata: Metadata = {
   title: "Đăng nhập",
 };
 
-export default function LoginPage() {
-  return <AuthForm mode="login" />;
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect?: string }>;
+}) {
+  const { redirect } = await searchParams;
+  const redirectTo =
+    redirect?.startsWith("/") && !redirect.startsWith("//")
+      ? redirect
+      : "/workspaces";
+
+  return <AuthForm mode="login" redirectTo={redirectTo} />;
 }

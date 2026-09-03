@@ -1,6 +1,6 @@
 "use client";
 
-import { Files, MessageSquareText } from "lucide-react";
+import { Files, MessageSquareText, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -27,6 +27,12 @@ export function WorkspaceNavigation() {
       label: "Trò chuyện",
       icon: MessageSquareText,
       active: pathname.startsWith(`/workspaces/${activeWorkspaceId}/chat`),
+    },
+    {
+      href: `/workspaces/${activeWorkspaceId}/settings`,
+      label: "Cài đặt",
+      icon: Settings,
+      active: pathname.startsWith(`/workspaces/${activeWorkspaceId}/settings`),
     },
   ];
 

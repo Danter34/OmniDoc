@@ -12,6 +12,8 @@ public class Workspace : BaseAuditableEntity
 
     public ICollection<WorkspaceMember> Members { get; set; } = new List<WorkspaceMember>();
 
+    public ICollection<WorkspaceInvitation> Invitations { get; set; } = new List<WorkspaceInvitation>();
+
     public ICollection<Document> Documents { get; set; } = new List<Document>();
 
     public ICollection<Conversation> Conversations { get; set; } = new List<Conversation>();

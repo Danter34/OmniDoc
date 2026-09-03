@@ -10,4 +10,8 @@ public interface IWorkspaceAuthorizationService
         Guid workspaceId,
         Guid userId,
         CancellationToken cancellationToken = default);
+
+    Task<Result> AuthorizeOwnerAsync(
+        Guid workspaceId,
+        CancellationToken cancellationToken = default);
 }
