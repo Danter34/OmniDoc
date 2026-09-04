@@ -53,6 +53,7 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
     {
         var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
+            WorkspacePermission.ViewWorkspace,
             cancellationToken);
 
         if (!access.IsSuccess)

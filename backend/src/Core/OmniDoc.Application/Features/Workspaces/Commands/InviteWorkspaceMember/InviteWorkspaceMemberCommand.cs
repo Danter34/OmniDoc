@@ -67,8 +67,9 @@ public sealed class InviteWorkspaceMemberCommandHandler
         InviteWorkspaceMemberCommand request,
         CancellationToken cancellationToken)
     {
-        var access = await _workspaceAuthorization.AuthorizeOwnerAsync(
+        var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
+            WorkspacePermission.InviteMembers,
             cancellationToken);
 
         if (!access.IsSuccess)
@@ -111,6 +112,14 @@ public sealed class InviteWorkspaceMemberCommandHandler
             return Result<WorkspaceInvitationDto>.Failure(
                 "Invitation role is invalid.",
                 400);
+        }
+
+        if (access.Data!.Role == WorkspaceRole.Admin &&
+            request.Role != WorkspaceRole.Member)
+        {
+            return Result<WorkspaceInvitationDto>.Failure(
+                "Workspace admins can only invite members.",
+                403);
         }
 
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();

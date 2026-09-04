@@ -19,7 +19,9 @@ public sealed class WorkspaceAuthorizationTests
         await using var context = await SeedWorkspaceAsync(ownerId);
         var service = CreateAuthorizationService(context, ownerId);
 
-        var result = await service.AuthorizeAsync(context.Workspaces.Single().Id);
+        var result = await service.AuthorizeAsync(
+            context.Workspaces.Single().Id,
+            WorkspacePermission.ViewWorkspace);
 
         Assert.True(result.IsSuccess);
     }
@@ -32,7 +34,9 @@ public sealed class WorkspaceAuthorizationTests
         await using var context = await SeedWorkspaceAsync(ownerId, memberId);
         var service = CreateAuthorizationService(context, memberId);
 
-        var result = await service.AuthorizeAsync(context.Workspaces.Single().Id);
+        var result = await service.AuthorizeAsync(
+            context.Workspaces.Single().Id,
+            WorkspacePermission.ViewWorkspace);
 
         Assert.True(result.IsSuccess);
     }
@@ -43,7 +47,9 @@ public sealed class WorkspaceAuthorizationTests
         await using var context = await SeedWorkspaceAsync(Guid.NewGuid());
         var service = CreateAuthorizationService(context, Guid.NewGuid());
 
-        var result = await service.AuthorizeAsync(context.Workspaces.Single().Id);
+        var result = await service.AuthorizeAsync(
+            context.Workspaces.Single().Id,
+            WorkspacePermission.ViewWorkspace);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(403, result.StatusCode);
@@ -55,7 +61,9 @@ public sealed class WorkspaceAuthorizationTests
         await using var context = await SeedWorkspaceAsync(Guid.NewGuid());
         var service = CreateAuthorizationService(context, Guid.NewGuid());
 
-        var result = await service.AuthorizeAsync(Guid.NewGuid());
+        var result = await service.AuthorizeAsync(
+            Guid.NewGuid(),
+            WorkspacePermission.ViewWorkspace);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(404, result.StatusCode);
@@ -69,10 +77,55 @@ public sealed class WorkspaceAuthorizationTests
             context,
             new StubCurrentUserService());
 
-        var result = await service.AuthorizeAsync(context.Workspaces.Single().Id);
+        var result = await service.AuthorizeAsync(
+            context.Workspaces.Single().Id,
+            WorkspacePermission.ViewWorkspace);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(401, result.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(WorkspacePermission.ViewWorkspace)]
+    [InlineData(WorkspacePermission.ManageDocuments)]
+    [InlineData(WorkspacePermission.InviteMembers)]
+    [InlineData(WorkspacePermission.RemoveMembers)]
+    public async Task Authorize_AllowsAdminOperationalPermissions(
+        WorkspacePermission permission)
+    {
+        var ownerId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        await using var context = await SeedWorkspaceAsync(
+            ownerId,
+            adminId,
+            WorkspaceRole.Admin);
+
+        var result = await CreateAuthorizationService(context, adminId)
+            .AuthorizeAsync(context.Workspaces.Single().Id, permission);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(WorkspaceRole.Admin, result.Data!.Role);
+    }
+
+    [Theory]
+    [InlineData(WorkspacePermission.ManageRoles)]
+    [InlineData(WorkspacePermission.TransferOwnership)]
+    [InlineData(WorkspacePermission.DeleteWorkspace)]
+    public async Task Authorize_RejectsAdminOwnerOnlyPermissions(
+        WorkspacePermission permission)
+    {
+        var ownerId = Guid.NewGuid();
+        var adminId = Guid.NewGuid();
+        await using var context = await SeedWorkspaceAsync(
+            ownerId,
+            adminId,
+            WorkspaceRole.Admin);
+
+        var result = await CreateAuthorizationService(context, adminId)
+            .AuthorizeAsync(context.Workspaces.Single().Id, permission);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(403, result.StatusCode);
     }
 
     [Fact]
@@ -207,7 +260,8 @@ public sealed class WorkspaceAuthorizationTests
 
     private static async Task<TestApplicationDbContext> SeedWorkspaceAsync(
         Guid ownerId,
-        Guid? memberId = null)
+        Guid? memberId = null,
+        WorkspaceRole memberRole = WorkspaceRole.Member)
     {
         var context = new TestApplicationDbContext();
         var workspace = new Workspace
@@ -229,7 +283,7 @@ public sealed class WorkspaceAuthorizationTests
             {
                 WorkspaceId = workspace.Id,
                 UserId = userId,
-                Role = WorkspaceRole.Member
+                Role = memberRole
             });
         }
 

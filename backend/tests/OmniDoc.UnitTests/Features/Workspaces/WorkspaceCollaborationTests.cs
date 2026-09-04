@@ -42,7 +42,8 @@ public sealed class WorkspaceCollaborationTests
         var otherMember = context.Users.Single(user => user.Email == "other@example.com");
         var handler = new RemoveWorkspaceMemberCommandHandler(
             context,
-            AuthenticatedUser(seeded.Member));
+            AuthenticatedUser(seeded.Member),
+            Authorization(context, seeded.Member.Id));
 
         var result = await handler.Handle(
             new RemoveWorkspaceMemberCommand(seeded.Workspace.Id, otherMember.Id),
@@ -53,8 +54,10 @@ public sealed class WorkspaceCollaborationTests
         Assert.Equal(3, context.WorkspaceMembers.Count());
     }
 
-    [Fact]
-    public async Task CannotDemoteLastOwner()
+    [Theory]
+    [InlineData(WorkspaceRole.Admin)]
+    [InlineData(WorkspaceRole.Member)]
+    public async Task CannotDemoteLastOwner(WorkspaceRole newRole)
     {
         await using var context = await SeedWorkspaceAsync();
         var seeded = GetSeededWorkspace(context);
@@ -66,7 +69,7 @@ public sealed class WorkspaceCollaborationTests
             new UpdateMemberRoleCommand(
                 seeded.Workspace.Id,
                 seeded.Owner.Id,
-                WorkspaceRole.Member),
+                newRole),
             CancellationToken.None);
 
         Assert.False(result.IsSuccess);
@@ -83,7 +86,8 @@ public sealed class WorkspaceCollaborationTests
         var seeded = GetSeededWorkspace(context);
         var handler = new RemoveWorkspaceMemberCommandHandler(
             context,
-            AuthenticatedUser(seeded.Owner));
+            AuthenticatedUser(seeded.Owner),
+            Authorization(context, seeded.Owner.Id));
 
         var result = await handler.Handle(
             new RemoveWorkspaceMemberCommand(seeded.Workspace.Id, seeded.Owner.Id),
@@ -298,7 +302,8 @@ public sealed class WorkspaceCollaborationTests
         var seeded = GetSeededWorkspace(context);
         var handler = new RemoveWorkspaceMemberCommandHandler(
             context,
-            AuthenticatedUser(seeded.Member));
+            AuthenticatedUser(seeded.Member),
+            Authorization(context, seeded.Member.Id));
 
         var result = await handler.Handle(
             new RemoveWorkspaceMemberCommand(seeded.Workspace.Id, seeded.Member.Id),
@@ -308,6 +313,220 @@ public sealed class WorkspaceCollaborationTests
         Assert.DoesNotContain(
             context.WorkspaceMembers,
             member => member.UserId == seeded.Member.Id);
+    }
+
+    [Fact]
+    public async Task AdminCanInviteMemberWithOutboxAndRealtimeNotification()
+    {
+        await using var context = await SeedWorkspaceAsync(includeAdmin: true);
+        var seeded = GetSeededWorkspace(context);
+        var admin = context.Users.Single(user => user.Email == "admin@example.com");
+        var invitee = NewUser("admin.invitee@example.com", "Admin Invitee");
+        context.Users.Add(invitee);
+        await context.SaveChangesAsync();
+        var scheduler = new FakeEmailOutboxScheduler();
+        var publisher = new RecordingNotificationPublisher();
+        var handler = CreateInviteHandler(
+            context,
+            admin.Id,
+            scheduler,
+            publisher);
+
+        var result = await handler.Handle(
+            new InviteWorkspaceMemberCommand(
+                seeded.Workspace.Id,
+                invitee.Email,
+                WorkspaceRole.Member),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var outbox = Assert.Single(context.EmailOutboxMessages);
+        Assert.Equal(outbox.Id, Assert.Single(scheduler.EnqueuedMessageIds));
+        var notification = Assert.Single(context.Notifications);
+        Assert.Equal(invitee.Id, notification.UserId);
+        Assert.Equal(notification.Id, Assert.Single(publisher.Published).Notification.Id);
+    }
+
+    [Theory]
+    [InlineData(WorkspaceRole.Admin)]
+    [InlineData(WorkspaceRole.Owner)]
+    public async Task AdminCannotInvitePrivilegedRole(WorkspaceRole role)
+    {
+        await using var context = await SeedWorkspaceAsync(includeAdmin: true);
+        var seeded = GetSeededWorkspace(context);
+        var admin = context.Users.Single(user => user.Email == "admin@example.com");
+        var handler = CreateInviteHandler(context, admin.Id);
+
+        var result = await handler.Handle(
+            new InviteWorkspaceMemberCommand(
+                seeded.Workspace.Id,
+                "privileged@example.com",
+                role),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(403, result.StatusCode);
+        Assert.Empty(context.WorkspaceInvitations);
+        Assert.Empty(context.EmailOutboxMessages);
+    }
+
+    [Fact]
+    public async Task AdminCanRemoveMember()
+    {
+        await using var context = await SeedWorkspaceAsync(includeAdmin: true);
+        var seeded = GetSeededWorkspace(context);
+        var admin = context.Users.Single(user => user.Email == "admin@example.com");
+        var handler = new RemoveWorkspaceMemberCommandHandler(
+            context,
+            AuthenticatedUser(admin),
+            Authorization(context, admin.Id));
+
+        var result = await handler.Handle(
+            new RemoveWorkspaceMemberCommand(seeded.Workspace.Id, seeded.Member.Id),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.DoesNotContain(
+            context.WorkspaceMembers,
+            member => member.UserId == seeded.Member.Id);
+    }
+
+    [Theory]
+    [InlineData(WorkspaceRole.Admin)]
+    [InlineData(WorkspaceRole.Owner)]
+    public async Task AdminCannotRemovePrivilegedMember(WorkspaceRole targetRole)
+    {
+        await using var context = await SeedWorkspaceAsync(
+            includeAdmin: true,
+            includeSecondAdmin: targetRole == WorkspaceRole.Admin);
+        var seeded = GetSeededWorkspace(context);
+        var admin = context.Users.Single(user => user.Email == "admin@example.com");
+        var target = targetRole == WorkspaceRole.Owner
+            ? seeded.Owner
+            : context.Users.Single(user => user.Email == "other.admin@example.com");
+        var handler = new RemoveWorkspaceMemberCommandHandler(
+            context,
+            AuthenticatedUser(admin),
+            Authorization(context, admin.Id));
+
+        var result = await handler.Handle(
+            new RemoveWorkspaceMemberCommand(seeded.Workspace.Id, target.Id),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(403, result.StatusCode);
+        Assert.Contains(
+            context.WorkspaceMembers,
+            member => member.UserId == target.Id);
+    }
+
+    [Fact]
+    public async Task AdminCannotUpdateMemberRole()
+    {
+        await using var context = await SeedWorkspaceAsync(includeAdmin: true);
+        var seeded = GetSeededWorkspace(context);
+        var admin = context.Users.Single(user => user.Email == "admin@example.com");
+        var handler = new UpdateMemberRoleCommandHandler(
+            context,
+            Authorization(context, admin.Id));
+
+        var result = await handler.Handle(
+            new UpdateMemberRoleCommand(
+                seeded.Workspace.Id,
+                seeded.Member.Id,
+                WorkspaceRole.Admin),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(403, result.StatusCode);
+        Assert.Equal(
+            WorkspaceRole.Member,
+            context.WorkspaceMembers.Single(member => member.UserId == seeded.Member.Id).Role);
+    }
+
+    [Fact]
+    public async Task OwnerCanPromoteMemberToAdmin()
+    {
+        await using var context = await SeedWorkspaceAsync();
+        var seeded = GetSeededWorkspace(context);
+        var handler = new UpdateMemberRoleCommandHandler(
+            context,
+            Authorization(context, seeded.Owner.Id));
+
+        var result = await handler.Handle(
+            new UpdateMemberRoleCommand(
+                seeded.Workspace.Id,
+                seeded.Member.Id,
+                WorkspaceRole.Admin),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Admin", result.Data!.Role);
+    }
+
+    [Fact]
+    public async Task OwnerCanDemoteAdminToMember()
+    {
+        await using var context = await SeedWorkspaceAsync(includeAdmin: true);
+        var seeded = GetSeededWorkspace(context);
+        var admin = context.Users.Single(user => user.Email == "admin@example.com");
+        var handler = new UpdateMemberRoleCommandHandler(
+            context,
+            Authorization(context, seeded.Owner.Id));
+
+        var result = await handler.Handle(
+            new UpdateMemberRoleCommand(
+                seeded.Workspace.Id,
+                admin.Id,
+                WorkspaceRole.Member),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Member", result.Data!.Role);
+    }
+
+    [Fact]
+    public async Task AdminCanLeaveWorkspace()
+    {
+        await using var context = await SeedWorkspaceAsync(includeAdmin: true);
+        var seeded = GetSeededWorkspace(context);
+        var admin = context.Users.Single(user => user.Email == "admin@example.com");
+        var handler = new RemoveWorkspaceMemberCommandHandler(
+            context,
+            AuthenticatedUser(admin),
+            Authorization(context, admin.Id));
+
+        var result = await handler.Handle(
+            new RemoveWorkspaceMemberCommand(seeded.Workspace.Id, admin.Id),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.DoesNotContain(
+            context.WorkspaceMembers,
+            member => member.UserId == admin.Id);
+    }
+
+    [Fact]
+    public async Task UnverifiedAdminCannotInviteWorkspaceMember()
+    {
+        await using var context = await SeedWorkspaceAsync(
+            includeAdmin: true,
+            adminEmailConfirmed: false);
+        var seeded = GetSeededWorkspace(context);
+        var admin = context.Users.Single(user => user.Email == "admin@example.com");
+        var handler = CreateInviteHandler(context, admin.Id);
+
+        var result = await handler.Handle(
+            new InviteWorkspaceMemberCommand(
+                seeded.Workspace.Id,
+                "new@example.com",
+                WorkspaceRole.Member),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(403, result.StatusCode);
+        Assert.Equal("EMAIL_NOT_VERIFIED", result.ErrorCode);
+        Assert.Empty(context.WorkspaceInvitations);
     }
 
     [Fact]
@@ -329,6 +548,28 @@ public sealed class WorkspaceCollaborationTests
         Assert.True(result.IsSuccess);
         Assert.NotEqual(seeded.Owner.Id, seeded.Workspace.OwnerId);
         Assert.Equal("Member", result.Data!.Role);
+    }
+
+    [Fact]
+    public async Task OwnerCanTransferPrimaryOwnershipToExistingOwner()
+    {
+        await using var context = await SeedWorkspaceAsync(includeSecondOwner: true);
+        var seeded = GetSeededWorkspace(context);
+        var otherOwner = context.Users.Single(
+            user => user.Email == "other.owner@example.com");
+        var handler = new UpdateMemberRoleCommandHandler(
+            context,
+            Authorization(context, seeded.Owner.Id));
+
+        var result = await handler.Handle(
+            new UpdateMemberRoleCommand(
+                seeded.Workspace.Id,
+                otherOwner.Id,
+                WorkspaceRole.Owner),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(otherOwner.Id, seeded.Workspace.OwnerId);
     }
 
     [Fact]
@@ -400,7 +641,10 @@ public sealed class WorkspaceCollaborationTests
     private static async Task<TestApplicationDbContext> SeedWorkspaceAsync(
         bool includeSecondMember = false,
         bool includeSecondOwner = false,
-        bool ownerEmailConfirmed = true)
+        bool ownerEmailConfirmed = true,
+        bool includeAdmin = false,
+        bool includeSecondAdmin = false,
+        bool adminEmailConfirmed = true)
     {
         var context = new TestApplicationDbContext();
         var owner = NewUser("owner@example.com", "Workspace Owner");
@@ -438,6 +682,32 @@ public sealed class WorkspaceCollaborationTests
                 workspace,
                 otherOwner,
                 WorkspaceRole.Owner));
+        }
+
+        if (includeAdmin)
+        {
+            var admin = NewUser("admin@example.com", "Workspace Admin");
+            if (adminEmailConfirmed)
+            {
+                admin.ConfirmEmail();
+            }
+
+            context.Users.Add(admin);
+            workspace.Members.Add(NewMembership(
+                workspace,
+                admin,
+                WorkspaceRole.Admin));
+        }
+
+        if (includeSecondAdmin)
+        {
+            var otherAdmin = NewUser("other.admin@example.com", "Other Admin");
+            otherAdmin.ConfirmEmail();
+            context.Users.Add(otherAdmin);
+            workspace.Members.Add(NewMembership(
+                workspace,
+                otherAdmin,
+                WorkspaceRole.Admin));
         }
 
         context.Workspaces.Add(workspace);

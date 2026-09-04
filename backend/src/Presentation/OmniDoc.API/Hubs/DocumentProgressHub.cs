@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using OmniDoc.Application.Common.Interfaces;
+using OmniDoc.Domain.Enums;
 
 namespace OmniDoc.API.Hubs;
 
@@ -32,6 +33,7 @@ public class DocumentProgressHub : Hub
         var access = await _workspaceAuthorization.AuthorizeAsync(
             parsedWorkspaceId,
             userId,
+            WorkspacePermission.ViewWorkspace,
             Context.ConnectionAborted);
 
         if (!access.IsSuccess)

@@ -3,5 +3,6 @@ namespace OmniDoc.Domain.Enums;
 public enum WorkspaceRole
 {
     Owner = 1,
-    Member = 2
+    Admin = 2,
+    Member = 3
 }

@@ -13,6 +13,7 @@ import {
   Trash2,
   UserPlus,
   Users,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -63,8 +64,11 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [showInviteVerificationGate, setShowInviteVerificationGate] =
     useState(false);
+  const [forbiddenToast, setForbiddenToast] = useState<string | null>(null);
 
   const isOwner = workspace.role === "Owner";
+  const isAdmin = workspace.role === "Admin";
+  const canInviteMembers = isOwner || isAdmin;
   const ownerCount = useMemo(
     () => members.filter((member) => member.role === "Owner").length,
     [members],
@@ -97,8 +101,26 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
     return () => controller.abort();
   }, [workspace.id]);
 
-  async function handleRoleChange(member: WorkspaceMember) {
-    const newRole: WorkspaceRole = member.role === "Owner" ? "Member" : "Owner";
+  useEffect(() => {
+    if (!forbiddenToast) return;
+
+    const timer = window.setTimeout(() => setForbiddenToast(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [forbiddenToast]);
+
+  function showForbiddenError(requestError: unknown) {
+    if (requestError instanceof ApiError && requestError.status === 403) {
+      setForbiddenToast(
+        getErrorMessage(requestError) ||
+          "Bạn không có quyền thực hiện thao tác này trong Workspace.",
+      );
+    }
+  }
+
+  async function handleRoleChange(
+    member: WorkspaceMember,
+    newRole: WorkspaceRole,
+  ) {
     setOpenMenuUserId(null);
     setProcessingUserId(member.userId);
     setError(null);
@@ -114,6 +136,7 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
       );
       await refreshWorkspaces();
     } catch (requestError) {
+      showForbiddenError(requestError);
       setError(getErrorMessage(requestError));
     } finally {
       setProcessingUserId(null);
@@ -143,6 +166,7 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
         current.filter((item) => item.userId !== member.userId),
       );
     } catch (requestError) {
+      showForbiddenError(requestError);
       setError(getErrorMessage(requestError));
       setRemovalTarget(null);
     } finally {
@@ -170,6 +194,7 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
         setShowInviteVerificationGate(true);
         return;
       }
+      showForbiddenError(requestError);
       setInviteError(getErrorMessage(requestError));
     } finally {
       setIsInviting(false);
@@ -177,12 +202,15 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
   }
 
   function handleOpenInvite() {
+    if (!canInviteMembers) return;
+
     if (!user?.emailConfirmed) {
       setShowInviteVerificationGate(true);
       return;
     }
 
     setShowInviteVerificationGate(false);
+    setInviteRole("Member");
     setInviteOpen(true);
   }
 
@@ -230,7 +258,7 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
             Quản lý người có quyền truy cập vào {workspace.name}.
           </p>
         </div>
-        {isOwner ? (
+        {canInviteMembers ? (
           <Button icon={<UserPlus className="size-4" />} onClick={handleOpenInvite}>
             Mời thành viên
           </Button>
@@ -251,7 +279,9 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
             {members.length} thành viên
           </div>
           {!isOwner ? (
-            <span className="text-xs text-slate-500">Bạn có quyền Member</span>
+            <span className="text-xs text-slate-500">
+              Bạn có quyền {workspace.role}
+            </span>
           ) : null}
         </div>
 
@@ -299,7 +329,9 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
                           "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
                           member.role === "Owner"
                             ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200"
-                            : "bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200",
+                            : member.role === "Admin"
+                              ? "border border-indigo-200 bg-indigo-50 text-indigo-700"
+                              : "bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200",
                         )}>
                           {member.role}
                         </span>
@@ -310,7 +342,7 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
                       <td className="relative px-4 py-3.5 text-right">
                         {isProcessing ? (
                           <Spinner className="ml-auto size-4 text-blue-600" />
-                        ) : isOwner ? (
+                        ) : isOwner || (isAdmin && member.role === "Member") ? (
                           <button
                             aria-label={`Thao tác với ${member.fullName}`}
                             className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
@@ -323,15 +355,47 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
 
                         {openMenuUserId === member.userId ? (
                           <div className="absolute right-4 top-12 z-20 w-56 rounded-xl border border-slate-200 bg-white p-1.5 text-left shadow-xl shadow-slate-950/10">
-                            <button
-                              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                              disabled={protectsLastOwner}
-                              onClick={() => void handleRoleChange(member)}
-                              type="button"
-                            >
-                              {member.role === "Owner" ? <ArrowDownCircle className="size-4" /> : <ArrowUpCircle className="size-4" />}
-                              {member.role === "Owner" ? "Đổi thành Member" : "Thăng cấp lên Owner"}
-                            </button>
+                            {isOwner && member.role === "Member" ? (
+                              <button
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50"
+                                onClick={() => void handleRoleChange(member, "Admin")}
+                                type="button"
+                              >
+                                <ArrowUpCircle className="size-4" />
+                                Thăng cấp lên Admin
+                              </button>
+                            ) : null}
+                            {isOwner && member.role === "Admin" ? (
+                              <button
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50"
+                                onClick={() => void handleRoleChange(member, "Member")}
+                                type="button"
+                              >
+                                <ArrowDownCircle className="size-4" />
+                                Chuyển thành Member
+                              </button>
+                            ) : null}
+                            {isOwner && member.role === "Owner" ? (
+                              <button
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                disabled={protectsLastOwner}
+                                onClick={() => void handleRoleChange(member, "Member")}
+                                type="button"
+                              >
+                                <ArrowDownCircle className="size-4" />
+                                Chuyển thành Member
+                              </button>
+                            ) : null}
+                            {isOwner && member.role !== "Owner" ? (
+                              <button
+                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50"
+                                onClick={() => void handleRoleChange(member, "Owner")}
+                                type="button"
+                              >
+                                <ArrowUpCircle className="size-4" />
+                                Nhượng quyền Owner
+                              </button>
+                            ) : null}
                             <button
                               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
                               disabled={protectsLastOwner}
@@ -457,11 +521,17 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
               <span className="mb-1.5 block text-sm font-medium text-slate-700">Vai trò khởi tạo</span>
               <select
                 className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                disabled={isAdmin}
                 onChange={(event) => setInviteRole(event.target.value as WorkspaceRole)}
                 value={inviteRole}
               >
                 <option value="Member">Member — xem và cộng tác</option>
-                <option value="Owner">Owner — toàn quyền quản trị</option>
+                {isOwner ? (
+                  <>
+                    <option value="Admin">Admin — quản trị thành viên</option>
+                    <option value="Owner">Owner — toàn quyền quản trị</option>
+                  </>
+                ) : null}
               </select>
             </label>
             <div className="flex justify-end gap-2 pt-2">
@@ -500,6 +570,27 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
           </Button>
         </div>
       </Modal>
+
+      {forbiddenToast ? (
+        <div
+          className="fixed bottom-5 right-5 z-[80] flex w-[min(380px,calc(100vw-40px))] items-start gap-3 rounded-2xl border border-amber-200 bg-white p-4 text-sm text-slate-700 shadow-xl shadow-slate-950/10"
+          role="alert"
+        >
+          <AlertCircle className="mt-0.5 size-5 shrink-0 text-amber-500" />
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-slate-900">Không đủ quyền truy cập</p>
+            <p className="mt-1 leading-5">{forbiddenToast}</p>
+          </div>
+          <button
+            aria-label="Đóng thông báo"
+            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            onClick={() => setForbiddenToast(null)}
+            type="button"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }

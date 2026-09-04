@@ -60,6 +60,7 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
     {
         var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
+            WorkspacePermission.ManageDocuments,
             cancellationToken);
 
         if (!access.IsSuccess)

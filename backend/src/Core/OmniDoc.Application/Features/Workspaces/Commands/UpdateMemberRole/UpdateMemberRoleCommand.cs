@@ -30,8 +30,9 @@ public sealed class UpdateMemberRoleCommandHandler
         UpdateMemberRoleCommand request,
         CancellationToken cancellationToken)
     {
-        var access = await _workspaceAuthorization.AuthorizeOwnerAsync(
+        var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
+            WorkspacePermission.ManageRoles,
             cancellationToken);
 
         if (!access.IsSuccess)
@@ -70,13 +71,38 @@ public sealed class UpdateMemberRoleCommandHandler
                 404);
         }
 
+        var ownershipTransferred = false;
+        if (request.NewRole == WorkspaceRole.Owner &&
+            workspace.OwnerId != targetMember.UserId)
+        {
+            var transferAccess = await _workspaceAuthorization.AuthorizeAsync(
+                request.WorkspaceId,
+                WorkspacePermission.TransferOwnership,
+                cancellationToken);
+
+            if (!transferAccess.IsSuccess)
+            {
+                return Result<WorkspaceMemberDto>.Failure(
+                    transferAccess.Errors,
+                    transferAccess.StatusCode);
+            }
+
+            workspace.OwnerId = targetMember.UserId;
+            ownershipTransferred = true;
+        }
+
         if (targetMember.Role == request.NewRole)
         {
+            if (ownershipTransferred)
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
             return Result<WorkspaceMemberDto>.Success(ToDto(targetMember));
         }
 
         if (targetMember.Role == WorkspaceRole.Owner &&
-            request.NewRole == WorkspaceRole.Member)
+            request.NewRole != WorkspaceRole.Owner)
         {
             var otherOwner = workspace.Members.FirstOrDefault(member =>
                 member.UserId != targetMember.UserId &&

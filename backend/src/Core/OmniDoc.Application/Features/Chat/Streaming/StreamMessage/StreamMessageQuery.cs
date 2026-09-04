@@ -164,7 +164,10 @@ public class StreamMessageQueryHandler : IStreamRequestHandler<StreamMessageQuer
         }
 
         var access = await _workspaceAuthorization
-            .AuthorizeAsync(request.WorkspaceId, cancellationToken)
+            .AuthorizeAsync(
+                request.WorkspaceId,
+                WorkspacePermission.ViewWorkspace,
+                cancellationToken)
             .ConfigureAwait(false);
 
         if (!access.IsSuccess)

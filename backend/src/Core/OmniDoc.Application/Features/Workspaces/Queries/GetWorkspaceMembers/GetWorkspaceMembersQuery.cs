@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Common.Models;
 using OmniDoc.Application.Features.Workspaces.DTOs;
+using OmniDoc.Domain.Enums;
 
 namespace OmniDoc.Application.Features.Workspaces.Queries.GetWorkspaceMembers;
 
@@ -29,6 +30,7 @@ public sealed class GetWorkspaceMembersQueryHandler
     {
         var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
+            WorkspacePermission.ViewWorkspace,
             cancellationToken);
 
         if (!access.IsSuccess)

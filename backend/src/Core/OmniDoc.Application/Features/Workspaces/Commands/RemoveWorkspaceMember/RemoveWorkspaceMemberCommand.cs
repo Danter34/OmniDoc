@@ -15,13 +15,16 @@ public sealed class RemoveWorkspaceMemberCommandHandler
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
+    private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
     public RemoveWorkspaceMemberCommandHandler(
         IApplicationDbContext context,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        IWorkspaceAuthorizationService workspaceAuthorization)
     {
         _context = context;
         _currentUser = currentUser;
+        _workspaceAuthorization = workspaceAuthorization;
     }
 
     public async Task<Result<bool>> Handle(
@@ -61,11 +64,25 @@ public sealed class RemoveWorkspaceMemberCommandHandler
         }
 
         var isSelfRemoval = actorUserId == request.MemberUserId;
-        if (actor.Role != WorkspaceRole.Owner && !isSelfRemoval)
+        if (!isSelfRemoval)
         {
-            return Result<bool>.Failure(
-                "Workspace owner permission is required to remove another member.",
-                403);
+            var access = await _workspaceAuthorization.AuthorizeAsync(
+                request.WorkspaceId,
+                WorkspacePermission.RemoveMembers,
+                cancellationToken);
+
+            if (!access.IsSuccess)
+            {
+                return Result<bool>.Failure(access.Errors, access.StatusCode);
+            }
+
+            if (access.Data!.Role == WorkspaceRole.Admin &&
+                targetMember.Role != WorkspaceRole.Member)
+            {
+                return Result<bool>.Failure(
+                    "Workspace admins can only remove members.",
+                    403);
+            }
         }
 
         if (targetMember.Role == WorkspaceRole.Owner)

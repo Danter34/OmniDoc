@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Common.Models;
+using OmniDoc.Domain.Authorization;
 using OmniDoc.Domain.Enums;
 
 namespace OmniDoc.Application.Common.Services;
@@ -18,21 +19,29 @@ public sealed class WorkspaceAuthorizationService : IWorkspaceAuthorizationServi
         _currentUser = currentUser;
     }
 
-    public async Task<Result> AuthorizeAsync(
+    public async Task<Result<WorkspaceAuthorizationContext>> AuthorizeAsync(
         Guid workspaceId,
+        WorkspacePermission permission,
         CancellationToken cancellationToken = default)
     {
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
         {
-            return Result.Failure("Authentication is required.", 401);
+            return Result<WorkspaceAuthorizationContext>.Failure(
+                "Authentication is required.",
+                401);
         }
 
-        return await AuthorizeAsync(workspaceId, userId, cancellationToken);
+        return await AuthorizeAsync(
+            workspaceId,
+            userId,
+            permission,
+            cancellationToken);
     }
 
-    public async Task<Result> AuthorizeAsync(
+    public async Task<Result<WorkspaceAuthorizationContext>> AuthorizeAsync(
         Guid workspaceId,
         Guid userId,
+        WorkspacePermission permission,
         CancellationToken cancellationToken = default)
     {
         var workspace = await _context.Workspaces
@@ -41,47 +50,39 @@ public sealed class WorkspaceAuthorizationService : IWorkspaceAuthorizationServi
             .Select(item => new
             {
                 item.OwnerId,
-                IsMember = item.Members.Any(member => member.UserId == userId)
+                Role = item.Members
+                    .Where(member => member.UserId == userId)
+                    .Select(member => (WorkspaceRole?)member.Role)
+                    .FirstOrDefault()
             })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (workspace is null)
         {
-            return Result.Failure($"Workspace '{workspaceId}' was not found.", 404);
+            return Result<WorkspaceAuthorizationContext>.Failure(
+                $"Workspace '{workspaceId}' was not found.",
+                404);
         }
 
-        return workspace.OwnerId == userId || workspace.IsMember
-            ? Result.Success()
-            : Result.Failure("You do not have access to this workspace.", 403);
-    }
+        var role = workspace.OwnerId == userId
+            ? WorkspaceRole.Owner
+            : workspace.Role;
 
-    public async Task<Result> AuthorizeOwnerAsync(
-        Guid workspaceId,
-        CancellationToken cancellationToken = default)
-    {
-        if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
+        if (role is null)
         {
-            return Result.Failure("Authentication is required.", 401);
+            return Result<WorkspaceAuthorizationContext>.Failure(
+                "You do not have access to this workspace.",
+                403);
         }
 
-        var workspace = await _context.Workspaces
-            .AsNoTracking()
-            .Where(item => item.Id == workspaceId)
-            .Select(item => new
-            {
-                IsOwner = item.Members.Any(member =>
-                    member.UserId == userId &&
-                    member.Role == WorkspaceRole.Owner)
-            })
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (workspace is null)
+        if (!WorkspacePermissionMatrix.HasPermission(role.Value, permission))
         {
-            return Result.Failure($"Workspace '{workspaceId}' was not found.", 404);
+            return Result<WorkspaceAuthorizationContext>.Failure(
+                $"Workspace permission '{permission}' is required.",
+                403);
         }
 
-        return workspace.IsOwner
-            ? Result.Success()
-            : Result.Failure("Workspace owner permission is required.", 403);
+        return Result<WorkspaceAuthorizationContext>.Success(
+            new WorkspaceAuthorizationContext(workspaceId, userId, role.Value));
     }
 }

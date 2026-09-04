@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Common.Models;
 using OmniDoc.Application.Features.Documents.DTOs;
+using OmniDoc.Domain.Enums;
 
 namespace OmniDoc.Application.Features.Documents.Queries.GetDocumentById;
 
@@ -36,6 +37,7 @@ public class GetDocumentByIdQueryHandler : IRequestHandler<GetDocumentByIdQuery,
 
         var access = await _workspaceAuthorization.AuthorizeAsync(
             document.WorkspaceId,
+            WorkspacePermission.ManageDocuments,
             cancellationToken);
 
         return access.IsSuccess

@@ -3,6 +3,7 @@ using MediatR;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Common.Models;
 using OmniDoc.Application.Features.Retrieval.DTOs;
+using OmniDoc.Domain.Enums;
 
 namespace OmniDoc.Application.Features.Retrieval.Queries.SearchWorkspaceChunks;
 
@@ -39,6 +40,7 @@ public class SearchWorkspaceChunksQueryHandler : IRequestHandler<SearchWorkspace
     {
         var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
+            WorkspacePermission.ManageDocuments,
             cancellationToken);
 
         if (!access.IsSuccess)

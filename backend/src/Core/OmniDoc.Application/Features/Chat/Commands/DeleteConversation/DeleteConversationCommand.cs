@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Common.Models;
+using OmniDoc.Domain.Enums;
 
 namespace OmniDoc.Application.Features.Chat.Commands.DeleteConversation;
 
@@ -29,6 +30,7 @@ public sealed class DeleteConversationCommandHandler
     {
         var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
+            WorkspacePermission.ViewWorkspace,
             cancellationToken);
 
         if (!access.IsSuccess)
