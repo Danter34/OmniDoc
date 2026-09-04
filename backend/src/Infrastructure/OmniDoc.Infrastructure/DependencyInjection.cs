@@ -28,6 +28,8 @@ public static class DependencyInjection
         services.AddSingleton<IEmailTemplateBuilder, OmniDocEmailTemplateBuilder>();
         services.AddSingleton<IEmailVerificationOtpService, EmailVerificationOtpService>();
         services.AddSingleton<IEmailVerificationFeatureOptions, EmailVerificationFeatureOptions>();
+        services.AddSingleton<IPasswordResetTokenService, PasswordResetTokenService>();
+        services.AddSingleton<IPasswordResetLinkService, PasswordResetLinkService>();
         services.AddScoped<IEmailOutboxScheduler, HangfireEmailOutboxScheduler>();
         services.AddScoped<IEmailOutboxJob, SendEmailJob>();
         services.AddScoped<IEmailOutboxDispatcher, EmailOutboxDispatcher>();

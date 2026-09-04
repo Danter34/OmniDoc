@@ -16,6 +16,7 @@ import {
 import { authService } from "@/services/auth.service";
 import { tokenStorage } from "@/services/token-storage";
 import type {
+  ChangePasswordRequest,
   LoginRequest,
   RegisterRequest,
   User,
@@ -29,6 +30,7 @@ interface AuthContextValue {
   register: (payload: RegisterRequest) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  changePassword: (payload: ChangePasswordRequest) => Promise<void>;
   verificationModalOpen: boolean;
   openVerificationModal: () => void;
   closeVerificationModal: () => void;
@@ -125,6 +127,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const changePassword = useCallback(async (payload: ChangePasswordRequest) => {
+    const response = await authService.changePassword(payload);
+    tokenStorage.set(response.token);
+    setToken(response.token);
+    setUser({
+      id: response.id,
+      email: response.email,
+      fullName: response.fullName,
+      createdAtUtc: response.createdAtUtc,
+      emailConfirmed: response.emailConfirmed,
+      otpResendAvailableAt: response.otpResendAvailableAt,
+    });
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -140,12 +156,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error(getErrorMessage(error));
         }
       },
+      changePassword,
       verificationModalOpen,
       openVerificationModal: () => setVerificationModalOpen(true),
       closeVerificationModal: () => setVerificationModalOpen(false),
     }),
     [
       clearSession,
+      changePassword,
       isLoading,
       login,
       refreshUser,

@@ -47,6 +47,41 @@ internal sealed class FakeEmailVerificationOtpService
         $"hash::{userId:N}::{otp}";
 }
 
+internal sealed class FakePasswordResetTokenService
+    : IPasswordResetTokenService
+{
+    public const string Token = "test-reset-token";
+
+    public PasswordResetTokenIssue Create(Guid userId, DateTime issuedAtUtc) =>
+        new(
+            Token,
+            Hash(userId, Token),
+            $"protected-reset::{Token}",
+            issuedAtUtc.AddMinutes(15));
+
+    public bool Verify(Guid userId, string rawToken, string expectedHash) =>
+        expectedHash == Hash(userId, rawToken);
+
+    public string Unprotect(string protectedToken) =>
+        protectedToken.Replace(
+            "protected-reset::",
+            string.Empty,
+            StringComparison.Ordinal);
+
+    public static string Hash(Guid userId, string rawToken) =>
+        $"reset-hash::{userId:N}::{rawToken}";
+}
+
+internal sealed class FakePasswordResetLinkService
+    : IPasswordResetLinkService
+{
+    public string BuildRelativeUrl(string rawToken, string email) =>
+        $"/reset-password?token={rawToken}&email={Uri.EscapeDataString(email)}";
+
+    public string BuildAbsoluteUrl(string rawToken, string email) =>
+        $"https://app.example.test{BuildRelativeUrl(rawToken, email)}";
+}
+
 internal sealed class FakeEmailOutboxScheduler : IEmailOutboxScheduler
 {
     public List<Guid> EnqueuedMessageIds { get; } = [];

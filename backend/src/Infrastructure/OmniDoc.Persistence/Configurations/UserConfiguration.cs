@@ -27,5 +27,11 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(user => user.EmailVerificationOtpHash)
             .HasMaxLength(128);
+
+        builder.Property(user => user.PasswordResetTokenHash)
+            .HasMaxLength(128);
+
+        builder.Property(user => user.TokenVersion)
+            .HasDefaultValue(1);
     }
 }

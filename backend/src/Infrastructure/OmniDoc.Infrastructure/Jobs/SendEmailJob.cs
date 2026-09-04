@@ -11,6 +11,8 @@ public sealed class SendEmailJob : IEmailOutboxJob
     private readonly IEmailSender _emailSender;
     private readonly IEmailTemplateBuilder _templates;
     private readonly IEmailVerificationOtpService _otpService;
+    private readonly IPasswordResetTokenService _passwordResetTokens;
+    private readonly IPasswordResetLinkService _passwordResetLinks;
     private readonly IEmailVerificationFeatureOptions _featureOptions;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<SendEmailJob> _logger;
@@ -20,6 +22,8 @@ public sealed class SendEmailJob : IEmailOutboxJob
         IEmailSender emailSender,
         IEmailTemplateBuilder templates,
         IEmailVerificationOtpService otpService,
+        IPasswordResetTokenService passwordResetTokens,
+        IPasswordResetLinkService passwordResetLinks,
         IEmailVerificationFeatureOptions featureOptions,
         TimeProvider timeProvider,
         ILogger<SendEmailJob> logger)
@@ -28,6 +32,8 @@ public sealed class SendEmailJob : IEmailOutboxJob
         _emailSender = emailSender;
         _templates = templates;
         _otpService = otpService;
+        _passwordResetTokens = passwordResetTokens;
+        _passwordResetLinks = passwordResetLinks;
         _featureOptions = featureOptions;
         _timeProvider = timeProvider;
         _logger = logger;
@@ -50,9 +56,8 @@ public sealed class SendEmailJob : IEmailOutboxJob
         var user = message.User;
 
         if (user is null ||
-            user.EmailConfirmed ||
-            user.EmailVerificationOtpHash != message.OtpHash ||
-            message.ProtectedPayload is null)
+            message.ProtectedPayload is null ||
+            !IsMessageCurrent(message, user, now))
         {
             message.ProcessedAtUtc = now;
             message.ProtectedPayload = null;
@@ -67,17 +72,7 @@ public sealed class SendEmailJob : IEmailOutboxJob
 
         try
         {
-            if (message.Type != EmailOutboxType.EmailVerificationOtp)
-            {
-                throw new InvalidOperationException(
-                    $"Unsupported email outbox type '{message.Type}'.");
-            }
-
-            var otp = _otpService.Unprotect(message.ProtectedPayload);
-            var content = _templates.BuildEmailVerificationOtp(
-                user.FullName,
-                otp,
-                user.OtpExpiresAt ?? now);
+            var content = BuildContent(message, user, now);
 
             await _emailSender.SendEmailAsync(
                 message.RecipientEmail,
@@ -86,7 +81,8 @@ public sealed class SendEmailJob : IEmailOutboxJob
                 cancellationToken);
 
             message.ProcessedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
-            if (!_featureOptions.ShowDemoOtp)
+            if (message.Type != EmailOutboxType.EmailVerificationOtp ||
+                !_featureOptions.ShowDemoOtp)
             {
                 message.ProtectedPayload = null;
             }
@@ -107,5 +103,52 @@ public sealed class SendEmailJob : IEmailOutboxJob
                 message.AttemptCount);
             throw;
         }
+    }
+
+    private static bool IsMessageCurrent(
+        Domain.Entities.EmailOutboxMessage message,
+        Domain.Entities.User user,
+        DateTime now) =>
+        message.Type switch
+        {
+            EmailOutboxType.EmailVerificationOtp =>
+                !user.EmailConfirmed &&
+                user.EmailVerificationOtpHash == message.OtpHash &&
+                user.OtpExpiresAt > now,
+            EmailOutboxType.PasswordReset =>
+                user.PasswordResetTokenHash == message.OtpHash &&
+                user.PasswordResetExpiresAt > now,
+            _ => true
+        };
+
+    private EmailContent BuildContent(
+        Domain.Entities.EmailOutboxMessage message,
+        Domain.Entities.User user,
+        DateTime now) =>
+        message.Type switch
+        {
+            EmailOutboxType.EmailVerificationOtp =>
+                _templates.BuildEmailVerificationOtp(
+                    user.FullName,
+                    _otpService.Unprotect(message.ProtectedPayload!),
+                    user.OtpExpiresAt ?? now),
+            EmailOutboxType.PasswordReset =>
+                BuildPasswordResetContent(message, user, now),
+            _ => throw new InvalidOperationException(
+                $"Unsupported email outbox type '{message.Type}'.")
+        };
+
+    private EmailContent BuildPasswordResetContent(
+        Domain.Entities.EmailOutboxMessage message,
+        Domain.Entities.User user,
+        DateTime now)
+    {
+        var rawToken = _passwordResetTokens.Unprotect(message.ProtectedPayload!);
+        var resetUrl = _passwordResetLinks.BuildAbsoluteUrl(rawToken, user.Email);
+
+        return _templates.BuildPasswordReset(
+            user.FullName,
+            resetUrl,
+            user.PasswordResetExpiresAt ?? now);
     }
 }

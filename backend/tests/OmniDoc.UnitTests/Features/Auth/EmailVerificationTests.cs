@@ -422,6 +422,8 @@ public sealed class EmailVerificationTests
             sender,
             new FakeEmailTemplateBuilder(),
             new FakeEmailVerificationOtpService(),
+            new FakePasswordResetTokenService(),
+            new FakePasswordResetLinkService(),
             new StubEmailVerificationFeatureOptions(showDemoOtp),
             timeProvider,
             NullLogger<SendEmailJob>.Instance);
@@ -453,5 +455,11 @@ public sealed class EmailVerificationTests
             string otp,
             DateTime expiresAtUtc) =>
             new("Verify email", $"OTP: {otp}");
+
+        public EmailContent BuildPasswordReset(
+            string recipientName,
+            string resetUrl,
+            DateTime expiresAtUtc) =>
+            new("Reset password", $"Reset: {resetUrl}");
     }
 }

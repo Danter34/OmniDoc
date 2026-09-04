@@ -22,6 +22,12 @@ public class User
 
     public DateTime? LastOtpSentAt { get; private set; }
 
+    public string? PasswordResetTokenHash { get; private set; }
+
+    public DateTime? PasswordResetExpiresAt { get; private set; }
+
+    public int TokenVersion { get; private set; } = 1;
+
     public ICollection<WorkspaceMember> WorkspaceMemberships { get; set; } = new List<WorkspaceMember>();
 
     public ICollection<WorkspaceInvitation> SentWorkspaceInvitations { get; set; } = new List<WorkspaceInvitation>();
@@ -66,5 +72,49 @@ public class User
         EmailVerificationOtpHash = null;
         OtpExpiresAt = null;
         OtpFailedAttempts = 0;
+    }
+
+    public void IssuePasswordResetToken(
+        string tokenHash,
+        DateTime expiresAtUtc,
+        DateTime nowUtc)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tokenHash);
+
+        if (expiresAtUtc <= nowUtc)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(expiresAtUtc),
+                "Password reset expiration must be in the future.");
+        }
+
+        PasswordResetTokenHash = tokenHash;
+        PasswordResetExpiresAt = expiresAtUtc;
+    }
+
+    public void ResetPassword(string passwordHash)
+    {
+        SetPasswordAndRevokeSessions(passwordHash);
+        InvalidatePasswordResetToken();
+    }
+
+    public void ChangePassword(string passwordHash)
+    {
+        SetPasswordAndRevokeSessions(passwordHash);
+        InvalidatePasswordResetToken();
+    }
+
+    public void InvalidatePasswordResetToken()
+    {
+        PasswordResetTokenHash = null;
+        PasswordResetExpiresAt = null;
+    }
+
+    private void SetPasswordAndRevokeSessions(string passwordHash)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(passwordHash);
+
+        PasswordHash = passwordHash;
+        TokenVersion++;
     }
 }

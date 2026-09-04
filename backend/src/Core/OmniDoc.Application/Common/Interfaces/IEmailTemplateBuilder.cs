@@ -8,4 +8,9 @@ public interface IEmailTemplateBuilder
         string recipientName,
         string otp,
         DateTime expiresAtUtc);
+
+    EmailContent BuildPasswordReset(
+        string recipientName,
+        string resetUrl,
+        DateTime expiresAtUtc);
 }

@@ -1,3 +1,5 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -61,6 +63,34 @@ public static class DependencyInjection
                         }
 
                         return Task.CompletedTask;
+                    },
+                    OnTokenValidated = async context =>
+                    {
+                        var userIdValue = context.Principal?
+                            .FindFirstValue(ClaimTypes.NameIdentifier) ??
+                            context.Principal?
+                                .FindFirstValue(JwtRegisteredClaimNames.Sub);
+                        var tokenVersionValue = context.Principal?
+                            .FindFirstValue(AuthClaimTypes.TokenVersion);
+
+                        if (!Guid.TryParse(userIdValue, out var userId) ||
+                            !int.TryParse(tokenVersionValue, out var tokenVersion))
+                        {
+                            context.Fail("Token session version is invalid.");
+                            return;
+                        }
+
+                        var validator = context.HttpContext.RequestServices
+                            .GetRequiredService<ITokenVersionValidator>();
+                        var isCurrent = await validator.IsCurrentAsync(
+                            userId,
+                            tokenVersion,
+                            context.HttpContext.RequestAborted);
+
+                        if (!isCurrent)
+                        {
+                            context.Fail("This session has been revoked.");
+                        }
                     }
                 };
             });

@@ -27,3 +27,27 @@ export interface EmailVerificationOtpResponse {
   expiresAt: string;
   resendAvailableAt: string;
 }
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  debugResetUrl: string | null;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  token: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface PasswordResetResponse {
+  message: string;
+}

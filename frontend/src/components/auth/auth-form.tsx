@@ -216,8 +216,16 @@ export function AuthForm({
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-slate-700">
-              Mật khẩu
+            <span className="mb-1.5 flex items-center justify-between gap-3 text-sm font-medium text-slate-700">
+              <span>Mật khẩu</span>
+              {!isRegister ? (
+                <Link
+                  className="font-medium text-blue-600 transition hover:text-blue-700"
+                  href="/forgot-password"
+                >
+                  Quên mật khẩu?
+                </Link>
+              ) : null}
             </span>
             <div className="relative">
               <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
