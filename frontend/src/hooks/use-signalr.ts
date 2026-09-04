@@ -162,10 +162,21 @@ export function useSignalR(
       }
     }
 
-    void startConnection();
+    // React Strict Mode mounts, cleans up, and mounts effects again in development.
+    // Deferring the initial start lets that probe cleanup cancel the timer instead of
+    // stopping SignalR halfway through its negotiation request.
+    let startTimer: number | null = window.setTimeout(() => {
+      startTimer = null;
+      void startConnection();
+    }, 0);
 
     return () => {
       disposed = true;
+
+      if (startTimer !== null) {
+        window.clearTimeout(startTimer);
+        startTimer = null;
+      }
 
       if (animationFrame !== null) {
         window.cancelAnimationFrame(animationFrame);
@@ -175,6 +186,12 @@ export function useSignalR(
       connection.off(PROGRESS_EVENT, handleProgress);
 
       void (async () => {
+        // startConnection owns cleanup while a negotiation is in flight. Calling
+        // stop() here in the Connecting state makes SignalR log a false failure.
+        if (connection.state === HubConnectionState.Connecting) {
+          return;
+        }
+
         if (connection.state === HubConnectionState.Connected) {
           try {
             await connection.invoke("LeaveWorkspace", workspaceId);
