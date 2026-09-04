@@ -10,6 +10,7 @@ public interface IApplicationDbContext
     DbSet<WorkspaceMember> WorkspaceMembers { get; }
     DbSet<WorkspaceInvitation> WorkspaceInvitations { get; }
     DbSet<EmailOutboxMessage> EmailOutboxMessages { get; }
+    DbSet<Notification> Notifications { get; }
     DbSet<Document> Documents { get; }
     DbSet<DocumentChunk> DocumentChunks { get; }
     DbSet<Conversation> Conversations { get; }

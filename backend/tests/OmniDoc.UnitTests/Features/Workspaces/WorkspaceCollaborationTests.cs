@@ -146,6 +146,62 @@ public sealed class WorkspaceCollaborationTests
     }
 
     [Fact]
+    public async Task CreatingInvitation_PersistsAndSchedulesEmailOutboxMessage()
+    {
+        await using var context = await SeedWorkspaceAsync();
+        var seeded = GetSeededWorkspace(context);
+        var scheduler = new FakeEmailOutboxScheduler();
+        var handler = CreateInviteHandler(
+            context,
+            seeded.Owner.Id,
+            scheduler: scheduler);
+
+        var result = await handler.Handle(
+            new InviteWorkspaceMemberCommand(
+                seeded.Workspace.Id,
+                "external@example.com",
+                WorkspaceRole.Member),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var outbox = Assert.Single(context.EmailOutboxMessages);
+        Assert.Equal(EmailOutboxType.WorkspaceInvitation, outbox.Type);
+        Assert.Equal("external@example.com", outbox.RecipientEmail);
+        Assert.Equal(outbox.Id, Assert.Single(scheduler.EnqueuedMessageIds));
+    }
+
+    [Fact]
+    public async Task CreatingInvitation_ForExistingUserPersistsAndPublishesNotification()
+    {
+        await using var context = await SeedWorkspaceAsync();
+        var seeded = GetSeededWorkspace(context);
+        var invitee = NewUser("invitee@example.com", "Existing User");
+        context.Users.Add(invitee);
+        await context.SaveChangesAsync();
+        var publisher = new RecordingNotificationPublisher();
+        var handler = CreateInviteHandler(
+            context,
+            seeded.Owner.Id,
+            publisher: publisher);
+
+        var result = await handler.Handle(
+            new InviteWorkspaceMemberCommand(
+                seeded.Workspace.Id,
+                invitee.Email,
+                WorkspaceRole.Member),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        var notification = Assert.Single(context.Notifications);
+        Assert.Equal(invitee.Id, notification.UserId);
+        Assert.Equal(NotificationType.WorkspaceInvitation, notification.Type);
+        Assert.Equal($"/invitations/{context.WorkspaceInvitations.Single().Token}", notification.ActionUrl);
+        var pushed = Assert.Single(publisher.Published);
+        Assert.Equal(invitee.Id, pushed.UserId);
+        Assert.Equal(notification.Id, pushed.Notification.Id);
+    }
+
+    [Fact]
     public async Task UnverifiedOwnerCannotInviteWorkspaceMember()
     {
         await using var context = await SeedWorkspaceAsync(ownerEmailConfirmed: false);
@@ -304,7 +360,9 @@ public sealed class WorkspaceCollaborationTests
 
     private static InviteWorkspaceMemberCommandHandler CreateInviteHandler(
         TestApplicationDbContext context,
-        Guid userId)
+        Guid userId,
+        IEmailOutboxScheduler? scheduler = null,
+        INotificationRealtimePublisher? publisher = null)
     {
         return new InviteWorkspaceMemberCommandHandler(
             context,
@@ -315,7 +373,10 @@ public sealed class WorkspaceCollaborationTests
                 IsAuthenticated = true
             },
             new FakeInvitationLinkService(),
-            Authorization(context, userId));
+            Authorization(context, userId),
+            scheduler ?? new FakeEmailOutboxScheduler(),
+            publisher ?? new RecordingNotificationPublisher(),
+            new StubTimeProvider());
     }
 
     private static WorkspaceAuthorizationService Authorization(
@@ -440,5 +501,20 @@ public sealed class WorkspaceCollaborationTests
     {
         public string BuildInvitationLink(string token) =>
             $"https://app.example.test/invitations/{token}";
+    }
+
+    private sealed class RecordingNotificationPublisher
+        : INotificationRealtimePublisher
+    {
+        public List<(Guid UserId, NotificationRealtimeMessage Notification)> Published { get; } = [];
+
+        public Task PublishAsync(
+            Guid userId,
+            NotificationRealtimeMessage notification,
+            CancellationToken cancellationToken = default)
+        {
+            Published.Add((userId, notification));
+            return Task.CompletedTask;
+        }
     }
 }

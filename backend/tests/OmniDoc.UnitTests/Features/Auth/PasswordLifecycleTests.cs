@@ -297,6 +297,7 @@ public sealed class PasswordLifecycleTests
             new FakeEmailVerificationOtpService(),
             new FakePasswordResetTokenService(),
             new FakePasswordResetLinkService(),
+            new FakeInvitationLinkService(),
             new StubEmailVerificationFeatureOptions(),
             time,
             NullLogger<SendEmailJob>.Instance);
@@ -430,5 +431,14 @@ public sealed class PasswordLifecycleTests
             LastResetUrl = resetUrl;
             return new EmailContent("Reset", resetUrl);
         }
+
+        public EmailContent BuildWorkspaceInvitation(
+            string recipientName,
+            string workspaceName,
+            string inviterName,
+            string role,
+            string invitationUrl,
+            DateTime expiresAtUtc) =>
+            new("Workspace invitation", invitationUrl);
     }
 }

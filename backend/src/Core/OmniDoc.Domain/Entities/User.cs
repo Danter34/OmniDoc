@@ -34,6 +34,8 @@ public class User
 
     public ICollection<EmailOutboxMessage> EmailOutboxMessages { get; set; } = new List<EmailOutboxMessage>();
 
+    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
     public void IssueEmailVerificationOtp(
         string otpHash,
         DateTime issuedAtUtc,

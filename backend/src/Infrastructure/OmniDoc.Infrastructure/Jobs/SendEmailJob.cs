@@ -13,6 +13,7 @@ public sealed class SendEmailJob : IEmailOutboxJob
     private readonly IEmailVerificationOtpService _otpService;
     private readonly IPasswordResetTokenService _passwordResetTokens;
     private readonly IPasswordResetLinkService _passwordResetLinks;
+    private readonly IInvitationLinkService _invitationLinks;
     private readonly IEmailVerificationFeatureOptions _featureOptions;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<SendEmailJob> _logger;
@@ -24,6 +25,7 @@ public sealed class SendEmailJob : IEmailOutboxJob
         IEmailVerificationOtpService otpService,
         IPasswordResetTokenService passwordResetTokens,
         IPasswordResetLinkService passwordResetLinks,
+        IInvitationLinkService invitationLinks,
         IEmailVerificationFeatureOptions featureOptions,
         TimeProvider timeProvider,
         ILogger<SendEmailJob> logger)
@@ -34,6 +36,7 @@ public sealed class SendEmailJob : IEmailOutboxJob
         _otpService = otpService;
         _passwordResetTokens = passwordResetTokens;
         _passwordResetLinks = passwordResetLinks;
+        _invitationLinks = invitationLinks;
         _featureOptions = featureOptions;
         _timeProvider = timeProvider;
         _logger = logger;
@@ -57,7 +60,7 @@ public sealed class SendEmailJob : IEmailOutboxJob
 
         if (user is null ||
             message.ProtectedPayload is null ||
-            !IsMessageCurrent(message, user, now))
+            !await IsMessageCurrentAsync(message, user, now, cancellationToken))
         {
             message.ProcessedAtUtc = now;
             message.ProtectedPayload = null;
@@ -72,7 +75,11 @@ public sealed class SendEmailJob : IEmailOutboxJob
 
         try
         {
-            var content = BuildContent(message, user, now);
+            var content = await BuildContentAsync(
+                message,
+                user,
+                now,
+                cancellationToken);
 
             await _emailSender.SendEmailAsync(
                 message.RecipientEmail,
@@ -105,11 +112,30 @@ public sealed class SendEmailJob : IEmailOutboxJob
         }
     }
 
-    private static bool IsMessageCurrent(
+    private async Task<bool> IsMessageCurrentAsync(
         Domain.Entities.EmailOutboxMessage message,
         Domain.Entities.User user,
-        DateTime now) =>
-        message.Type switch
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        if (message.Type == EmailOutboxType.WorkspaceInvitation)
+        {
+            if (!Guid.TryParseExact(message.ProtectedPayload, "N", out var invitationId))
+            {
+                return false;
+            }
+
+            return await _context.WorkspaceInvitations
+                .AsNoTracking()
+                .AnyAsync(
+                    invitation =>
+                        invitation.Id == invitationId &&
+                        invitation.Status == InvitationStatus.Pending &&
+                        invitation.ExpiresAt > now,
+                    cancellationToken);
+        }
+
+        return message.Type switch
         {
             EmailOutboxType.EmailVerificationOtp =>
                 !user.EmailConfirmed &&
@@ -120,12 +146,22 @@ public sealed class SendEmailJob : IEmailOutboxJob
                 user.PasswordResetExpiresAt > now,
             _ => true
         };
+    }
 
-    private EmailContent BuildContent(
+    private async Task<EmailContent> BuildContentAsync(
         Domain.Entities.EmailOutboxMessage message,
         Domain.Entities.User user,
-        DateTime now) =>
-        message.Type switch
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        if (message.Type == EmailOutboxType.WorkspaceInvitation)
+        {
+            return await BuildWorkspaceInvitationContentAsync(
+                message,
+                cancellationToken);
+        }
+
+        return message.Type switch
         {
             EmailOutboxType.EmailVerificationOtp =>
                 _templates.BuildEmailVerificationOtp(
@@ -137,6 +173,7 @@ public sealed class SendEmailJob : IEmailOutboxJob
             _ => throw new InvalidOperationException(
                 $"Unsupported email outbox type '{message.Type}'.")
         };
+    }
 
     private EmailContent BuildPasswordResetContent(
         Domain.Entities.EmailOutboxMessage message,
@@ -150,5 +187,38 @@ public sealed class SendEmailJob : IEmailOutboxJob
             user.FullName,
             resetUrl,
             user.PasswordResetExpiresAt ?? now);
+    }
+
+    private async Task<EmailContent> BuildWorkspaceInvitationContentAsync(
+        Domain.Entities.EmailOutboxMessage message,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParseExact(message.ProtectedPayload, "N", out var invitationId))
+        {
+            throw new InvalidOperationException("Workspace invitation payload is invalid.");
+        }
+
+        var invitation = await _context.WorkspaceInvitations
+            .AsNoTracking()
+            .Where(item => item.Id == invitationId)
+            .Select(item => new
+            {
+                item.InviteeEmail,
+                item.Token,
+                item.Role,
+                item.ExpiresAt,
+                WorkspaceName = item.Workspace!.Name,
+                InviterName = item.Inviter!.FullName
+            })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new InvalidOperationException("Workspace invitation was not found.");
+
+        return _templates.BuildWorkspaceInvitation(
+            invitation.InviteeEmail,
+            invitation.WorkspaceName,
+            invitation.InviterName,
+            invitation.Role.ToString(),
+            _invitationLinks.BuildInvitationLink(invitation.Token),
+            invitation.ExpiresAt);
     }
 }

@@ -82,6 +82,12 @@ internal sealed class FakePasswordResetLinkService
         $"https://app.example.test{BuildRelativeUrl(rawToken, email)}";
 }
 
+internal sealed class FakeInvitationLinkService : IInvitationLinkService
+{
+    public string BuildInvitationLink(string token) =>
+        $"https://app.example.test/invitations/{token}";
+}
+
 internal sealed class FakeEmailOutboxScheduler : IEmailOutboxScheduler
 {
     public List<Guid> EnqueuedMessageIds { get; } = [];

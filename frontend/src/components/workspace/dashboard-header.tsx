@@ -1,10 +1,10 @@
 "use client";
 
-import { Bell, KeyRound, LogOut } from "lucide-react";
+import { KeyRound, LogOut } from "lucide-react";
 import { useState } from "react";
 
 import { ChangePasswordModal } from "@/components/auth/change-password-modal";
-import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Logo } from "@/components/ui/logo";
 import { WorkspaceSelector } from "@/components/workspace/workspace-selector";
 import { useAuth } from "@/hooks/use-auth";
@@ -24,13 +24,7 @@ export function DashboardHeader() {
           <WorkspaceSelector />
 
           <div className="ml-auto flex items-center gap-1.5">
-            <Button
-              aria-label="Thông báo"
-              className="size-10 px-0"
-              variant="ghost"
-            >
-              <Bell className="size-5" />
-            </Button>
+            <NotificationBell />
 
             <div className="relative">
               <button

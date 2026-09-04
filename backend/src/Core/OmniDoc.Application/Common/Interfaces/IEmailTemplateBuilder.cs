@@ -13,4 +13,12 @@ public interface IEmailTemplateBuilder
         string recipientName,
         string resetUrl,
         DateTime expiresAtUtc);
+
+    EmailContent BuildWorkspaceInvitation(
+        string recipientName,
+        string workspaceName,
+        string inviterName,
+        string role,
+        string invitationUrl,
+        DateTime expiresAtUtc);
 }

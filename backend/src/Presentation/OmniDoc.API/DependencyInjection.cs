@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.Tokens;
 using OmniDoc.API.Services;
 using OmniDoc.Application.Common.Interfaces;
@@ -25,6 +26,7 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IInvitationLinkService, InvitationLinkService>();
+        services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
 
         var jwtSettings = configuration
             .GetSection(JwtSettings.SectionName)
@@ -55,9 +57,10 @@ public static class DependencyInjection
                     {
                         var accessToken = context.Request.Query["access_token"];
 
+                        var requestPath = context.HttpContext.Request.Path;
                         if (!string.IsNullOrEmpty(accessToken) &&
-                            context.HttpContext.Request.Path.StartsWithSegments(
-                                "/hubs/document-progress"))
+                            (requestPath.StartsWithSegments("/hubs/document-progress") ||
+                             requestPath.StartsWithSegments("/hubs/notifications")))
                         {
                             context.Token = accessToken;
                         }
@@ -100,6 +103,7 @@ public static class DependencyInjection
         // IHubContext is a singleton, so the notifier can be resolved from the Hangfire
         // job scope without capturing a shorter-lived dependency.
         services.AddSingleton<IDocumentProgressNotifier, SignalRDocumentProgressNotifier>();
+        services.AddSingleton<INotificationRealtimePublisher, SignalRNotificationRealtimePublisher>();
 
         return services;
     }

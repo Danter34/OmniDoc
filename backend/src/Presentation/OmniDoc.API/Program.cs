@@ -38,6 +38,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapControllers();
 app.MapHub<DocumentProgressHub>("/hubs/document-progress");
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 var recurringJobs = app.Services.GetRequiredService<IRecurringJobManager>();
 recurringJobs.AddOrUpdate<OmniDoc.Application.Common.Interfaces.IEmailOutboxDispatcher>(

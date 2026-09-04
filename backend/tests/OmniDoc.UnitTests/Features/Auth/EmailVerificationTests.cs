@@ -424,6 +424,7 @@ public sealed class EmailVerificationTests
             new FakeEmailVerificationOtpService(),
             new FakePasswordResetTokenService(),
             new FakePasswordResetLinkService(),
+            new FakeInvitationLinkService(),
             new StubEmailVerificationFeatureOptions(showDemoOtp),
             timeProvider,
             NullLogger<SendEmailJob>.Instance);
@@ -461,5 +462,14 @@ public sealed class EmailVerificationTests
             string resetUrl,
             DateTime expiresAtUtc) =>
             new("Reset password", $"Reset: {resetUrl}");
+
+        public EmailContent BuildWorkspaceInvitation(
+            string recipientName,
+            string workspaceName,
+            string inviterName,
+            string role,
+            string invitationUrl,
+            DateTime expiresAtUtc) =>
+            new("Workspace invitation", invitationUrl);
     }
 }

@@ -1,10 +1,13 @@
 using System.Security.Cryptography;
+using System.Text.Json;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Common.Models;
 using OmniDoc.Application.Features.Workspaces.DTOs;
+using OmniDoc.Application.Features.Notifications.DTOs;
+using OmniDoc.Application.Features.Workspaces;
 using OmniDoc.Domain.Entities;
 using OmniDoc.Domain.Enums;
 
@@ -38,17 +41,26 @@ public sealed class InviteWorkspaceMemberCommandHandler
     private readonly ICurrentUserService _currentUser;
     private readonly IInvitationLinkService _invitationLinks;
     private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
+    private readonly IEmailOutboxScheduler _emailScheduler;
+    private readonly INotificationRealtimePublisher _notificationPublisher;
+    private readonly TimeProvider _timeProvider;
 
     public InviteWorkspaceMemberCommandHandler(
         IApplicationDbContext context,
         ICurrentUserService currentUser,
         IInvitationLinkService invitationLinks,
-        IWorkspaceAuthorizationService workspaceAuthorization)
+        IWorkspaceAuthorizationService workspaceAuthorization,
+        IEmailOutboxScheduler emailScheduler,
+        INotificationRealtimePublisher notificationPublisher,
+        TimeProvider timeProvider)
     {
         _context = context;
         _currentUser = currentUser;
         _invitationLinks = invitationLinks;
         _workspaceAuthorization = workspaceAuthorization;
+        _emailScheduler = emailScheduler;
+        _notificationPublisher = notificationPublisher;
+        _timeProvider = timeProvider;
     }
 
     public async Task<Result<WorkspaceInvitationDto>> Handle(
@@ -76,7 +88,7 @@ public sealed class InviteWorkspaceMemberCommandHandler
         var inviter = await _context.Users
             .AsNoTracking()
             .Where(user => user.Id == inviterId)
-            .Select(user => new { user.EmailConfirmed })
+            .Select(user => new { user.EmailConfirmed, user.FullName })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (inviter is null)
@@ -116,7 +128,19 @@ public sealed class InviteWorkspaceMemberCommandHandler
                 409);
         }
 
-        var now = DateTime.UtcNow;
+        var workspaceName = await _context.Workspaces
+            .AsNoTracking()
+            .Where(workspace => workspace.Id == request.WorkspaceId)
+            .Select(workspace => workspace.Name)
+            .FirstAsync(cancellationToken);
+
+        var invitee = await _context.Users
+            .AsNoTracking()
+            .Where(user => user.Email == normalizedEmail)
+            .Select(user => new { user.Id })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var existingInvitations = await _context.WorkspaceInvitations
             .Where(invitation =>
                 invitation.WorkspaceId == request.WorkspaceId &&
@@ -149,8 +173,45 @@ public sealed class InviteWorkspaceMemberCommandHandler
             CreatedAt = now
         };
 
+        var outboxMessage = WorkspaceInvitationOutboxFactory.Create(invitation);
+        Notification? notification = null;
+
+        if (invitee is not null)
+        {
+            notification = new Notification
+            {
+                UserId = invitee.Id,
+                Title = "Lời mời tham gia Workspace",
+                Message = $"{inviter.FullName} đã mời bạn tham gia {workspaceName} với vai trò {request.Role}.",
+                ActionUrl = $"/invitations/{invitation.Token}",
+                Type = NotificationType.WorkspaceInvitation,
+                CreatedAt = now,
+                MetadataJson = JsonSerializer.Serialize(new
+                {
+                    workspaceId = request.WorkspaceId,
+                    invitationId = invitation.Id,
+                    role = request.Role.ToString()
+                })
+            };
+        }
+
         _context.WorkspaceInvitations.Add(invitation);
+        _context.EmailOutboxMessages.Add(outboxMessage);
+        if (notification is not null)
+        {
+            _context.Notifications.Add(notification);
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
+        _emailScheduler.Enqueue(outboxMessage.Id);
+
+        if (notification is not null && invitee is not null)
+        {
+            await _notificationPublisher.PublishAsync(
+                invitee.Id,
+                NotificationDto.FromEntity(notification).ToRealtimeMessage(),
+                cancellationToken);
+        }
 
         return Result<WorkspaceInvitationDto>.Success(
             new WorkspaceInvitationDto(
