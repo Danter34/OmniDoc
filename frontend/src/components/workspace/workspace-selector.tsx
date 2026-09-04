@@ -53,38 +53,38 @@ export function WorkspaceSelector() {
         <button
           aria-expanded={open}
           aria-haspopup="listbox"
-          className="flex h-11 min-w-0 items-center gap-2.5 rounded-xl border border-slate-200 bg-white px-3 text-left shadow-sm transition hover:border-slate-300 hover:bg-slate-50 sm:min-w-64"
+          className="flex h-11 min-w-0 items-center gap-2.5 rounded-xl border border-line-subtle bg-surface/80 px-3 text-left shadow-sm transition-[background-color,border-color,box-shadow] hover:border-line hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:min-w-64"
           disabled={isLoading}
           onClick={() => setOpen((current) => !current)}
           type="button"
         >
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-info-subtle text-accent">
             <Building2 className="size-4" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-medium text-slate-800">
+            <span className="block truncate text-sm font-medium text-content">
               {isLoading
                 ? "Đang tải..."
                 : (activeWorkspace?.name ?? "Chọn Workspace")}
             </span>
             {activeWorkspace ? (
-              <span className="block text-[11px] text-slate-500">
+              <span className="block text-[11px] text-muted">
                 {activeWorkspace.role === "Member" ? "Member" : "Owner"}
               </span>
             ) : null}
           </span>
           <ChevronDown
             className={cn(
-              "size-4 shrink-0 text-slate-400 transition-transform",
+              "size-4 shrink-0 text-muted transition-transform",
               open && "rotate-180",
             )}
           />
         </button>
 
         {open ? (
-          <div className="absolute left-0 top-[calc(100%+8px)] z-40 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-950/10">
-            <div className="border-b border-slate-100 px-3 py-2.5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <div className="glass-panel absolute left-0 top-[calc(100%+8px)] z-40 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl">
+            <div className="border-b border-line-subtle px-3 py-2.5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Workspaces
               </p>
             </div>
@@ -99,8 +99,8 @@ export function WorkspaceSelector() {
                       className={cn(
                         "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition",
                         selected
-                          ? "bg-blue-50"
-                          : "hover:bg-slate-50",
+                          ? "active-gradient-item"
+                          : "text-content-secondary hover:bg-surface-subtle",
                       )}
                       key={workspace.id}
                       onClick={() => selectWorkspace(workspace.id)}
@@ -111,21 +111,21 @@ export function WorkspaceSelector() {
                         className={cn(
                           "flex size-9 shrink-0 items-center justify-center rounded-xl",
                           selected
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-slate-100 text-slate-500",
+                            ? "bg-info-subtle text-accent"
+                            : "bg-surface-tertiary text-muted",
                         )}
                       >
                         <Building2 className="size-4" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-slate-800">
+                        <span className="block truncate text-sm font-medium text-content">
                           {workspace.name}
                         </span>
-                        <span className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+                        <span className="mt-0.5 flex items-center gap-2 text-xs text-muted">
                           <span>
                             {workspace.role === "Member" ? "Member" : "Owner"}
                           </span>
-                          <span className="text-slate-300">•</span>
+                          <span className="text-line-strong">•</span>
                           <span className="inline-flex items-center gap-1">
                             <FileText className="size-3" />
                             {workspace.documentCount}
@@ -133,27 +133,27 @@ export function WorkspaceSelector() {
                         </span>
                       </span>
                       {selected ? (
-                        <Check className="size-4 shrink-0 text-blue-600" />
+                        <Check className="size-4 shrink-0 text-accent" />
                       ) : null}
                     </button>
                   );
                 })
               ) : (
-                <p className="px-3 py-5 text-center text-sm text-slate-500">
+                <p className="px-3 py-5 text-center text-sm text-muted">
                   Chưa có workspace nào.
                 </p>
               )}
             </div>
-            <div className="border-t border-slate-100 p-1.5">
+            <div className="border-t border-line-subtle p-1.5">
               <button
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-blue-600 transition hover:bg-blue-50"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-accent transition-colors hover:bg-info-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset"
                 onClick={() => {
                   setOpen(false);
                   setCreateOpen(true);
                 }}
                 type="button"
               >
-                <span className="flex size-9 items-center justify-center rounded-xl border border-dashed border-blue-300 bg-blue-50">
+                <span className="flex size-9 items-center justify-center rounded-xl border border-dashed border-line-strong bg-info-subtle">
                   <Plus className="size-4" />
                 </span>
                 Tạo Workspace

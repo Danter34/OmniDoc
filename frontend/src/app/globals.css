@@ -142,6 +142,30 @@
   --status-info-bg: #eff6ff;
   --code-bg: var(--od-neutral-900);
   --code-fg: var(--od-neutral-50);
+  --code-control-bg: rgb(30 41 59 / 92%);
+  --code-control-hover: #334155;
+  --code-control-fg: #e2e8f0;
+  --chat-user-bg: #eef4ff;
+  --chat-user-border: #bfdbfe;
+  --chat-assistant-bg: rgb(255 255 255 / 90%);
+  --brand-icon-fg: var(--od-neutral-0);
+  --brand-icon-shadow: rgb(37 99 235 / 28%);
+  --sidebar-active-bg: rgb(239 246 255 / 88%);
+  --sidebar-active-fg: #1e3a8a;
+  --sidebar-icon-glow: rgb(37 99 235 / 35%);
+  --citation-fg: #92400e;
+  --citation-bg: #fffbeb;
+  --citation-bg-hover: #fef3c7;
+  --citation-border: #d97706;
+  --citation-active-fg: #5b21b6;
+  --citation-active-bg: #f5f3ff;
+  --citation-active-border: #7c3aed;
+  --citation-active-glow: rgb(124 58 237 / 24%);
+  --splitter-track: #94a3b8;
+  --splitter-track-active: var(--od-blue-600);
+  --splitter-hit-active: rgb(37 99 235 / 10%);
+  --pdf-page-surface: var(--od-neutral-0);
+  --pdf-page-placeholder: var(--od-neutral-100);
 }
 
 [data-theme="dark"] {
@@ -195,6 +219,30 @@
   --status-info-bg: #101a2d;
   --code-bg: #070b12;
   --code-fg: var(--od-neutral-50);
+  --code-control-bg: rgb(24 34 51 / 94%);
+  --code-control-hover: #263449;
+  --code-control-fg: var(--od-neutral-200);
+  --chat-user-bg: rgb(29 78 216 / 14%);
+  --chat-user-border: rgb(59 130 246 / 32%);
+  --chat-assistant-bg: rgb(24 34 51 / 88%);
+  --brand-icon-fg: var(--od-neutral-0);
+  --brand-icon-shadow: rgb(0 240 255 / 25%);
+  --sidebar-active-bg: rgb(37 99 235 / 15%);
+  --sidebar-active-fg: var(--od-cyan-300);
+  --sidebar-icon-glow: rgb(0 240 255 / 32%);
+  --citation-fg: #fcd34d;
+  --citation-bg: #211a0e;
+  --citation-bg-hover: #30230d;
+  --citation-border: #b45309;
+  --citation-active-fg: #cffafe;
+  --citation-active-bg: #312e81;
+  --citation-active-border: var(--od-cyan-400);
+  --citation-active-glow: rgb(34 211 238 / 28%);
+  --splitter-track: #64748b;
+  --splitter-track-active: var(--od-cyan-400);
+  --splitter-hit-active: rgb(34 211 238 / 10%);
+  --pdf-page-surface: var(--od-neutral-0);
+  --pdf-page-placeholder: #202b3c;
 }
 
 @theme inline {
@@ -229,6 +277,27 @@
   --color-danger-action-hover: var(--danger-action-hover);
   --color-info: var(--status-info-fg);
   --color-info-subtle: var(--status-info-bg);
+  --color-chat-user: var(--chat-user-bg);
+  --color-chat-user-line: var(--chat-user-border);
+  --color-chat-assistant: var(--chat-assistant-bg);
+  --color-brand-icon: var(--brand-icon-fg);
+  --color-sidebar-active: var(--sidebar-active-bg);
+  --color-sidebar-active-content: var(--sidebar-active-fg);
+  --color-citation: var(--citation-fg);
+  --color-citation-subtle: var(--citation-bg);
+  --color-citation-hover: var(--citation-bg-hover);
+  --color-citation-line: var(--citation-border);
+  --color-citation-active: var(--citation-active-fg);
+  --color-citation-active-subtle: var(--citation-active-bg);
+  --color-citation-active-line: var(--citation-active-border);
+  --color-splitter: var(--splitter-track);
+  --color-splitter-active: var(--splitter-track-active);
+  --color-splitter-hit-active: var(--splitter-hit-active);
+  --color-code-control: var(--code-control-bg);
+  --color-code-control-hover: var(--code-control-hover);
+  --color-code-control-content: var(--code-control-fg);
+  --color-pdf-page: var(--pdf-page-surface);
+  --color-pdf-placeholder: var(--pdf-page-placeholder);
   --font-sans: var(--font-ui);
   --font-mono: var(--font-code);
 }
@@ -307,6 +376,70 @@ button:not(:disabled) {
   background-image: var(--gradient-ambient);
 }
 
+.active-gradient-item {
+  position: relative;
+  isolation: isolate;
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-fg);
+  box-shadow: 0 10px 30px -22px var(--sidebar-icon-glow);
+}
+
+.active-gradient-item::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--gradient-brand);
+  content: "";
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(var(--od-neutral-0) 0 0) content-box,
+    linear-gradient(var(--od-neutral-0) 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.streaming-aura {
+  position: relative;
+  isolation: isolate;
+  contain: paint;
+  box-shadow: var(--accent-glow);
+}
+
+.streaming-aura::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--gradient-stream);
+  content: "";
+  opacity: 0.42;
+  pointer-events: none;
+  will-change: opacity;
+  -webkit-mask:
+    linear-gradient(var(--od-neutral-0) 0 0) content-box,
+    linear-gradient(var(--od-neutral-0) 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: streaming-aura-opacity 1.9s var(--ease-standard) infinite alternate;
+}
+
+.pdf-page-citation-aura {
+  position: absolute;
+  z-index: 15;
+  inset: 0.75rem;
+  border: 2px solid var(--citation-active-border);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 0 0 1px var(--citation-active-glow),
+    0 0 28px var(--citation-active-glow);
+  opacity: 0;
+  pointer-events: none;
+  animation: pdf-page-citation-aura 2.4s var(--ease-standard);
+}
+
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   .glass-panel {
     background-color: var(--glass-bg-strong);
@@ -331,6 +464,26 @@ button:not(:disabled) {
   100% {
     opacity: 0;
     transform: translate(-50%, 0.5rem);
+  }
+}
+
+@keyframes streaming-aura-opacity {
+  from {
+    opacity: 0.32;
+  }
+  to {
+    opacity: 0.92;
+  }
+}
+
+@keyframes pdf-page-citation-aura {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  18%,
+  68% {
+    opacity: 0.86;
   }
 }
 

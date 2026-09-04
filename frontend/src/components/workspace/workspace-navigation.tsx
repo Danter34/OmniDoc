@@ -37,22 +37,32 @@ export function WorkspaceNavigation() {
   ];
 
   return (
-    <nav className="mb-5 flex w-fit items-center gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+    <nav
+      aria-label="Điều hướng Workspace"
+      className="glass-panel mb-5 flex w-fit items-center gap-1 rounded-xl p-1"
+    >
       {items.map((item) => {
         const Icon = item.icon;
 
         return (
           <Link
+            aria-current={item.active ? "page" : undefined}
             className={cn(
-              "inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition",
+              "inline-flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset",
               item.active
-                ? "bg-blue-50 text-blue-700"
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800",
+                ? "active-gradient-item"
+                : "text-muted hover:bg-surface-subtle hover:text-content",
             )}
             href={item.href}
             key={item.href}
           >
-            <Icon className="size-4" />
+            <Icon
+              aria-hidden="true"
+              className={cn(
+                "size-4",
+                item.active && "drop-shadow-[0_0_5px_var(--sidebar-icon-glow)]",
+              )}
+            />
             {item.label}
           </Link>
         );

@@ -18,10 +18,13 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessageItem } from "@/components/chat/chat-message-item";
+import { getCitationKey } from "@/components/chat/citation-badge";
 import {
   CitationPanel,
   type SelectedCitation,
@@ -75,6 +78,9 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [selectedCitation, setSelectedCitation] =
     useState<SelectedCitation | null>(null);
+  const [activeCitationKey, setActiveCitationKey] = useState<string | null>(
+    null,
+  );
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
     null,
   );
@@ -83,6 +89,15 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
   const [pdfPaneWidth, setPdfPaneWidth] = useState(48);
   const [isResizingPdf, setIsResizingPdf] = useState(false);
   const splitAreaRef = useRef<HTMLDivElement>(null);
+  const splitterRef = useRef<HTMLDivElement>(null);
+  const pdfPaneWidthRef = useRef(48);
+  const pendingPdfPaneWidthRef = useRef(48);
+  const resizeFrameRef = useRef<number | null>(null);
+  const isResizingPdfRef = useRef(false);
+  const previousBodyStylesRef = useRef<{
+    cursor: string;
+    userSelect: string;
+  } | null>(null);
   const navigationRequestIdRef = useRef(0);
   const [loadedConversationId, setLoadedConversationId] = useState<
     string | null
@@ -190,6 +205,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
       setMessagesError(null);
       setLoadedConversationId(null);
       setSelectedCitation(null);
+      setActiveCitationKey(null);
       selectConversation(conversationId);
       scrollToBottom("auto");
     },
@@ -206,6 +222,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     setMessagesError(null);
     setLoadedConversationId(null);
     setSelectedCitation(null);
+    setActiveCitationKey(null);
     selectConversation(created.id);
     scrollToBottom("auto");
   }, [
@@ -228,6 +245,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
         setMessagesLoading(true);
         setMessagesError(null);
         setSelectedCitation(null);
+        setActiveCitationKey(null);
       }
     },
     [activeConversationId, deleteConversation, isStreaming],
@@ -261,6 +279,9 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
         requestId: navigationRequestIdRef.current,
         fromCitation,
       });
+      if (!fromCitation) {
+        setActiveCitationKey(null);
+      }
       setPdfViewerOpen(true);
     },
     [],
@@ -269,6 +290,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
   const selectCitation = useCallback(
     (citation: Citation, index: number) => {
       setSelectedCitation({ citation, index });
+      setActiveCitationKey(getCitationKey(citation));
       openDocument(citation.documentId, citation.pageNumber, true);
     },
     [openDocument],
@@ -282,38 +304,172 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     [openDocument],
   );
 
-  useEffect(() => {
-    if (!isResizingPdf) {
+  const setPdfPaneWidthValue = useCallback((value: number) => {
+    const nextWidth = Math.min(68, Math.max(30, value));
+    pdfPaneWidthRef.current = nextWidth;
+    pendingPdfPaneWidthRef.current = nextWidth;
+    splitAreaRef.current?.style.setProperty(
+      "--pdf-pane-width",
+      `${nextWidth}%`,
+    );
+    splitterRef.current?.setAttribute(
+      "aria-valuenow",
+      String(Math.round(nextWidth)),
+    );
+    setPdfPaneWidth(nextWidth);
+  }, []);
+
+  const restoreResizeDocumentStyles = useCallback(() => {
+    const previousStyles = previousBodyStylesRef.current;
+    if (!previousStyles) {
       return;
     }
 
-    const previousCursor = document.body.style.cursor;
-    const previousUserSelect = document.body.style.userSelect;
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
+    document.body.style.cursor = previousStyles.cursor;
+    document.body.style.userSelect = previousStyles.userSelect;
+    previousBodyStylesRef.current = null;
+  }, []);
 
-    const handleMouseMove = (event: MouseEvent) => {
-      const bounds = splitAreaRef.current?.getBoundingClientRect();
-
-      if (!bounds) {
+  const handleSplitterPointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.button !== 0 || isResizingPdfRef.current) {
         return;
       }
 
-      const nextWidth = ((event.clientX - bounds.left) / bounds.width) * 100;
-      setPdfPaneWidth(Math.min(68, Math.max(30, nextWidth)));
-    };
-    const stopResizing = () => setIsResizingPdf(false);
+      event.preventDefault();
+      event.currentTarget.setPointerCapture(event.pointerId);
+      isResizingPdfRef.current = true;
+      previousBodyStylesRef.current = {
+        cursor: document.body.style.cursor,
+        userSelect: document.body.style.userSelect,
+      };
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      setIsResizingPdf(true);
+    },
+    [],
+  );
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", stopResizing);
+  const handleSplitterPointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+        return;
+      }
 
-    return () => {
-      document.body.style.cursor = previousCursor;
-      document.body.style.userSelect = previousUserSelect;
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", stopResizing);
-    };
-  }, [isResizingPdf]);
+      const bounds = splitAreaRef.current?.getBoundingClientRect();
+      if (!bounds || bounds.width === 0) {
+        return;
+      }
+
+      pendingPdfPaneWidthRef.current = Math.min(
+        68,
+        Math.max(30, ((event.clientX - bounds.left) / bounds.width) * 100),
+      );
+
+      if (resizeFrameRef.current !== null) {
+        return;
+      }
+
+      resizeFrameRef.current = window.requestAnimationFrame(() => {
+        const nextWidth = pendingPdfPaneWidthRef.current;
+        pdfPaneWidthRef.current = nextWidth;
+        splitAreaRef.current?.style.setProperty(
+          "--pdf-pane-width",
+          `${nextWidth}%`,
+        );
+        splitterRef.current?.setAttribute(
+          "aria-valuenow",
+          String(Math.round(nextWidth)),
+        );
+        resizeFrameRef.current = null;
+      });
+    },
+    [],
+  );
+
+  const commitSplitterResize = useCallback(() => {
+    if (!isResizingPdfRef.current) {
+      return;
+    }
+
+    isResizingPdfRef.current = false;
+    if (resizeFrameRef.current !== null) {
+      window.cancelAnimationFrame(resizeFrameRef.current);
+      resizeFrameRef.current = null;
+    }
+
+    const finalWidth = pendingPdfPaneWidthRef.current;
+    pdfPaneWidthRef.current = finalWidth;
+    splitAreaRef.current?.style.setProperty(
+      "--pdf-pane-width",
+      `${finalWidth}%`,
+    );
+    splitterRef.current?.setAttribute(
+      "aria-valuenow",
+      String(Math.round(finalWidth)),
+    );
+    setPdfPaneWidth(finalWidth);
+    setIsResizingPdf(false);
+    restoreResizeDocumentStyles();
+  }, [restoreResizeDocumentStyles]);
+
+  const finishSplitterResize = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!isResizingPdfRef.current) {
+        return;
+      }
+
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      commitSplitterResize();
+    },
+    [commitSplitterResize],
+  );
+
+  const handleSplitterKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      let nextWidth = pdfPaneWidthRef.current;
+
+      if (event.key === "ArrowLeft") {
+        nextWidth -= 2;
+      } else if (event.key === "ArrowRight") {
+        nextWidth += 2;
+      } else if (event.key === "Home") {
+        nextWidth = 30;
+      } else if (event.key === "End") {
+        nextWidth = 68;
+      } else {
+        return;
+      }
+
+      event.preventDefault();
+      setPdfPaneWidthValue(nextWidth);
+    },
+    [setPdfPaneWidthValue],
+  );
+
+  useEffect(
+    () => () => {
+      if (resizeFrameRef.current !== null) {
+        window.cancelAnimationFrame(resizeFrameRef.current);
+      }
+      isResizingPdfRef.current = false;
+      restoreResizeDocumentStyles();
+    },
+    [restoreResizeDocumentStyles],
+  );
+
+  const closeMobileSidebar = useCallback(() => setMobileSidebarOpen(false), []);
+  const closeCitationPanel = useCallback(() => setSelectedCitation(null), []);
+  const closePdfViewer = useCallback(() => {
+    setPdfViewerOpen(false);
+    setActiveCitationKey(null);
+  }, []);
+  const selectDocument = useCallback(
+    (documentId: string) => openDocument(documentId),
+    [openDocument],
+  );
 
   const historyUnavailable = Boolean(
     activeConversationId && (!historyReady || messagesLoading),
@@ -333,7 +489,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
 
   return (
     <>
-      <section className="grid h-[calc(100vh-11.5rem)] min-h-[640px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:grid-cols-[18rem_minmax(0,1fr)]">
+      <section className="glass-panel flex h-[calc(100vh-11.5rem)] min-h-[640px] overflow-hidden rounded-2xl">
         <ConversationSidebar
           activeConversationId={activeConversationId}
           conversations={conversations}
@@ -343,12 +499,12 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
           mobileOpen={mobileSidebarOpen}
           onCreate={createNewConversation}
           onDelete={removeConversation}
-          onMobileClose={() => setMobileSidebarOpen(false)}
+          onMobileClose={closeMobileSidebar}
           onSelect={selectConversationAndReset}
         />
 
         <div
-          className="relative flex min-h-0 min-w-0"
+          className="relative flex min-h-0 min-w-0 flex-1"
           ref={splitAreaRef}
           style={
             {
@@ -357,13 +513,13 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
           }
         >
           {pdfViewerOpen && selectedDocument ? (
-            <aside className="absolute inset-0 z-30 w-full min-w-0 border-r border-slate-200 bg-white lg:relative lg:z-auto lg:w-[var(--pdf-pane-width)] lg:shrink-0">
+            <aside className="absolute inset-0 z-30 w-full min-w-0 border-r border-line-subtle bg-surface lg:relative lg:z-auto lg:w-[var(--pdf-pane-width)] lg:shrink-0">
               <PdfViewer
                 document={selectedDocument}
                 documents={documents}
                 key={selectedDocument.id}
-                onClose={() => setPdfViewerOpen(false)}
-                onDocumentSelect={(documentId) => openDocument(documentId)}
+                onClose={closePdfViewer}
+                onDocumentSelect={selectDocument}
                 target={pdfTarget}
                 workspaceId={workspace.id}
               />
@@ -378,30 +534,33 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
               aria-valuemin={30}
               aria-valuenow={Math.round(pdfPaneWidth)}
               className={cn(
-                "group relative z-10 hidden w-2 shrink-0 cursor-col-resize items-center justify-center bg-slate-100 transition-colors hover:bg-blue-100 focus-visible:bg-blue-100 focus-visible:outline-none lg:flex",
-                isResizingPdf && "bg-blue-100",
+                "group relative z-10 hidden w-4 shrink-0 touch-none cursor-col-resize items-center justify-center bg-transparent transition-colors hover:bg-splitter-hit-active focus-visible:bg-splitter-hit-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring lg:flex",
+                isResizingPdf && "bg-splitter-hit-active",
               )}
-              onDoubleClick={() => setPdfPaneWidth(48)}
-              onKeyDown={(event) => {
-                if (event.key === "ArrowLeft") {
-                  event.preventDefault();
-                  setPdfPaneWidth((value) => Math.max(30, value - 2));
-                } else if (event.key === "ArrowRight") {
-                  event.preventDefault();
-                  setPdfPaneWidth((value) => Math.min(68, value + 2));
-                }
-              }}
-              onMouseDown={() => setIsResizingPdf(true)}
+              onDoubleClick={() => setPdfPaneWidthValue(48)}
+              onKeyDown={handleSplitterKeyDown}
+              onLostPointerCapture={commitSplitterResize}
+              onPointerCancel={finishSplitterResize}
+              onPointerDown={handleSplitterPointerDown}
+              onPointerMove={handleSplitterPointerMove}
+              onPointerUp={finishSplitterResize}
+              ref={splitterRef}
               role="separator"
               tabIndex={0}
               title="Kéo để thay đổi kích thước · Nhấp đúp để đặt lại"
             >
-              <span className="h-10 w-0.5 rounded-full bg-slate-300 transition group-hover:bg-blue-400" />
+              <span
+                className={cn(
+                  "h-12 w-0.5 rounded-full bg-splitter transition-[background-color,box-shadow] group-hover:bg-splitter-active group-hover:shadow-[0_0_12px_var(--splitter-track-active)]",
+                  isResizingPdf &&
+                    "bg-splitter-active shadow-[0_0_12px_var(--splitter-track-active)]",
+                )}
+              />
             </div>
           ) : null}
 
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          <header className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-200 px-4 sm:px-5">
+          <header className="flex h-16 shrink-0 items-center gap-3 border-b border-line-subtle bg-surface/65 px-4 backdrop-blur-xl sm:px-5">
             <Button
               aria-label="Mở danh sách hội thoại"
               className="size-9 px-0 lg:hidden"
@@ -410,14 +569,14 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
             >
               <Menu className="size-5" />
             </Button>
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-info-subtle text-accent shadow-[0_0_16px_var(--sidebar-icon-glow)]">
               <MessageSquareText className="size-4.5" />
             </span>
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-sm font-semibold text-slate-900">
+              <h1 className="truncate text-sm font-semibold text-content">
                 {activeConversation?.title ?? "Hỏi đáp tài liệu"}
               </h1>
-              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
                 <BookOpenCheck className="size-3.5" />
                 {indexedDocuments.length} tài liệu sẵn sàng
               </p>
@@ -427,7 +586,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
                 Chọn tài liệu PDF
               </label>
               <select
-                className="h-9 max-w-44 rounded-lg border border-slate-200 bg-white pl-3 pr-2 text-xs text-slate-600 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 xl:max-w-56"
+                className="h-11 max-w-44 rounded-lg border border-line-subtle bg-surface px-3 text-xs text-content-secondary outline-none transition focus:border-focus-ring focus:ring-2 focus:ring-focus-glow xl:max-w-56"
                 disabled={documentsLoading || documents.length === 0}
                 id="chat-document-selector"
                 onChange={(event) => {
@@ -451,7 +610,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
               disabled={documentsLoading || documents.length === 0}
               onClick={() => {
                 if (pdfViewerOpen) {
-                  setPdfViewerOpen(false);
+                  closePdfViewer();
                   return;
                 }
 
@@ -464,7 +623,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
               variant="secondary"
             >
               {pdfViewerOpen ? (
-                <FileText className="size-4 text-blue-600" />
+                <FileText className="size-4 text-accent" />
               ) : (
                 <PanelLeftOpen className="size-4" />
               )}
@@ -474,8 +633,8 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
                 "hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset",
                 !pdfViewerOpen && "sm:inline-flex",
                 realtimeStatus === "connected"
-                  ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                  : "bg-slate-100 text-slate-500 ring-slate-200",
+                  ? "bg-success-subtle text-success ring-success"
+                  : "bg-surface-subtle text-muted ring-line-subtle",
               )}
             >
               <Radio
@@ -490,24 +649,24 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
 
           <div className="relative min-h-0 flex-1">
             <div
-              className="h-full overflow-y-auto overscroll-contain bg-slate-50/40"
+              className="h-full overflow-y-auto overscroll-contain bg-surface/35"
               onScroll={handleScroll}
               ref={containerRef}
             >
               {!historyReady || (messagesLoading && activeConversationId) ? (
                 <div className="flex h-full items-center justify-center">
-                  <div className="flex items-center gap-2.5 text-sm text-slate-500">
-                    <Spinner className="size-5 text-blue-600" />
+                  <div className="flex items-center gap-2.5 text-sm text-muted">
+                    <Spinner className="size-5 text-accent" />
                     Đang tải lịch sử hội thoại...
                   </div>
                 </div>
               ) : messagesError ? (
                 <div className="flex h-full items-center justify-center px-6 text-center">
                   <div>
-                    <p className="text-sm font-medium text-slate-800">
+                    <p className="text-sm font-medium text-content">
                       Không thể tải tin nhắn
                     </p>
-                    <p className="mt-2 text-sm text-slate-500">
+                    <p className="mt-2 text-sm text-muted">
                       {messagesError}
                     </p>
                   </div>
@@ -522,13 +681,14 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
                 <div className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
                   {messages.map((message) => (
                     <ChatMessageItem
+                      activeCitationKey={activeCitationKey}
                       key={message.id}
                       message={message}
                       onCitationSelect={selectCitation}
                     />
                   ))}
                   {streamError ? (
-                    <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    <p className="rounded-xl border border-danger bg-danger-subtle px-4 py-3 text-sm text-danger">
                       {streamError}
                     </p>
                   ) : null}
@@ -563,7 +723,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
       </section>
 
       <CitationPanel
-        onClose={() => setSelectedCitation(null)}
+        onClose={closeCitationPanel}
         onViewInDocument={viewCitationInDocument}
         selected={selectedCitation}
       />
@@ -583,16 +743,16 @@ function EmptyChatState({
   return (
     <div className="flex min-h-full items-center justify-center px-5 py-10">
       <div className="w-full max-w-2xl text-center">
-        <span className="mx-auto flex size-16 items-center justify-center rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/20">
+        <span className="mx-auto flex size-16 items-center justify-center rounded-3xl text-brand-icon shadow-[0_0_32px_var(--brand-icon-shadow)] [background-image:var(--gradient-brand)]">
           <Bot className="size-8" />
         </span>
-        <p className="mt-6 text-sm font-medium text-blue-600">
+        <p className="mt-6 text-sm font-medium text-accent">
           OmniDoc RAG Assistant
         </p>
-        <h2 className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-950">
+        <h2 className="mt-1.5 text-2xl font-semibold tracking-tight text-content">
           Khám phá tri thức trong {workspaceName}
         </h2>
-        <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-slate-500">
+        <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-muted">
           Đặt câu hỏi để nhận câu trả lời có căn cứ, kèm trích dẫn đến đúng tài
           liệu và số trang.
         </p>
@@ -600,13 +760,13 @@ function EmptyChatState({
         <div className="mt-7 grid gap-2.5 text-left sm:grid-cols-3">
           {SUGGESTED_PROMPTS.map((prompt) => (
             <button
-              className="rounded-2xl border border-slate-200 bg-white p-3.5 text-xs leading-5 text-slate-600 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="glass-panel rounded-2xl p-3.5 text-xs leading-5 text-content-secondary transition-[background-color,border-color,color,box-shadow,transform] hover:-translate-y-0.5 hover:border-focus-ring hover:bg-info-subtle hover:text-accent hover:shadow-[var(--accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50"
               disabled={disabled}
               key={prompt}
               onClick={() => onSuggestion(prompt)}
               type="button"
             >
-              <Sparkles className="mb-2 size-4 text-blue-500" />
+              <Sparkles className="mb-2 size-4 text-accent" />
               {prompt}
             </button>
           ))}

@@ -6,7 +6,10 @@ import {
 } from "lucide-react";
 import { memo } from "react";
 
-import { CitationBadge } from "@/components/chat/citation-badge";
+import {
+  CitationBadge,
+  getCitationKey,
+} from "@/components/chat/citation-badge";
 import { MarkdownRenderer } from "@/components/chat/markdown-renderer";
 import { cn, formatDateTime } from "@/lib/utils";
 import type { ChatMessage, Citation } from "@/types/chat.types";
@@ -14,9 +17,11 @@ import type { ChatMessage, Citation } from "@/types/chat.types";
 function ChatMessageItemComponent({
   message,
   onCitationSelect,
+  activeCitationKey,
 }: {
   message: ChatMessage;
   onCitationSelect: (citation: Citation, index: number) => void;
+  activeCitationKey: string | null;
 }) {
   const isUser = message.role === "User";
   const isWaiting =
@@ -30,7 +35,7 @@ function ChatMessageItemComponent({
       )}
     >
       {!isUser ? (
-        <span className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-600/20">
+        <span className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl text-brand-icon shadow-[0_0_20px_var(--brand-icon-shadow)] [background-image:var(--gradient-brand)]">
           <Bot className="size-5" />
         </span>
       ) : null}
@@ -44,9 +49,10 @@ function ChatMessageItemComponent({
         <div
           className={cn(
             "rounded-2xl px-4 py-3.5 sm:px-5",
+            !isUser && message.status === "streaming" && "streaming-aura",
             isUser
-              ? "rounded-tr-md bg-blue-50 text-slate-800 ring-1 ring-inset ring-blue-100"
-              : "rounded-tl-md border border-slate-200 bg-white shadow-sm",
+              ? "rounded-tr-md border border-chat-user-line bg-chat-user text-content"
+              : "rounded-tl-md border border-line-subtle bg-chat-assistant shadow-sm",
           )}
         >
           {isUser ? (
@@ -57,7 +63,7 @@ function ChatMessageItemComponent({
             <div className="flex h-7 items-center gap-1.5" aria-label="Đang suy nghĩ">
               {[0, 1, 2].map((item) => (
                 <span
-                  className="size-2 animate-bounce rounded-full bg-blue-400"
+                  className="size-2 animate-bounce rounded-full bg-accent"
                   key={item}
                   style={{ animationDelay: `${item * 120}ms` }}
                 />
@@ -68,18 +74,18 @@ function ChatMessageItemComponent({
           )}
 
           {!isUser && message.status === "streaming" && message.content ? (
-            <span className="ml-1 inline-block h-4 w-0.5 animate-pulse bg-blue-500 align-middle" />
+            <span className="ml-1 inline-block h-4 w-0.5 animate-pulse bg-accent align-middle" />
           ) : null}
 
           {!isUser && message.status === "stopped" ? (
-            <p className="mt-3 flex items-center gap-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500">
+            <p className="mt-3 flex items-center gap-1.5 border-t border-line-subtle pt-3 text-xs text-muted">
               <CircleStop className="size-3.5" />
               Đã dừng sinh câu trả lời
             </p>
           ) : null}
 
           {!isUser && message.status === "error" ? (
-            <p className="mt-3 flex items-center gap-1.5 border-t border-rose-100 pt-3 text-xs text-rose-600">
+            <p className="mt-3 flex items-center gap-1.5 border-t border-danger pt-3 text-xs text-danger">
               <AlertCircle className="size-3.5" />
               Câu trả lời bị gián đoạn
             </p>
@@ -88,12 +94,13 @@ function ChatMessageItemComponent({
 
         {!isUser && message.citations.length > 0 ? (
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-slate-400">Nguồn</span>
+            <span className="text-xs font-medium text-muted">Nguồn</span>
             {message.citations.map((citation, index) => (
               <CitationBadge
                 citation={citation}
                 index={index + 1}
                 key={`${citation.chunkId}-${index}`}
+                active={getCitationKey(citation) === activeCitationKey}
                 onSelect={onCitationSelect}
               />
             ))}
@@ -102,7 +109,7 @@ function ChatMessageItemComponent({
 
         <p
           className={cn(
-            "mt-1.5 text-[11px] text-slate-400",
+            "mt-1.5 text-[11px] text-muted",
             isUser && "text-right",
           )}
         >
@@ -111,7 +118,7 @@ function ChatMessageItemComponent({
       </div>
 
       {isUser ? (
-        <span className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-200 text-slate-600">
+        <span className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface-tertiary text-content-secondary">
           <UserRound className="size-4.5" />
         </span>
       ) : null}

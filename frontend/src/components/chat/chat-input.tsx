@@ -2,6 +2,7 @@
 
 import { Send, Square, WandSparkles } from "lucide-react";
 import {
+  memo,
   useEffect,
   useRef,
   type FormEvent,
@@ -21,7 +22,7 @@ interface ChatInputProps {
   onStop: () => void;
 }
 
-export function ChatInput({
+function ChatInputComponent({
   value,
   disabled,
   isStreaming,
@@ -60,18 +61,18 @@ export function ChatInput({
 
   return (
     <form
-      className="border-t border-slate-200 bg-white p-3 sm:p-4"
+      className="shrink-0 bg-transparent px-3 pb-3 pt-2 sm:px-5 sm:pb-4"
       onSubmit={submit}
     >
       <div
         className={cn(
-          "mx-auto max-w-4xl rounded-2xl border bg-white p-2 shadow-sm transition focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-500/10",
-          disabled ? "border-slate-200 bg-slate-50" : "border-slate-300",
+          "glass-panel mx-auto max-w-4xl rounded-[1.4rem] p-2 transition-[background-color,border-color,box-shadow] focus-within:border-focus-ring focus-within:shadow-[var(--accent-glow)]",
+          disabled && "bg-surface-subtle opacity-80",
         )}
       >
         <textarea
           aria-label="Nhập câu hỏi"
-          className="block min-h-11 max-h-45 w-full resize-none bg-transparent px-2.5 py-2 text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:text-slate-400"
+          className="block min-h-11 max-h-45 w-full resize-none bg-transparent px-2.5 py-2 text-sm leading-6 text-content outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:text-muted"
           disabled={disabled || isStreaming}
           maxLength={4000}
           onChange={(event) => onChange(event.target.value)}
@@ -86,7 +87,7 @@ export function ChatInput({
           value={value}
         />
         <div className="flex items-center justify-between gap-3 px-1 pt-1">
-          <p className="flex min-w-0 items-center gap-1.5 truncate text-[11px] text-slate-400">
+          <p className="flex min-w-0 items-center gap-1.5 truncate text-[11px] text-muted">
             <WandSparkles className="size-3.5 shrink-0" />
             {disabledReason || "Enter để gửi · Shift+Enter để xuống dòng"}
           </p>
@@ -102,11 +103,11 @@ export function ChatInput({
           ) : (
             <Button
               aria-label="Gửi câu hỏi"
-              className="size-9 shrink-0 px-0"
+              className="group size-11 shrink-0 rounded-full px-0 shadow-[var(--accent-glow)]"
               disabled={disabled || !value.trim()}
               type="submit"
             >
-              <Send className="size-4" />
+              <Send className="size-4 transition-transform group-active:-translate-y-0.5 group-active:rotate-12" />
             </Button>
           )}
         </div>
@@ -114,3 +115,5 @@ export function ChatInput({
     </form>
   );
 }
+
+export const ChatInput = memo(ChatInputComponent);

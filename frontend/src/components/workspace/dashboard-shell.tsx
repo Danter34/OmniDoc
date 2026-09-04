@@ -12,13 +12,13 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const { verificationModalOpen, closeVerificationModal } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="ambient-bg min-h-screen">
       <DashboardHeader />
       <EmailVerificationBanner />
       {verificationModalOpen ? (
         <VerificationModal onClose={closeVerificationModal} />
       ) : null}
-      <main className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-[var(--layout-max)] px-4 py-7 sm:px-6 lg:px-8">
         <WorkspaceNavigation />
         {children}
       </main>

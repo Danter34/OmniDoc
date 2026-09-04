@@ -4,7 +4,9 @@ import { Check, Copy } from "lucide-react";
 import {
   isValidElement,
   memo,
+  useEffect,
   useDeferredValue,
+  useRef,
   useState,
   type ComponentPropsWithoutRef,
   type ReactNode,
@@ -34,13 +36,29 @@ function CodeBlock({
   ...props
 }: ComponentPropsWithoutRef<"pre">) {
   const [copied, setCopied] = useState(false);
+  const resetTimerRef = useRef<number | null>(null);
   const code = extractText(children).replace(/\n$/, "");
+
+  useEffect(
+    () => () => {
+      if (resetTimerRef.current !== null) {
+        window.clearTimeout(resetTimerRef.current);
+      }
+    },
+    [],
+  );
 
   async function copyCode() {
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1_500);
+      if (resetTimerRef.current !== null) {
+        window.clearTimeout(resetTimerRef.current);
+      }
+      resetTimerRef.current = window.setTimeout(() => {
+        resetTimerRef.current = null;
+        setCopied(false);
+      }, 1_500);
     } catch {
       setCopied(false);
     }
@@ -48,19 +66,24 @@ function CodeBlock({
 
   return (
     <div className="markdown-code-block group relative">
-      <button
-        aria-label="Sao chép mã"
-        className="absolute right-2.5 top-2.5 z-10 inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-slate-800/90 px-2.5 text-xs text-slate-300 opacity-0 shadow-sm transition hover:bg-slate-700 hover:text-white focus-visible:opacity-100 group-hover:opacity-100"
-        onClick={() => void copyCode()}
-        type="button"
-      >
-        {copied ? (
-          <Check className="size-3.5 text-emerald-400" />
-        ) : (
-          <Copy className="size-3.5" />
-        )}
-        {copied ? "Đã chép" : "Sao chép"}
-      </button>
+      <div className="absolute inset-x-0 top-0 z-10 flex h-10 items-center justify-between border-b border-line bg-code-control px-3 text-code-control-content">
+        <span className="text-[11px] font-medium uppercase tracking-wider">
+          Mã nguồn
+        </span>
+        <button
+          aria-label="Sao chép mã"
+          className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs transition-colors hover:bg-code-control-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          onClick={() => void copyCode()}
+          type="button"
+        >
+          {copied ? (
+            <Check className="size-3.5 text-success" />
+          ) : (
+            <Copy className="size-3.5" />
+          )}
+          {copied ? "Đã chép" : "Sao chép"}
+        </button>
+      </div>
       <pre {...props}>{children}</pre>
     </div>
   );
