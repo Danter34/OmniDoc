@@ -7,6 +7,7 @@ import {
   Check,
   Copy,
   LogOut,
+  MailWarning,
   MoreHorizontal,
   ShieldCheck,
   Trash2,
@@ -23,7 +24,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/hooks/use-auth";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { cn, getInitials } from "@/lib/utils";
-import { getErrorMessage } from "@/services/api-client";
+import { ApiError, getErrorMessage } from "@/services/api-client";
 import { workspaceService } from "@/services/workspace.service";
 import type {
   Workspace,
@@ -45,7 +46,7 @@ const joinedDateFormatter = new Intl.DateTimeFormat("vi-VN", {
 
 export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, openVerificationModal } = useAuth();
   const { refreshWorkspaces } = useWorkspace();
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,6 +61,8 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
   const [isInviting, setIsInviting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [showInviteVerificationGate, setShowInviteVerificationGate] =
+    useState(false);
 
   const isOwner = workspace.role === "Owner";
   const ownerCount = useMemo(
@@ -159,10 +162,33 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
       });
       setInvitation(created);
     } catch (requestError) {
+      if (
+        requestError instanceof ApiError &&
+        requestError.errorCode === "EMAIL_NOT_VERIFIED"
+      ) {
+        closeInviteModal();
+        setShowInviteVerificationGate(true);
+        return;
+      }
       setInviteError(getErrorMessage(requestError));
     } finally {
       setIsInviting(false);
     }
+  }
+
+  function handleOpenInvite() {
+    if (!user?.emailConfirmed) {
+      setShowInviteVerificationGate(true);
+      return;
+    }
+
+    setShowInviteVerificationGate(false);
+    setInviteOpen(true);
+  }
+
+  function handleOpenVerification() {
+    setShowInviteVerificationGate(false);
+    openVerificationModal();
   }
 
   function closeInviteModal() {
@@ -205,7 +231,7 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
           </p>
         </div>
         {isOwner ? (
-          <Button icon={<UserPlus className="size-4" />} onClick={() => setInviteOpen(true)}>
+          <Button icon={<UserPlus className="size-4" />} onClick={handleOpenInvite}>
             Mời thành viên
           </Button>
         ) : null}
@@ -348,6 +374,30 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
           </div>
         ) : null}
       </div>
+
+      <Modal
+        description="Xác minh email giúp bảo vệ Workspace và hạn chế lời mời không mong muốn."
+        onClose={() => setShowInviteVerificationGate(false)}
+        open={showInviteVerificationGate && !Boolean(user?.emailConfirmed)}
+        title="Cần xác minh email"
+      >
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm leading-6 text-amber-900">
+          <MailWarning className="mt-1 size-5 shrink-0 text-amber-600" />
+          <p>
+            Tài khoản của bạn cần được xác minh email trước khi gửi lời mời
+            vào Workspace.
+          </p>
+        </div>
+        <div className="mt-6 flex justify-end gap-2">
+          <Button
+            onClick={() => setShowInviteVerificationGate(false)}
+            variant="secondary"
+          >
+            Để sau
+          </Button>
+          <Button onClick={handleOpenVerification}>Xác minh ngay</Button>
+        </div>
+      </Modal>
 
       <Modal
         description="Chọn email và vai trò khởi tạo. Liên kết sẽ hết hạn sau 7 ngày."

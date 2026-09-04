@@ -32,6 +32,7 @@ internal sealed class FakeEmailVerificationOtpService
 
     public EmailVerificationOtpIssue Create(Guid userId, DateTime issuedAtUtc) =>
         new(
+            Otp,
             Hash(userId, Otp),
             $"protected::{Otp}",
             issuedAtUtc.AddMinutes(10));
@@ -52,6 +53,12 @@ internal sealed class FakeEmailOutboxScheduler : IEmailOutboxScheduler
 
     public void Enqueue(Guid outboxMessageId) =>
         EnqueuedMessageIds.Add(outboxMessageId);
+}
+
+internal sealed class StubEmailVerificationFeatureOptions(
+    bool showDemoOtp = false) : IEmailVerificationFeatureOptions
+{
+    public bool ShowDemoOtp { get; } = showDemoOtp;
 }
 
 internal sealed class StubTimeProvider : TimeProvider

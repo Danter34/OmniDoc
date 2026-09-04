@@ -74,11 +74,7 @@ export function AuthForm({
 
   useEffect(() => {
     if (!isLoading && user) {
-      router.replace(
-        isRegister && !user.emailConfirmed
-          ? `/verify-email?redirect=${encodeURIComponent(redirectTo)}`
-          : redirectTo,
-      );
+      router.replace(redirectTo);
     }
   }, [isLoading, isRegister, redirectTo, router, user]);
 
@@ -108,11 +104,7 @@ export function AuthForm({
         });
       }
 
-      router.replace(
-        isRegister
-          ? `/verify-email?redirect=${encodeURIComponent(redirectTo)}`
-          : redirectTo,
-      );
+      router.replace(redirectTo);
     } catch (error) {
       setRequestError(getErrorMessage(error));
     } finally {

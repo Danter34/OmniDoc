@@ -17,4 +17,6 @@ public sealed class EmailSettings
     public string FromName { get; set; } = "OmniDoc";
 
     public bool EnableSsl { get; set; }
+
+    public bool ShowDemoOtp { get; set; }
 }

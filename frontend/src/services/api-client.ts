@@ -9,6 +9,7 @@ export class ApiError extends Error {
     message: string,
     public readonly status: number,
     public readonly errors: string[] = [],
+    public readonly errorCode?: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -66,12 +67,24 @@ function createApiError(response: Response, body: unknown) {
     typeof body === "string" && body.trim()
       ? body
       : `Yêu cầu thất bại (${response.status}).`;
+  const errorCode =
+    body &&
+    typeof body === "object" &&
+    "errorCode" in body &&
+    typeof body.errorCode === "string"
+      ? body.errorCode
+      : undefined;
 
   if (response.status === 401 && typeof window !== "undefined") {
     window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
   }
 
-  return new ApiError(errors[0] ?? fallbackMessage, response.status, errors);
+  return new ApiError(
+    errors[0] ?? fallbackMessage,
+    response.status,
+    errors,
+    errorCode,
+  );
 }
 
 export async function apiFetch(

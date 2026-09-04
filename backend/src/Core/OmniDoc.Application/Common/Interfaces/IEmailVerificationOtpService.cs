@@ -1,6 +1,7 @@
 namespace OmniDoc.Application.Common.Interfaces;
 
 public sealed record EmailVerificationOtpIssue(
+    string RawOtp,
     string OtpHash,
     string ProtectedOtp,
     DateTime ExpiresAtUtc);
@@ -12,4 +13,9 @@ public interface IEmailVerificationOtpService
     bool Verify(Guid userId, string otp, string expectedHash);
 
     string Unprotect(string protectedOtp);
+}
+
+public interface IEmailVerificationFeatureOptions
+{
+    bool ShowDemoOtp { get; }
 }

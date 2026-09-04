@@ -124,7 +124,7 @@ public sealed class WorkspaceCollaborationTests
     }
 
     [Fact]
-    public async Task OwnerCanCreateSecureInvitation()
+    public async Task VerifiedOwnerCanCreateSecureInvitation()
     {
         await using var context = await SeedWorkspaceAsync();
         var seeded = GetSeededWorkspace(context);
@@ -143,6 +143,29 @@ public sealed class WorkspaceCollaborationTests
         Assert.Equal("Owner", result.Data.Role);
         Assert.StartsWith("https://app.example.test/invitations/", result.Data.InviteLink);
         Assert.True(context.WorkspaceInvitations.Single().Token.Length >= 43);
+    }
+
+    [Fact]
+    public async Task UnverifiedOwnerCannotInviteWorkspaceMember()
+    {
+        await using var context = await SeedWorkspaceAsync(ownerEmailConfirmed: false);
+        var seeded = GetSeededWorkspace(context);
+        var handler = CreateInviteHandler(context, seeded.Owner.Id);
+
+        var result = await handler.Handle(
+            new InviteWorkspaceMemberCommand(
+                seeded.Workspace.Id,
+                "new@example.com",
+                WorkspaceRole.Member),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(403, result.StatusCode);
+        Assert.Equal("EMAIL_NOT_VERIFIED", result.ErrorCode);
+        Assert.Equal(
+            "Bạn cần xác minh email để sử dụng tính năng mời thành viên bảo mật này.",
+            result.Error);
+        Assert.Empty(context.WorkspaceInvitations);
     }
 
     [Fact]
@@ -315,11 +338,17 @@ public sealed class WorkspaceCollaborationTests
 
     private static async Task<TestApplicationDbContext> SeedWorkspaceAsync(
         bool includeSecondMember = false,
-        bool includeSecondOwner = false)
+        bool includeSecondOwner = false,
+        bool ownerEmailConfirmed = true)
     {
         var context = new TestApplicationDbContext();
         var owner = NewUser("owner@example.com", "Workspace Owner");
         var member = NewUser("member@example.com", "Workspace Member");
+
+        if (ownerEmailConfirmed)
+        {
+            owner.ConfirmEmail();
+        }
         var workspace = new Workspace
         {
             Name = "Enterprise Workspace",

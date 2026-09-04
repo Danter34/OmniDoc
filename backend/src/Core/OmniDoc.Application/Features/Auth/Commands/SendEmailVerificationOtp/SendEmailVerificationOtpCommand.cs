@@ -15,6 +15,7 @@ public sealed class SendEmailVerificationOtpCommandHandler
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly IEmailVerificationOtpService _otpService;
+    private readonly IEmailVerificationFeatureOptions _featureOptions;
     private readonly IEmailOutboxScheduler _emailScheduler;
     private readonly TimeProvider _timeProvider;
 
@@ -22,12 +23,14 @@ public sealed class SendEmailVerificationOtpCommandHandler
         IApplicationDbContext context,
         ICurrentUserService currentUser,
         IEmailVerificationOtpService otpService,
+        IEmailVerificationFeatureOptions featureOptions,
         IEmailOutboxScheduler emailScheduler,
         TimeProvider timeProvider)
     {
         _context = context;
         _currentUser = currentUser;
         _otpService = otpService;
+        _featureOptions = featureOptions;
         _emailScheduler = emailScheduler;
         _timeProvider = timeProvider;
     }
@@ -66,23 +69,83 @@ public sealed class SendEmailVerificationOtpCommandHandler
 
         if (resendAvailableAt > now)
         {
+            var existingOtp = _featureOptions.ShowDemoOtp
+                ? await GetActiveDemoOtpAsync(userId, user.EmailVerificationOtpHash, cancellationToken)
+                : null;
+
+            if (existingOtp is not null && user.OtpExpiresAt > now)
+            {
+                return Result<EmailVerificationOtpDto>.Success(
+                    CreateResponse(
+                        user.OtpExpiresAt.Value,
+                        resendAvailableAt.Value,
+                        existingOtp,
+                        now));
+            }
+
             return Result<EmailVerificationOtpDto>.Failure(
                 "Please wait 60 seconds before requesting another verification code.",
                 429);
         }
 
-        var outboxMessage = EmailVerificationOutboxFactory.Create(
+        var stalePayloads = await _context.EmailOutboxMessages
+            .Where(item => item.UserId == userId && item.ProtectedPayload != null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var stalePayload in stalePayloads)
+        {
+            stalePayload.ProtectedPayload = null;
+        }
+
+        var outboxCreation = EmailVerificationOutboxFactory.Create(
             user,
             now,
             _otpService);
 
-        _context.EmailOutboxMessages.Add(outboxMessage);
+        _context.EmailOutboxMessages.Add(outboxCreation.OutboxMessage);
         await _context.SaveChangesAsync(cancellationToken);
-        _emailScheduler.Enqueue(outboxMessage.Id);
+        _emailScheduler.Enqueue(outboxCreation.OutboxMessage.Id);
 
         return Result<EmailVerificationOtpDto>.Success(
-            new EmailVerificationOtpDto(
+            CreateResponse(
                 user.OtpExpiresAt!.Value,
-                user.LastOtpSentAt!.Value.Add(EmailVerificationPolicy.ResendCooldown)));
+                user.LastOtpSentAt!.Value.Add(EmailVerificationPolicy.ResendCooldown),
+                _featureOptions.ShowDemoOtp ? outboxCreation.RawOtp : null,
+                now));
     }
+
+    private async Task<string?> GetActiveDemoOtpAsync(
+        Guid userId,
+        string? otpHash,
+        CancellationToken cancellationToken)
+    {
+        if (otpHash is null)
+        {
+            return null;
+        }
+
+        var protectedOtp = await _context.EmailOutboxMessages
+            .AsNoTracking()
+            .Where(item =>
+                item.UserId == userId &&
+                item.OtpHash == otpHash &&
+                item.ProtectedPayload != null)
+            .OrderByDescending(item => item.CreatedAtUtc)
+            .Select(item => item.ProtectedPayload)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return protectedOtp is null ? null : _otpService.Unprotect(protectedOtp);
+    }
+
+    private static EmailVerificationOtpDto CreateResponse(
+        DateTime expiresAt,
+        DateTime resendAvailableAt,
+        string? debugOtp,
+        DateTime now) =>
+        new(
+            true,
+            Math.Max(0, (int)Math.Ceiling((resendAvailableAt - now).TotalSeconds)),
+            debugOtp,
+            expiresAt,
+            resendAvailableAt);
 }

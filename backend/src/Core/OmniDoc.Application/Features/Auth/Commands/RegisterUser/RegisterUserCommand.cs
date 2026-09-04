@@ -81,15 +81,15 @@ public sealed class RegisterUserCommandHandler
         user.PasswordHash = _passwordHasher.HashPassword(request.Password);
 
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var outboxMessage = EmailVerificationOutboxFactory.Create(
+        var outboxCreation = EmailVerificationOutboxFactory.Create(
             user,
             now,
             _otpService);
 
         _context.Users.Add(user);
-        _context.EmailOutboxMessages.Add(outboxMessage);
+        _context.EmailOutboxMessages.Add(outboxCreation.OutboxMessage);
         await _context.SaveChangesAsync(cancellationToken);
-        _emailScheduler.Enqueue(outboxMessage.Id);
+        _emailScheduler.Enqueue(outboxCreation.OutboxMessage.Id);
 
         return Result<AuthResponseDto>.Success(
             new AuthResponseDto(

@@ -136,6 +136,57 @@ public sealed class EmailVerificationTests
         Assert.Equal(time.UtcNow.UtcDateTime.AddMinutes(10), user.OtpExpiresAt);
         var outbox = Assert.Single(context.EmailOutboxMessages);
         Assert.Equal(outbox.Id, Assert.Single(scheduler.EnqueuedMessageIds));
+        Assert.Null(result.Data!.DebugOtp);
+        Assert.True(result.Data.Success);
+        Assert.Equal(60, result.Data.ResendCooldownSeconds);
+    }
+
+    [Fact]
+    public async Task SendOtp_InDemoMode_ReturnsDebugOtp()
+    {
+        var time = new StubTimeProvider();
+        await using var context = await SeedUserWithOtpAsync(
+            time,
+            issuedAtUtc: time.UtcNow.UtcDateTime.AddSeconds(-61));
+        var user = Assert.Single(context.Users);
+        var handler = CreateSendHandler(
+            context,
+            user,
+            time,
+            new FakeEmailOutboxScheduler(),
+            showDemoOtp: true);
+
+        var result = await handler.Handle(
+            new SendEmailVerificationOtpCommand(),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(FakeEmailVerificationOtpService.Otp, result.Data!.DebugOtp);
+        Assert.Equal(60, result.Data.ResendCooldownSeconds);
+    }
+
+    [Fact]
+    public async Task SendOtp_InDemoModeDuringCooldown_ReusesEncryptedOutboxOtp()
+    {
+        var time = new StubTimeProvider();
+        await using var context = await SeedOutboxAsync(time);
+        var user = Assert.Single(context.Users);
+        var scheduler = new FakeEmailOutboxScheduler();
+        var handler = CreateSendHandler(
+            context,
+            user,
+            time,
+            scheduler,
+            showDemoOtp: true);
+
+        var result = await handler.Handle(
+            new SendEmailVerificationOtpCommand(),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(FakeEmailVerificationOtpService.Otp, result.Data!.DebugOtp);
+        Assert.Empty(scheduler.EnqueuedMessageIds);
+        Assert.Single(context.EmailOutboxMessages);
     }
 
     [Fact]
@@ -169,6 +220,7 @@ public sealed class EmailVerificationTests
         var issue = service.Create(userId, DateTime.UtcNow);
         var otp = service.Unprotect(issue.ProtectedOtp);
 
+        Assert.Equal(otp, issue.RawOtp);
         Assert.Matches("^[0-9]{6}$", otp);
         Assert.NotEqual(otp, issue.OtpHash);
         Assert.NotEqual(otp, issue.ProtectedOtp);
@@ -194,6 +246,24 @@ public sealed class EmailVerificationTests
         Assert.NotNull(message.ProcessedAtUtc);
         Assert.Null(message.ProtectedPayload);
         Assert.Equal(1, message.AttemptCount);
+    }
+
+    [Fact]
+    public async Task SendEmailJob_InDemoMode_RetainsEncryptedPayloadForOneClickReview()
+    {
+        var time = new StubTimeProvider();
+        await using var context = await SeedOutboxAsync(time);
+        var message = Assert.Single(context.EmailOutboxMessages);
+        var sender = new RecordingEmailSender();
+        var job = CreateEmailJob(context, sender, time, showDemoOtp: true);
+
+        await job.ProcessAsync(message.Id);
+
+        Assert.Single(sender.Messages);
+        Assert.NotNull(message.ProcessedAtUtc);
+        Assert.Equal(
+            $"protected::{FakeEmailVerificationOtpService.Otp}",
+            message.ProtectedPayload);
     }
 
     [Fact]
@@ -253,10 +323,19 @@ public sealed class EmailVerificationTests
         User user,
         TimeProvider timeProvider,
         IEmailOutboxScheduler scheduler) =>
+        CreateSendHandler(context, user, timeProvider, scheduler, false);
+
+    private static SendEmailVerificationOtpCommandHandler CreateSendHandler(
+        TestApplicationDbContext context,
+        User user,
+        TimeProvider timeProvider,
+        IEmailOutboxScheduler scheduler,
+        bool showDemoOtp) =>
         new(
             context,
             AuthenticatedUser(user),
             new FakeEmailVerificationOtpService(),
+            new StubEmailVerificationFeatureOptions(showDemoOtp),
             scheduler,
             timeProvider);
 
@@ -336,12 +415,14 @@ public sealed class EmailVerificationTests
     private static SendEmailJob CreateEmailJob(
         TestApplicationDbContext context,
         RecordingEmailSender sender,
-        TimeProvider timeProvider) =>
+        TimeProvider timeProvider,
+        bool showDemoOtp = false) =>
         new(
             context,
             sender,
             new FakeEmailTemplateBuilder(),
             new FakeEmailVerificationOtpService(),
+            new StubEmailVerificationFeatureOptions(showDemoOtp),
             timeProvider,
             NullLogger<SendEmailJob>.Instance);
 

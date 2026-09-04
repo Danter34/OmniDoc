@@ -11,6 +11,7 @@ public sealed class SendEmailJob : IEmailOutboxJob
     private readonly IEmailSender _emailSender;
     private readonly IEmailTemplateBuilder _templates;
     private readonly IEmailVerificationOtpService _otpService;
+    private readonly IEmailVerificationFeatureOptions _featureOptions;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<SendEmailJob> _logger;
 
@@ -19,6 +20,7 @@ public sealed class SendEmailJob : IEmailOutboxJob
         IEmailSender emailSender,
         IEmailTemplateBuilder templates,
         IEmailVerificationOtpService otpService,
+        IEmailVerificationFeatureOptions featureOptions,
         TimeProvider timeProvider,
         ILogger<SendEmailJob> logger)
     {
@@ -26,6 +28,7 @@ public sealed class SendEmailJob : IEmailOutboxJob
         _emailSender = emailSender;
         _templates = templates;
         _otpService = otpService;
+        _featureOptions = featureOptions;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -83,7 +86,10 @@ public sealed class SendEmailJob : IEmailOutboxJob
                 cancellationToken);
 
             message.ProcessedAtUtc = _timeProvider.GetUtcNow().UtcDateTime;
-            message.ProtectedPayload = null;
+            if (!_featureOptions.ShowDemoOtp)
+            {
+                message.ProtectedPayload = null;
+            }
             message.LastError = null;
             await _context.SaveChangesAsync(cancellationToken);
         }

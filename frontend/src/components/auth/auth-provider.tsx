@@ -29,6 +29,9 @@ interface AuthContextValue {
   register: (payload: RegisterRequest) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  verificationModalOpen: boolean;
+  openVerificationModal: () => void;
+  closeVerificationModal: () => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -37,11 +40,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
 
   const clearSession = useCallback(() => {
     tokenStorage.clear();
     setToken(null);
     setUser(null);
+    setVerificationModalOpen(false);
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -135,8 +140,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error(getErrorMessage(error));
         }
       },
+      verificationModalOpen,
+      openVerificationModal: () => setVerificationModalOpen(true),
+      closeVerificationModal: () => setVerificationModalOpen(false),
     }),
-    [clearSession, isLoading, login, refreshUser, register, token, user],
+    [
+      clearSession,
+      isLoading,
+      login,
+      refreshUser,
+      register,
+      token,
+      user,
+      verificationModalOpen,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

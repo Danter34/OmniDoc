@@ -4,9 +4,13 @@ using OmniDoc.Domain.Enums;
 
 namespace OmniDoc.Application.Features.Auth;
 
+public sealed record EmailVerificationOutboxCreation(
+    EmailOutboxMessage OutboxMessage,
+    string RawOtp);
+
 public static class EmailVerificationOutboxFactory
 {
-    public static EmailOutboxMessage Create(
+    public static EmailVerificationOutboxCreation Create(
         User user,
         DateTime issuedAtUtc,
         IEmailVerificationOtpService otpService)
@@ -28,6 +32,6 @@ public static class EmailVerificationOutboxFactory
         };
 
         message.IdempotencyKey = $"email-verification:{user.Id:N}:{message.Id:N}";
-        return message;
+        return new EmailVerificationOutboxCreation(message, issue.RawOtp);
     }
 }

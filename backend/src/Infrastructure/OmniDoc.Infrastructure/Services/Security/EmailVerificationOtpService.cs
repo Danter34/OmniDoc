@@ -31,6 +31,7 @@ public sealed class EmailVerificationOtpService : IEmailVerificationOtpService
             .ToString("D6");
 
         return new EmailVerificationOtpIssue(
+            otp,
             Hash(userId, otp),
             Protect(otp),
             issuedAtUtc.Add(EmailVerificationPolicy.OtpLifetime));

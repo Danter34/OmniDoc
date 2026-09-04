@@ -16,7 +16,9 @@ public abstract class BaseApiController : ControllerBase
     {
         if (!result.IsSuccess)
         {
-            return StatusCode(result.StatusCode, new { errors = result.Errors });
+            return StatusCode(
+                result.StatusCode,
+                new { errors = result.Errors, errorCode = result.ErrorCode });
         }
 
         if (result.StatusCode == StatusCodes.Status201Created)

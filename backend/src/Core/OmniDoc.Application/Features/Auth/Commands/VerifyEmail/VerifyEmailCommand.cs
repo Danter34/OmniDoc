@@ -67,6 +67,7 @@ public sealed class VerifyEmailCommandHandler
         if (user.OtpFailedAttempts >= EmailVerificationPolicy.MaxFailedAttempts)
         {
             user.InvalidateEmailVerificationOtp();
+            await ClearProtectedOtpPayloadsAsync(user.Id, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
 
             return Result<UserDto>.Failure(
@@ -84,6 +85,7 @@ public sealed class VerifyEmailCommandHandler
         if (user.OtpExpiresAt <= _timeProvider.GetUtcNow().UtcDateTime)
         {
             user.InvalidateEmailVerificationOtp();
+            await ClearProtectedOtpPayloadsAsync(user.Id, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
 
             return Result<UserDto>.Failure(
@@ -97,6 +99,7 @@ public sealed class VerifyEmailCommandHandler
             if (failedAttempts >= EmailVerificationPolicy.MaxFailedAttempts)
             {
                 user.InvalidateEmailVerificationOtp();
+                await ClearProtectedOtpPayloadsAsync(user.Id, cancellationToken);
             }
 
             await _context.SaveChangesAsync(cancellationToken);
@@ -109,6 +112,7 @@ public sealed class VerifyEmailCommandHandler
         }
 
         user.ConfirmEmail();
+        await ClearProtectedOtpPayloadsAsync(user.Id, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
 
         return Result<UserDto>.Success(ToDto(user));
@@ -124,4 +128,18 @@ public sealed class VerifyEmailCommandHandler
             user.EmailConfirmed
                 ? null
                 : user.LastOtpSentAt?.Add(EmailVerificationPolicy.ResendCooldown));
+
+    private async Task ClearProtectedOtpPayloadsAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var messages = await _context.EmailOutboxMessages
+            .Where(item => item.UserId == userId && item.ProtectedPayload != null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var message in messages)
+        {
+            message.ProtectedPayload = null;
+        }
+    }
 }

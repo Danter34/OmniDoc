@@ -73,6 +73,27 @@ public sealed class InviteWorkspaceMemberCommandHandler
                 401);
         }
 
+        var inviter = await _context.Users
+            .AsNoTracking()
+            .Where(user => user.Id == inviterId)
+            .Select(user => new { user.EmailConfirmed })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (inviter is null)
+        {
+            return Result<WorkspaceInvitationDto>.Failure(
+                "The authenticated user was not found.",
+                404);
+        }
+
+        if (!inviter.EmailConfirmed)
+        {
+            return Result<WorkspaceInvitationDto>.Failure(
+                "Bạn cần xác minh email để sử dụng tính năng mời thành viên bảo mật này.",
+                403,
+                "EMAIL_NOT_VERIFIED");
+        }
+
         if (!Enum.IsDefined(request.Role))
         {
             return Result<WorkspaceInvitationDto>.Failure(
