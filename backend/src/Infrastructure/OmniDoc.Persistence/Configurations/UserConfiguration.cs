@@ -24,5 +24,8 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.FullName)
             .HasMaxLength(200)
             .IsRequired();
+
+        builder.Property(user => user.EmailVerificationOtpHash)
+            .HasMaxLength(128);
     }
 }

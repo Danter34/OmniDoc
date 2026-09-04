@@ -11,10 +11,14 @@ public sealed class RegisterAndLoginTests
     public async Task Register_CreatesUserWithNormalizedEmailAndHashedPassword()
     {
         await using var context = new TestApplicationDbContext();
+        var scheduler = new FakeEmailOutboxScheduler();
         var handler = new RegisterUserCommandHandler(
             context,
             new FakePasswordHasher(),
-            new FakeJwtTokenGenerator());
+            new FakeJwtTokenGenerator(),
+            new FakeEmailVerificationOtpService(),
+            scheduler,
+            new StubTimeProvider());
 
         var result = await handler.Handle(
             new RegisterUserCommand(
@@ -31,6 +35,11 @@ public sealed class RegisterAndLoginTests
         Assert.Equal("Workspace Owner", user.FullName);
         Assert.Equal("hashed::StrongPassword123!", user.PasswordHash);
         Assert.Equal($"token::{user.Id}", result.Data!.Token);
+        Assert.False(user.EmailConfirmed);
+        Assert.NotNull(user.EmailVerificationOtpHash);
+        var outboxMessage = Assert.Single(context.EmailOutboxMessages);
+        Assert.Equal(user.Id, outboxMessage.UserId);
+        Assert.Equal(outboxMessage.Id, Assert.Single(scheduler.EnqueuedMessageIds));
     }
 
     [Fact]
@@ -48,7 +57,10 @@ public sealed class RegisterAndLoginTests
         var handler = new RegisterUserCommandHandler(
             context,
             new FakePasswordHasher(),
-            new FakeJwtTokenGenerator());
+            new FakeJwtTokenGenerator(),
+            new FakeEmailVerificationOtpService(),
+            new FakeEmailOutboxScheduler(),
+            new StubTimeProvider());
 
         var result = await handler.Handle(
             new RegisterUserCommand(

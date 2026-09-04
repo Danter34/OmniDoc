@@ -9,6 +9,7 @@ using OmniDoc.Infrastructure.Jobs;
 using OmniDoc.Infrastructure.Services;
 using OmniDoc.Infrastructure.Services.Ai;
 using OmniDoc.Infrastructure.Services.Security;
+using OmniDoc.Infrastructure.Services.Email;
 
 namespace OmniDoc.Infrastructure;
 
@@ -23,6 +24,22 @@ public static class DependencyInjection
         services.AddScoped<IDocumentProcessingJob, DocumentProcessingJob>();
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IEmailSender, SmtpEmailSender>();
+        services.AddSingleton<IEmailTemplateBuilder, OmniDocEmailTemplateBuilder>();
+        services.AddSingleton<IEmailVerificationOtpService, EmailVerificationOtpService>();
+        services.AddScoped<IEmailOutboxScheduler, HangfireEmailOutboxScheduler>();
+        services.AddScoped<IEmailOutboxJob, SendEmailJob>();
+        services.AddScoped<IEmailOutboxDispatcher, EmailOutboxDispatcher>();
+
+        services.AddOptions<EmailSettings>()
+            .Bind(configuration.GetSection(EmailSettings.SectionName))
+            .Validate(settings => !string.IsNullOrWhiteSpace(settings.Host),
+                "EmailSettings:Host is required.")
+            .Validate(settings => settings.Port is > 0 and <= 65535,
+                "EmailSettings:Port must be between 1 and 65535.")
+            .Validate(settings => !string.IsNullOrWhiteSpace(settings.FromEmail),
+                "EmailSettings:FromEmail is required.")
+            .ValidateOnStart();
 
         services.AddOptions<JwtSettings>()
             .Bind(configuration.GetSection(JwtSettings.SectionName))

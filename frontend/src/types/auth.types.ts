@@ -3,6 +3,8 @@ export interface User {
   email: string;
   fullName: string;
   createdAtUtc?: string;
+  emailConfirmed: boolean;
+  otpResendAvailableAt?: string | null;
 }
 
 export interface AuthResponse extends User {
@@ -16,4 +18,9 @@ export interface LoginRequest {
 
 export interface RegisterRequest extends LoginRequest {
   fullName: string;
+}
+
+export interface EmailVerificationOtpResponse {
+  expiresAt: string;
+  resendAvailableAt: string;
 }

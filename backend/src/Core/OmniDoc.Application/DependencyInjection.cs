@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(assembly);
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.AddScoped<IWorkspaceAuthorizationService, WorkspaceAuthorizationService>();
+        services.AddSingleton(TimeProvider.System);
 
         // Stateless between calls — all scanner state lives in ProcessStreamAsync locals.
         services.AddSingleton<CitationStreamStateMachine>();

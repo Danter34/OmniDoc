@@ -39,15 +39,24 @@ public sealed class RegisterUserCommandHandler
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _tokenGenerator;
+    private readonly IEmailVerificationOtpService _otpService;
+    private readonly IEmailOutboxScheduler _emailScheduler;
+    private readonly TimeProvider _timeProvider;
 
     public RegisterUserCommandHandler(
         IApplicationDbContext context,
         IPasswordHasher passwordHasher,
-        IJwtTokenGenerator tokenGenerator)
+        IJwtTokenGenerator tokenGenerator,
+        IEmailVerificationOtpService otpService,
+        IEmailOutboxScheduler emailScheduler,
+        TimeProvider timeProvider)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _tokenGenerator = tokenGenerator;
+        _otpService = otpService;
+        _emailScheduler = emailScheduler;
+        _timeProvider = timeProvider;
     }
 
     public async Task<Result<AuthResponseDto>> Handle(
@@ -71,15 +80,25 @@ public sealed class RegisterUserCommandHandler
 
         user.PasswordHash = _passwordHasher.HashPassword(request.Password);
 
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var outboxMessage = EmailVerificationOutboxFactory.Create(
+            user,
+            now,
+            _otpService);
+
         _context.Users.Add(user);
+        _context.EmailOutboxMessages.Add(outboxMessage);
         await _context.SaveChangesAsync(cancellationToken);
+        _emailScheduler.Enqueue(outboxMessage.Id);
 
         return Result<AuthResponseDto>.Success(
             new AuthResponseDto(
                 user.Id,
                 user.Email,
                 user.FullName,
-                _tokenGenerator.GenerateToken(user)),
+                _tokenGenerator.GenerateToken(user),
+                user.EmailConfirmed,
+                user.LastOtpSentAt?.Add(EmailVerificationPolicy.ResendCooldown)),
             201);
     }
 

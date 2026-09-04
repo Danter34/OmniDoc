@@ -63,6 +63,10 @@ public sealed class LoginUserCommandHandler
                 user.Id,
                 user.Email,
                 user.FullName,
-                _tokenGenerator.GenerateToken(user)));
+                _tokenGenerator.GenerateToken(user),
+                user.EmailConfirmed,
+                user.EmailConfirmed
+                    ? null
+                    : user.LastOtpSentAt?.Add(EmailVerificationPolicy.ResendCooldown)));
     }
 }

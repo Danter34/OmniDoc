@@ -4,4 +4,6 @@ public record AuthResponseDto(
     Guid Id,
     string Email,
     string FullName,
-    string Token);
+    string Token,
+    bool EmailConfirmed,
+    DateTime? OtpResendAvailableAt);

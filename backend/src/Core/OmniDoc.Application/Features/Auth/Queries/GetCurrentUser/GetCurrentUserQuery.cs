@@ -38,7 +38,13 @@ public sealed class GetCurrentUserQueryHandler
                 item.Id,
                 item.Email,
                 item.FullName,
-                item.CreatedAtUtc))
+                item.CreatedAtUtc,
+                item.EmailConfirmed,
+                item.EmailConfirmed
+                    ? null
+                    : item.LastOtpSentAt.HasValue
+                        ? item.LastOtpSentAt.Value.AddSeconds(60)
+                        : null))
             .FirstOrDefaultAsync(cancellationToken);
 
         return user is null

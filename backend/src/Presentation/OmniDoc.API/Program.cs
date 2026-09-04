@@ -39,6 +39,13 @@ if (app.Environment.IsDevelopment())
 app.MapControllers();
 app.MapHub<DocumentProgressHub>("/hubs/document-progress");
 
+var recurringJobs = app.Services.GetRequiredService<IRecurringJobManager>();
+recurringJobs.AddOrUpdate<OmniDoc.Application.Common.Interfaces.IEmailOutboxDispatcher>(
+    "email-outbox-dispatcher",
+    dispatcher => dispatcher.DispatchPendingAsync(CancellationToken.None),
+    Cron.Minutely,
+    new RecurringJobOptions());
+
 // Endpoint kiểm tra nhanh trạng thái server
 app.MapGet("/api/health", () => Results.Ok(new
 {

@@ -101,6 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: response.email,
       fullName: response.fullName,
       createdAtUtc: response.createdAtUtc,
+      emailConfirmed: response.emailConfirmed,
+      otpResendAvailableAt: response.otpResendAvailableAt,
     });
   }, []);
 
@@ -113,6 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: response.email,
       fullName: response.fullName,
       createdAtUtc: response.createdAtUtc,
+      emailConfirmed: response.emailConfirmed,
+      otpResendAvailableAt: response.otpResendAvailableAt,
     });
   }, []);
 
