@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { ChangePasswordModal } from "@/components/auth/change-password-modal";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Logo } from "@/components/ui/logo";
 import { WorkspaceSelector } from "@/components/workspace/workspace-selector";
 import { useAuth } from "@/hooks/use-auth";
@@ -17,20 +18,25 @@ export function DashboardHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-3 px-4 sm:px-6 lg:px-8">
+      <header className="glass-panel sticky top-0 z-30 border-x-0 border-t-0">
+        <div className="mx-auto flex h-16 max-w-[var(--layout-max)] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <Logo className="mr-1 shrink-0" />
-          <div className="hidden h-6 w-px bg-slate-200 sm:block" />
+          <div
+            aria-hidden="true"
+            className="hidden h-6 w-px bg-line-subtle sm:block"
+          />
           <WorkspaceSelector />
 
           <div className="ml-auto flex items-center gap-1.5">
             <NotificationBell />
+            <ThemeToggle />
 
             <div className="relative">
               <button
                 aria-expanded={profileOpen}
                 aria-haspopup="menu"
-                className="flex size-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700 ring-2 ring-white transition hover:bg-blue-200"
+                aria-label={`Mở menu tài khoản của ${user?.fullName ?? "OmniDoc"}`}
+                className="flex size-11 items-center justify-center rounded-full bg-info-subtle text-sm font-semibold text-accent ring-2 ring-surface transition-colors hover:bg-surface-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 onClick={() => setProfileOpen((current) => !current)}
                 type="button"
               >
@@ -39,19 +45,19 @@ export function DashboardHeader() {
 
               {profileOpen ? (
                 <div
-                  className="absolute right-0 top-[calc(100%+8px)] z-40 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-950/10"
+                  className="glass-panel absolute right-0 top-[calc(100%+8px)] z-40 w-64 rounded-2xl p-2"
                   role="menu"
                 >
-                  <div className="border-b border-slate-100 px-3 py-2.5">
-                    <p className="truncate text-sm font-medium text-slate-900">
+                  <div className="border-b border-line-subtle px-3 py-2.5">
+                    <p className="truncate text-sm font-medium text-content">
                       {user?.fullName}
                     </p>
-                    <p className="mt-0.5 truncate text-xs text-slate-500">
+                    <p className="mt-0.5 truncate text-xs text-muted">
                       {user?.email}
                     </p>
                   </div>
                   <button
-                    className="mt-1 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                    className="mt-1 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-content-secondary transition-colors hover:bg-surface-subtle hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset"
                     onClick={() => {
                       setProfileOpen(false);
                       setChangePasswordOpen(true);
@@ -59,16 +65,16 @@ export function DashboardHeader() {
                     role="menuitem"
                     type="button"
                   >
-                    <KeyRound className="size-4" />
+                    <KeyRound aria-hidden="true" className="size-4" />
                     Đổi mật khẩu
                   </button>
                   <button
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-content-secondary transition-colors hover:bg-surface-subtle hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset"
                     onClick={logout}
                     role="menuitem"
                     type="button"
                   >
-                    <LogOut className="size-4" />
+                    <LogOut aria-hidden="true" className="size-4" />
                     Đăng xuất
                   </button>
                 </div>

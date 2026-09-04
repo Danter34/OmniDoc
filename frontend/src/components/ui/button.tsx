@@ -6,7 +6,12 @@ import {
 
 import { cn } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "outline"
+  | "ghost"
+  | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -17,18 +22,20 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-blue-600 text-white shadow-sm hover:bg-blue-700 focus-visible:ring-blue-500 disabled:bg-blue-300",
+    "text-on-accent shadow-sm [background-image:var(--gradient-action)] hover:brightness-110",
   secondary:
-    "border border-slate-200 bg-white text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:ring-blue-500",
+    "border border-line-subtle bg-surface-subtle text-content shadow-sm hover:bg-surface-tertiary",
+  outline:
+    "border border-line bg-surface text-content shadow-sm hover:border-line-strong hover:bg-surface-subtle",
   ghost:
-    "bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-slate-400",
+    "bg-transparent text-content-secondary hover:bg-surface-subtle hover:text-content",
   danger:
-    "bg-rose-600 text-white shadow-sm hover:bg-rose-700 focus-visible:ring-rose-500",
+    "bg-danger-action text-on-accent shadow-sm hover:bg-danger-action-hover",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-9 rounded-lg px-3 text-sm",
-  md: "h-10 rounded-xl px-4 text-sm",
+  sm: "h-11 rounded-lg px-3 text-sm",
+  md: "h-11 rounded-xl px-4 text-sm",
   lg: "h-12 rounded-xl px-5 text-base",
 };
 
@@ -49,7 +56,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ref={ref}
       type={type}
       className={cn(
-        "inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70",
+        "inline-flex items-center justify-center gap-2 font-medium transition-[background-color,border-color,color,box-shadow,filter,opacity] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-60",
         variantClasses[variant],
         sizeClasses[size],
         className,
