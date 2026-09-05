@@ -12,6 +12,7 @@
   --od-violet-700: #6d28d9;
   --od-violet-600: #7c3aed;
   --od-violet-500: #8b5cf6;
+  --od-violet-neon: #a855f7;
   --od-neutral-0: #ffffff;
   --od-neutral-50: #f8fafc;
   --od-neutral-100: #f1f5f9;
@@ -32,6 +33,12 @@
     var(--od-cyan-electric) 0%,
     var(--od-blue-600) 48%,
     var(--od-violet-500) 100%
+  );
+  --gradient-brand-text: linear-gradient(
+    90deg,
+    var(--od-cyan-electric) 0%,
+    var(--od-blue-500) 45%,
+    var(--od-violet-neon) 100%
   );
   --gradient-action: linear-gradient(
     135deg,
@@ -383,6 +390,19 @@ button:not(:disabled) {
   color: var(--selection-fg);
 }
 
+.text-brand-gradient {
+  display: inline-block;
+  background-image: var(--gradient-brand-text);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-clip: text;
+  color: transparent;
+  line-height: inherit;
+  vertical-align: baseline;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 .glass-panel {
   border: 1px solid var(--glass-border);
   background-color: var(--glass-bg);
@@ -702,6 +722,14 @@ button:not(:disabled) {
   margin: 1.25rem 0;
   border: 0;
   border-top: 1px solid var(--border-subtle);
+}
+
+@media (forced-colors: active) {
+  .text-brand-gradient {
+    background-image: none;
+    color: CanvasText;
+    -webkit-text-fill-color: currentcolor;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

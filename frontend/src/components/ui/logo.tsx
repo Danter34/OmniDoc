@@ -3,6 +3,20 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
+export function BrandName({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-baseline whitespace-nowrap",
+        className,
+      )}
+    >
+      <span className="text-content">Omni</span>
+      <span className="text-brand-gradient">Doc</span>
+    </span>
+  );
+}
+
 export function Logo({
   compact = false,
   className,
@@ -27,9 +41,7 @@ export function Logo({
         width={imageSize}
       />
       {!compact ? (
-        <span className="font-semibold text-lg tracking-tight text-content">
-          Omni<span className="text-accent">Doc</span>
-        </span>
+        <BrandName className="text-lg font-semibold tracking-tight" />
       ) : null}
     </>
   );

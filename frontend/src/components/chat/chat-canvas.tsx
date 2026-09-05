@@ -35,6 +35,7 @@ import {
   type PdfPageTarget,
 } from "@/components/document/PdfViewer";
 import { Button } from "@/components/ui/button";
+import { BrandName } from "@/components/ui/logo";
 import { Spinner } from "@/components/ui/spinner";
 import { useChatStream } from "@/hooks/use-chat-stream";
 import { useConversations } from "@/hooks/use-conversations";
@@ -753,7 +754,7 @@ function EmptyChatState({
           />
         </span>
         <h2 className="mt-6 text-2xl font-semibold tracking-tight text-content">
-          OmniDoc RAG Assistant
+          <BrandName /> RAG Assistant
         </h2>
         <p className="mt-1.5 text-sm font-medium text-accent">
           Intelligence in every document
