@@ -113,23 +113,17 @@ export function AuthForm({
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-10">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-36 top-1/4 size-80 rounded-full bg-blue-100/60 blur-3xl" />
-        <div className="absolute -right-32 bottom-1/4 size-72 rounded-full bg-amber-100/60 blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f044_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f044_1px,transparent_1px)] bg-[size:32px_32px]" />
-      </div>
-
-      <section className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 shadow-xl shadow-slate-900/[0.06] sm:p-9">
+    <main className="ambient-bg relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <section className="glass-panel relative w-full max-w-md rounded-2xl p-7 sm:p-9">
         <Logo />
         <div className="mt-8">
-          <p className="text-sm font-medium text-blue-600">
+          <p className="text-sm font-medium text-accent">
             {isRegister ? "Bắt đầu với OmniDoc" : "Chào mừng trở lại"}
           </p>
-          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-950">
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-content">
             {isRegister ? "Tạo tài khoản của bạn" : "Đăng nhập vào tài khoản"}
           </h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
+          <p className="mt-2 text-sm leading-6 text-muted">
             {isRegister
               ? "Tạo workspace và biến tài liệu PDF thành tri thức có thể tìm kiếm."
               : "Tiếp tục quản lý tài liệu và không gian làm việc của bạn."}
@@ -138,7 +132,7 @@ export function AuthForm({
 
         {requestError ? (
           <div
-            className="mt-5 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-sm text-rose-700"
+            className="mt-5 flex items-start gap-2.5 rounded-xl border border-danger bg-danger-subtle px-3.5 py-3 text-sm text-danger"
             role="alert"
           >
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
@@ -149,11 +143,11 @@ export function AuthForm({
         <form className="mt-6 space-y-4" onSubmit={handleSubmit} noValidate>
           {isRegister ? (
             <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-slate-700">
+              <span className="mb-1.5 block text-sm font-medium text-content-secondary">
                 Họ và tên
               </span>
               <div className="relative">
-                <UserRound className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <UserRound className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
                 <Input
                   autoComplete="name"
                   className="pl-10"
@@ -174,7 +168,7 @@ export function AuthForm({
                 />
               </div>
               {errors.fullName ? (
-                <span className="mt-1.5 block text-xs text-rose-600">
+                <span className="mt-1.5 block text-xs text-danger">
                   {errors.fullName}
                 </span>
               ) : null}
@@ -182,11 +176,11 @@ export function AuthForm({
           ) : null}
 
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-slate-700">
+            <span className="mb-1.5 block text-sm font-medium text-content-secondary">
               Email
             </span>
             <div className="relative">
-              <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
               <Input
                 autoComplete="email"
                 className="pl-10"
@@ -209,18 +203,18 @@ export function AuthForm({
               />
             </div>
             {errors.email ? (
-              <span className="mt-1.5 block text-xs text-rose-600">
+              <span className="mt-1.5 block text-xs text-danger">
                 {errors.email}
               </span>
             ) : null}
           </label>
 
           <label className="block">
-            <span className="mb-1.5 flex items-center justify-between gap-3 text-sm font-medium text-slate-700">
+            <span className="mb-1.5 flex items-center justify-between gap-3 text-sm font-medium text-content-secondary">
               <span>Mật khẩu</span>
               {!isRegister ? (
                 <Link
-                  className="font-medium text-blue-600 transition hover:text-blue-700"
+                  className="font-medium text-accent transition-colors hover:text-accent-primary"
                   href="/forgot-password"
                 >
                   Quên mật khẩu?
@@ -228,10 +222,10 @@ export function AuthForm({
               ) : null}
             </span>
             <div className="relative">
-              <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+              <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
               <Input
                 autoComplete={isRegister ? "new-password" : "current-password"}
-                className="px-10"
+                className="pl-10 pr-12"
                 error={Boolean(errors.password)}
                 maxLength={128}
                 minLength={isRegister ? 8 : undefined}
@@ -251,7 +245,7 @@ export function AuthForm({
               />
               <button
                 aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                className="absolute right-2.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-subtle hover:text-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                 onClick={() => setShowPassword((current) => !current)}
                 type="button"
               >
@@ -263,7 +257,7 @@ export function AuthForm({
               </button>
             </div>
             {errors.password ? (
-              <span className="mt-1.5 block text-xs text-rose-600">
+              <span className="mt-1.5 block text-xs text-danger">
                 {errors.password}
               </span>
             ) : null}
@@ -286,10 +280,10 @@ export function AuthForm({
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-500">
+        <p className="mt-6 text-center text-sm text-muted">
           {isRegister ? "Đã có tài khoản?" : "Chưa có tài khoản?"}{" "}
           <Link
-            className="font-medium text-blue-600 transition hover:text-blue-700"
+            className="font-medium text-accent transition-colors hover:text-accent-primary"
             href={`${isRegister ? "/login" : "/register"}?redirect=${encodeURIComponent(redirectTo)}`}
           >
             {isRegister ? "Đăng nhập" : "Đăng ký ngay"}

@@ -70,7 +70,7 @@ export function CreateWorkspaceModal({
       <form className="space-y-4" onSubmit={handleSubmit}>
         {error ? (
           <div
-            className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700"
+            className="flex items-start gap-2 rounded-xl border border-danger bg-danger-subtle p-3 text-sm text-danger"
             role="alert"
           >
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
@@ -79,8 +79,8 @@ export function CreateWorkspaceModal({
         ) : null}
 
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-slate-700">
-            Tên Workspace <span className="text-rose-500">*</span>
+          <span className="mb-1.5 block text-sm font-medium text-content-secondary">
+            Tên Workspace <span className="text-danger">*</span>
           </span>
           <Input
             autoFocus
@@ -93,17 +93,17 @@ export function CreateWorkspaceModal({
             placeholder="Ví dụ: Phòng Pháp chế"
             value={name}
           />
-          <span className="mt-1.5 block text-right text-xs text-slate-400">
+          <span className="mt-1.5 block text-right text-xs text-muted">
             {name.length}/256
           </span>
         </label>
 
         <label className="block">
-          <span className="mb-1.5 block text-sm font-medium text-slate-700">
+          <span className="mb-1.5 block text-sm font-medium text-content-secondary">
             Mô tả
           </span>
           <textarea
-            className="min-h-24 w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50"
+            className="min-h-24 w-full resize-none rounded-xl border border-line-subtle bg-surface px-3.5 py-3 text-sm text-content outline-none transition placeholder:text-muted focus:border-focus-ring focus:ring-4 focus:ring-focus-glow disabled:bg-surface-subtle"
             disabled={isSubmitting}
             maxLength={1000}
             onChange={(event) => setDescription(event.target.value)}

@@ -44,6 +44,12 @@
     var(--od-blue-600) 52%,
     var(--od-violet-500) 100%
   );
+  --gradient-progress: linear-gradient(
+    90deg,
+    var(--od-cyan-electric) 0%,
+    var(--od-blue-600) 52%,
+    var(--od-violet-500) 100%
+  );
   --font-ui:
     Inter, "Geist Sans", ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -166,6 +172,19 @@
   --splitter-hit-active: rgb(37 99 235 / 10%);
   --pdf-page-surface: var(--od-neutral-0);
   --pdf-page-placeholder: var(--od-neutral-100);
+  --notification-badge-bg: #be123c;
+  --notification-badge-fg: var(--od-neutral-0);
+  --notification-unread-bg: #eff6ff;
+  --notification-unread-dot: var(--od-blue-600);
+  --role-owner-fg: #1d4ed8;
+  --role-owner-bg: #eff6ff;
+  --role-owner-border: #93c5fd;
+  --role-admin-fg: #6d28d9;
+  --role-admin-bg: #f5f3ff;
+  --role-admin-border: #c4b5fd;
+  --role-member-fg: #475569;
+  --role-member-bg: #f1f5f9;
+  --role-member-border: #cbd5e1;
 }
 
 [data-theme="dark"] {
@@ -243,6 +262,19 @@
   --splitter-hit-active: rgb(34 211 238 / 10%);
   --pdf-page-surface: var(--od-neutral-0);
   --pdf-page-placeholder: #202b3c;
+  --notification-badge-bg: #e11d48;
+  --notification-badge-fg: var(--od-neutral-0);
+  --notification-unread-bg: rgb(37 99 235 / 14%);
+  --notification-unread-dot: var(--od-cyan-400);
+  --role-owner-fg: #93c5fd;
+  --role-owner-bg: #101a2d;
+  --role-owner-border: #1d4ed8;
+  --role-admin-fg: #c4b5fd;
+  --role-admin-bg: #21183b;
+  --role-admin-border: #7c3aed;
+  --role-member-fg: var(--od-neutral-300);
+  --role-member-bg: #151e2b;
+  --role-member-border: #475569;
 }
 
 @theme inline {
@@ -298,6 +330,19 @@
   --color-code-control-content: var(--code-control-fg);
   --color-pdf-page: var(--pdf-page-surface);
   --color-pdf-placeholder: var(--pdf-page-placeholder);
+  --color-notification-badge: var(--notification-badge-bg);
+  --color-notification-badge-content: var(--notification-badge-fg);
+  --color-notification-unread: var(--notification-unread-bg);
+  --color-notification-unread-dot: var(--notification-unread-dot);
+  --color-role-owner: var(--role-owner-fg);
+  --color-role-owner-subtle: var(--role-owner-bg);
+  --color-role-owner-line: var(--role-owner-border);
+  --color-role-admin: var(--role-admin-fg);
+  --color-role-admin-subtle: var(--role-admin-bg);
+  --color-role-admin-line: var(--role-admin-border);
+  --color-role-member: var(--role-member-fg);
+  --color-role-member-subtle: var(--role-member-bg);
+  --color-role-member-line: var(--role-member-border);
   --font-sans: var(--font-ui);
   --font-mono: var(--font-code);
 }

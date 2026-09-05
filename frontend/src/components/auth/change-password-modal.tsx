@@ -82,10 +82,10 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
     >
       {isComplete ? (
         <div className="py-4 text-center" role="status">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-success-subtle text-success">
             <CheckCircle2 className="size-8" />
           </div>
-          <p className="mt-4 text-sm font-medium text-emerald-700">
+          <p className="mt-4 text-sm font-medium text-success">
             Mật khẩu và phiên đăng nhập đã được cập nhật.
           </p>
         </div>
@@ -93,7 +93,7 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
         <>
           {error ? (
             <div
-              className="mb-5 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+              className="mb-5 flex items-start gap-2.5 rounded-xl border border-danger bg-danger-subtle px-4 py-3 text-sm text-danger"
               role="alert"
             >
               <AlertCircle className="mt-0.5 size-4 shrink-0" />
@@ -193,17 +193,17 @@ function PasswordField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-slate-700">
+      <span className="mb-1.5 block text-sm font-medium text-content-secondary">
         {label}
       </span>
       <div className="relative">
-        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted">
           {icon}
         </span>
         <Input
           autoComplete={autoComplete}
           autoFocus={autoFocus}
-          className="px-10"
+          className="pl-10 pr-12"
           error={error}
           maxLength={128}
           onChange={(event) => onChange(event.target.value)}
@@ -213,7 +213,7 @@ function PasswordField({
         />
         <button
           aria-label={show ? `Ẩn ${label.toLowerCase()}` : `Hiện ${label.toLowerCase()}`}
-          className="absolute right-2.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+          className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-subtle hover:text-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           onClick={onToggle}
           type="button"
         >

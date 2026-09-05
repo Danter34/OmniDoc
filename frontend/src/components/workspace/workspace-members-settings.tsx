@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +61,7 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
   const [invitation, setInvitation] = useState<WorkspaceInvitation | null>(null);
   const [isInviting, setIsInviting] = useState(false);
   const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef<number | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [showInviteVerificationGate, setShowInviteVerificationGate] =
     useState(false);
@@ -107,6 +108,82 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
     const timer = window.setTimeout(() => setForbiddenToast(null), 5000);
     return () => window.clearTimeout(timer);
   }, [forbiddenToast]);
+
+  useEffect(() => {
+    if (!openMenuUserId) return;
+
+    const menu = document.getElementById(`member-menu-${openMenuUserId}`);
+    const focusFrame = window.requestAnimationFrame(() => {
+      menu
+        ?.querySelector<HTMLButtonElement>('[role="menuitem"]:not([disabled])')
+        ?.focus();
+    });
+
+    function handlePointerDown(event: PointerEvent) {
+      if (
+        !(event.target instanceof Element) ||
+        !event.target.closest("[data-member-menu-root]")
+      ) {
+        setOpenMenuUserId(null);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        document.getElementById(`member-menu-trigger-${openMenuUserId}`)?.focus();
+        setOpenMenuUserId(null);
+        return;
+      }
+
+      if (
+        event.key !== "ArrowDown" &&
+        event.key !== "ArrowUp" &&
+        event.key !== "Home" &&
+        event.key !== "End"
+      ) {
+        return;
+      }
+
+      const items = Array.from(
+        menu?.querySelectorAll<HTMLButtonElement>(
+          '[role="menuitem"]:not([disabled])',
+        ) ?? [],
+      );
+      if (items.length === 0) return;
+
+      event.preventDefault();
+      const currentIndex = items.findIndex(
+        (item) => item === document.activeElement,
+      );
+      const nextIndex =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? items.length - 1
+            : event.key === "ArrowUp"
+              ? (currentIndex - 1 + items.length) % items.length
+              : (currentIndex + 1) % items.length;
+      items[nextIndex]?.focus();
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openMenuUserId]);
+
+  useEffect(
+    () => () => {
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current);
+      }
+    },
+    [],
+  );
 
   function showForbiddenError(requestError: unknown) {
     if (requestError instanceof ApiError && requestError.status === 403) {
@@ -220,6 +297,10 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
   }
 
   function closeInviteModal() {
+    if (copyTimerRef.current !== null) {
+      window.clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = null;
+    }
     setInviteOpen(false);
     setInviteEmail("");
     setInviteRole("Member");
@@ -237,24 +318,30 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
       await navigator.clipboard.writeText(invitation.inviteLink);
       setCopied(true);
       setInviteError(null);
-      window.setTimeout(() => setCopied(false), 2000);
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current);
+      }
+      copyTimerRef.current = window.setTimeout(() => {
+        copyTimerRef.current = null;
+        setCopied(false);
+      }, 2000);
     } catch {
       setInviteError("Không thể sao chép tự động. Vui lòng chọn và sao chép liên kết.");
     }
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <header className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+    <section className="glass-panel overflow-hidden rounded-2xl">
+      <header className="flex flex-col gap-4 border-b border-line-subtle px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div>
-          <div className="flex items-center gap-2 text-sm font-medium text-blue-600">
+          <div className="flex items-center gap-2 text-sm font-medium text-accent">
             <ShieldCheck className="size-4" />
             Cài đặt workspace
           </div>
-          <h1 className="mt-1.5 text-xl font-semibold text-slate-950">
+          <h1 className="mt-1.5 text-xl font-semibold text-content">
             Thành viên & Quyền hạn
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted">
             Quản lý người có quyền truy cập vào {workspace.name}.
           </p>
         </div>
@@ -266,7 +353,7 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
       </header>
 
       {error ? (
-        <div className="mx-5 mt-5 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 sm:mx-6" role="alert">
+        <div className="mx-5 mt-5 flex items-start gap-2.5 rounded-xl border border-danger bg-danger-subtle px-4 py-3 text-sm text-danger sm:mx-6" role="alert">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -274,26 +361,26 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
 
       <div className="px-5 py-5 sm:px-6">
         <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-            <Users className="size-4 text-slate-400" />
+          <div className="flex items-center gap-2 text-sm font-medium text-content-secondary">
+            <Users className="size-4 text-muted" />
             {members.length} thành viên
           </div>
           {!isOwner ? (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-muted">
               Bạn có quyền {workspace.role}
             </span>
           ) : null}
         </div>
 
         {isLoading ? (
-          <div className="flex min-h-52 items-center justify-center gap-3 text-sm text-slate-500">
-            <Spinner className="size-5 text-blue-600" />
+          <div className="flex min-h-52 items-center justify-center gap-3 text-sm text-muted">
+            <Spinner className="size-5 text-accent" />
             Đang tải danh sách thành viên...
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-200">
+          <div className="overflow-x-auto rounded-xl border border-line-subtle bg-surface/55">
             <table className="w-full min-w-[720px] border-collapse text-left">
-              <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <thead className="bg-surface-subtle text-xs font-semibold uppercase tracking-wide text-muted">
                 <tr>
                   <th className="px-4 py-3">Thành viên</th>
                   <th className="px-4 py-3">Vai trò</th>
@@ -301,7 +388,7 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
                   <th className="w-16 px-4 py-3"><span className="sr-only">Hành động</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-line-subtle">
                 {members.map((member) => {
                   const isCurrentUser = member.userId === user?.id;
                   const protectsLastOwner =
@@ -312,15 +399,15 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
                     <tr className="text-sm" key={member.userId}>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-semibold text-blue-700">
+                          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-info-subtle text-xs font-semibold text-accent">
                             {getInitials(member.fullName)}
                           </div>
                           <div className="min-w-0">
-                            <p className="truncate font-medium text-slate-900">
+                            <p className="truncate font-medium text-content">
                               {member.fullName}
-                              {isCurrentUser ? <span className="ml-1.5 text-xs font-normal text-slate-400">(Bạn)</span> : null}
+                              {isCurrentUser ? <span className="ml-1.5 text-xs font-normal text-muted">(Bạn)</span> : null}
                             </p>
-                            <p className="mt-0.5 truncate text-xs text-slate-500">{member.email}</p>
+                            <p className="mt-0.5 truncate text-xs text-muted">{member.email}</p>
                           </div>
                         </div>
                       </td>
@@ -328,24 +415,28 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
                         <span className={cn(
                           "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold",
                           member.role === "Owner"
-                            ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200"
+                            ? "bg-role-owner-subtle text-role-owner ring-1 ring-inset ring-role-owner-line"
                             : member.role === "Admin"
-                              ? "border border-indigo-200 bg-indigo-50 text-indigo-700"
-                              : "bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200",
+                              ? "bg-role-admin-subtle text-role-admin ring-1 ring-inset ring-role-admin-line"
+                              : "bg-role-member-subtle text-role-member ring-1 ring-inset ring-role-member-line",
                         )}>
                           {member.role}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-slate-500">
+                      <td className="px-4 py-3.5 text-muted">
                         {joinedDateFormatter.format(new Date(member.joinedAt))}
                       </td>
-                      <td className="relative px-4 py-3.5 text-right">
+                      <td className="relative px-4 py-3.5 text-right" data-member-menu-root>
                         {isProcessing ? (
-                          <Spinner className="ml-auto size-4 text-blue-600" />
+                          <Spinner className="ml-auto size-4 text-accent" />
                         ) : isOwner || (isAdmin && member.role === "Member") ? (
                           <button
                             aria-label={`Thao tác với ${member.fullName}`}
-                            className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                            aria-expanded={openMenuUserId === member.userId}
+                            aria-haspopup="menu"
+                            aria-controls={`member-menu-${member.userId}`}
+                            className="inline-flex size-11 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-subtle hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                            id={`member-menu-trigger-${member.userId}`}
                             onClick={() => setOpenMenuUserId((current) => current === member.userId ? null : member.userId)}
                             type="button"
                           >
@@ -354,11 +445,17 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
                         ) : null}
 
                         {openMenuUserId === member.userId ? (
-                          <div className="absolute right-4 top-12 z-20 w-56 rounded-xl border border-slate-200 bg-white p-1.5 text-left shadow-xl shadow-slate-950/10">
+                          <div
+                            aria-labelledby={`member-menu-trigger-${member.userId}`}
+                            className="glass-panel absolute right-4 top-14 z-20 w-56 rounded-xl p-1.5 text-left"
+                            id={`member-menu-${member.userId}`}
+                            role="menu"
+                          >
                             {isOwner && member.role === "Member" ? (
                               <button
-                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50"
+                                className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-content-secondary transition-colors hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                                 onClick={() => void handleRoleChange(member, "Admin")}
+                                role="menuitem"
                                 type="button"
                               >
                                 <ArrowUpCircle className="size-4" />
@@ -367,8 +464,9 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
                             ) : null}
                             {isOwner && member.role === "Admin" ? (
                               <button
-                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50"
+                                className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-content-secondary transition-colors hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                                 onClick={() => void handleRoleChange(member, "Member")}
+                                role="menuitem"
                                 type="button"
                               >
                                 <ArrowDownCircle className="size-4" />
@@ -377,9 +475,10 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
                             ) : null}
                             {isOwner && member.role === "Owner" ? (
                               <button
-                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-content-secondary transition-colors hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50"
                                 disabled={protectsLastOwner}
                                 onClick={() => void handleRoleChange(member, "Member")}
+                                role="menuitem"
                                 type="button"
                               >
                                 <ArrowDownCircle className="size-4" />
@@ -388,8 +487,9 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
                             ) : null}
                             {isOwner && member.role !== "Owner" ? (
                               <button
-                                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50"
+                                className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-content-secondary transition-colors hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                                 onClick={() => void handleRoleChange(member, "Owner")}
+                                role="menuitem"
                                 type="button"
                               >
                                 <ArrowUpCircle className="size-4" />
@@ -397,12 +497,13 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
                               </button>
                             ) : null}
                             <button
-                              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-danger transition-colors hover:bg-danger-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50"
                               disabled={protectsLastOwner}
                               onClick={() => {
                                 setOpenMenuUserId(null);
                                 setRemovalTarget({ member, isSelfRemoval: isCurrentUser });
                               }}
+                              role="menuitem"
                               type="button"
                             >
                               <Trash2 className="size-4" />
@@ -420,10 +521,10 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
         )}
 
         {!isOwner && user ? (
-          <div className="mt-5 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-5 flex flex-col gap-3 rounded-xl border border-line-subtle bg-surface-subtle px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-medium text-slate-800">Rời workspace</p>
-              <p className="mt-0.5 text-xs text-slate-500">Bạn sẽ mất quyền truy cập vào tài liệu và cuộc trò chuyện.</p>
+              <p className="text-sm font-medium text-content">Rời workspace</p>
+              <p className="mt-0.5 text-xs text-muted">Bạn sẽ mất quyền truy cập vào tài liệu và cuộc trò chuyện.</p>
             </div>
             <Button
               icon={<LogOut className="size-4" />}
@@ -445,8 +546,8 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
         open={showInviteVerificationGate && !Boolean(user?.emailConfirmed)}
         title="Cần xác minh email"
       >
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm leading-6 text-amber-900">
-          <MailWarning className="mt-1 size-5 shrink-0 text-amber-600" />
+        <div className="flex items-start gap-3 rounded-xl border border-warning bg-warning-subtle px-4 py-3.5 text-sm leading-6 text-warning">
+          <MailWarning className="mt-1 size-5 shrink-0" />
           <p>
             Tài khoản của bạn cần được xác minh email trước khi gửi lời mời
             vào Workspace.
@@ -470,18 +571,18 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
         title="Mời thành viên mới"
       >
         {inviteError ? (
-          <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
+          <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-danger bg-danger-subtle px-4 py-3 text-sm text-danger" role="alert">
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <span>{inviteError}</span>
           </div>
         ) : null}
         {invitation ? (
           <div>
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <div className="rounded-xl border border-success bg-success-subtle px-4 py-3 text-sm text-success">
               Đã tạo lời mời cho <strong>{invitation.inviteeEmail}</strong> với vai trò {invitation.role}.
             </div>
             <label className="mt-5 block">
-              <span className="mb-1.5 block text-sm font-medium text-slate-700">Liên kết mời</span>
+              <span className="mb-1.5 block text-sm font-medium text-content-secondary">Liên kết mời</span>
               <div className="flex gap-2">
                 <Input readOnly value={invitation.inviteLink} />
                 <Button
@@ -507,7 +608,7 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
         ) : (
           <form className="space-y-4" onSubmit={handleInvite}>
             <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-slate-700">Email</span>
+              <span className="mb-1.5 block text-sm font-medium text-content-secondary">Email</span>
               <Input
                 autoFocus
                 onChange={(event) => setInviteEmail(event.target.value)}
@@ -518,9 +619,9 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
               />
             </label>
             <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-slate-700">Vai trò khởi tạo</span>
+              <span className="mb-1.5 block text-sm font-medium text-content-secondary">Vai trò khởi tạo</span>
               <select
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                className="h-11 w-full rounded-xl border border-line-subtle bg-surface px-3.5 text-sm text-content outline-none transition focus:border-focus-ring focus:ring-4 focus:ring-focus-glow"
                 disabled={isAdmin}
                 onChange={(event) => setInviteRole(event.target.value as WorkspaceRole)}
                 value={inviteRole}
@@ -553,7 +654,7 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
         open={Boolean(removalTarget)}
         title={removalTarget?.isSelfRemoval ? "Rời workspace?" : "Xóa thành viên?"}
       >
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-content-secondary">
           {removalTarget?.isSelfRemoval
             ? `Bạn có chắc muốn rời ${workspace.name}?`
             : `Bạn có chắc muốn xóa ${removalTarget?.member.fullName ?? "thành viên này"} khỏi workspace?`}
@@ -573,17 +674,17 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
 
       {forbiddenToast ? (
         <div
-          className="fixed bottom-5 right-5 z-[80] flex w-[min(380px,calc(100vw-40px))] items-start gap-3 rounded-2xl border border-amber-200 bg-white p-4 text-sm text-slate-700 shadow-xl shadow-slate-950/10"
+          className="glass-panel fixed bottom-5 right-5 z-[80] flex w-[min(380px,calc(100vw-40px))] items-start gap-3 rounded-2xl border-warning p-4 text-sm text-content-secondary"
           role="alert"
         >
-          <AlertCircle className="mt-0.5 size-5 shrink-0 text-amber-500" />
+          <AlertCircle className="mt-0.5 size-5 shrink-0 text-warning" />
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-slate-900">Không đủ quyền truy cập</p>
+            <p className="font-semibold text-content">Không đủ quyền truy cập</p>
             <p className="mt-1 leading-5">{forbiddenToast}</p>
           </div>
           <button
             aria-label="Đóng thông báo"
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-subtle hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             onClick={() => setForbiddenToast(null)}
             type="button"
           >

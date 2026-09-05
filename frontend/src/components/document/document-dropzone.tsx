@@ -117,14 +117,15 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
   const uploadPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <section className="glass-panel rounded-2xl p-4 sm:p-5">
       <div
+        aria-disabled={isUploading}
         aria-label="Tải tài liệu PDF"
         className={cn(
           "relative flex min-h-48 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed px-6 py-8 text-center outline-none transition",
           isDragging
-            ? "border-blue-500 bg-blue-50"
-            : "border-slate-200 bg-slate-50/70 hover:border-blue-300 hover:bg-blue-50/40 focus-visible:border-blue-500 focus-visible:ring-4 focus-visible:ring-blue-500/10",
+            ? "border-focus-ring bg-info-subtle shadow-[var(--accent-glow)]"
+            : "border-line bg-surface-subtle/70 hover:border-line-strong hover:bg-info-subtle/60 focus-visible:border-focus-ring focus-visible:ring-4 focus-visible:ring-focus-glow",
           isUploading && "pointer-events-none",
         )}
         onDragEnter={(event) => {
@@ -161,19 +162,26 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
 
         {isUploading ? (
           <>
-            <span className="flex size-12 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
+            <span className="flex size-12 items-center justify-center rounded-2xl bg-info-subtle text-accent">
               <Spinner className="size-6" />
             </span>
-            <p className="mt-4 text-sm font-semibold text-slate-900">
+            <p className="mt-4 text-sm font-semibold text-content">
               Đang tải tài liệu lên...
             </p>
-            <p className="mt-1.5 text-xs text-slate-500">
+            <p className="mt-1.5 text-xs text-muted">
               {completed}/{total} tệp hoàn tất
             </p>
-            <div className="mt-5 h-2 w-full max-w-xs overflow-hidden rounded-full bg-slate-200">
+            <div
+              aria-label="Tiến độ tải tài liệu"
+              aria-valuemax={100}
+              aria-valuemin={0}
+              aria-valuenow={uploadPercent}
+              className="mt-5 h-2 w-full max-w-xs overflow-hidden rounded-full bg-surface-tertiary"
+              role="progressbar"
+            >
               <div
-                className="h-full rounded-full bg-blue-600 transition-[width] duration-300"
-                style={{ width: `${uploadPercent}%` }}
+                className="progress-shimmer relative h-full origin-left rounded-full transition-transform duration-300 [background-image:var(--gradient-progress)]"
+                style={{ transform: `scaleX(${uploadPercent / 100})` }}
               />
             </div>
           </>
@@ -183,8 +191,8 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
               className={cn(
                 "flex size-12 items-center justify-center rounded-2xl transition",
                 isDragging
-                  ? "bg-blue-600 text-white"
-                  : "bg-blue-100 text-blue-600",
+                  ? "text-brand-icon shadow-[var(--accent-glow)] [background-image:var(--gradient-action)]"
+                  : "bg-info-subtle text-accent",
               )}
             >
               {isDragging ? (
@@ -193,12 +201,12 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
                 <UploadCloud className="size-6" />
               )}
             </span>
-            <p className="mt-4 text-sm font-semibold text-slate-900">
+            <p className="mt-4 text-sm font-semibold text-content">
               {isDragging
                 ? "Thả PDF để tải lên"
                 : "Kéo thả PDF vào đây hoặc nhấp để chọn"}
             </p>
-            <p className="mt-1.5 text-xs leading-5 text-slate-500">
+            <p className="mt-1.5 text-xs leading-5 text-muted">
               Có thể chọn nhiều tệp PDF. Quá trình lập chỉ mục chạy nền.
             </p>
           </>
@@ -210,8 +218,8 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
           className={cn(
             "mt-3 flex items-start gap-2 rounded-xl px-3 py-2.5 text-xs",
             message.type === "success"
-              ? "bg-emerald-50 text-emerald-700"
-              : "bg-rose-50 text-rose-700",
+              ? "bg-success-subtle text-success"
+              : "bg-danger-subtle text-danger",
           )}
           role={message.type === "error" ? "alert" : "status"}
         >

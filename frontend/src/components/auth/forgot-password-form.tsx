@@ -41,42 +41,36 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-10">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-36 top-1/4 size-80 rounded-full bg-blue-100/60 blur-3xl" />
-        <div className="absolute -right-32 bottom-1/4 size-72 rounded-full bg-amber-100/60 blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f044_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f044_1px,transparent_1px)] bg-[size:32px_32px]" />
-      </div>
-
-      <section className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 shadow-xl shadow-slate-900/[0.06] sm:p-9">
+    <main className="ambient-bg relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <section className="glass-panel relative w-full max-w-md rounded-2xl p-7 sm:p-9">
         <Logo />
 
         {result ? (
           <div className="mt-8 text-center">
-            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+            <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-success-subtle text-success">
               <MailCheck className="size-7" />
             </div>
-            <h1 className="mt-5 text-2xl font-semibold tracking-tight text-slate-950">
+            <h1 className="mt-5 text-2xl font-semibold tracking-tight text-content">
               Kiểm tra hộp thư của bạn
             </h1>
-            <p className="mt-3 text-sm leading-6 text-slate-500">
+            <p className="mt-3 text-sm leading-6 text-muted">
               {result.message}
             </p>
 
             {result.debugResetUrl ? (
-              <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
+              <div className="mt-6 rounded-xl border border-warning bg-warning-subtle p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-warning">
                   Recruiter Demo Mode
                 </p>
                 <Link
-                  className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 text-sm font-semibold text-white transition hover:bg-amber-600"
+                  className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-warning px-4 text-sm font-semibold text-warning transition-[filter,box-shadow] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                   href={result.debugResetUrl}
                 >
                   <Zap className="size-4" />
                   Demo: Mở trang đặt lại mật khẩu ngay
                 </Link>
                 <a
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-amber-800 underline decoration-amber-300 underline-offset-2"
+                  className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-warning underline decoration-current underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                   href="http://localhost:8025"
                   rel="noreferrer"
                   target="_blank"
@@ -98,13 +92,13 @@ export function ForgotPasswordForm() {
         ) : (
           <>
             <div className="mt-8">
-              <p className="text-sm font-medium text-blue-600">
+              <p className="text-sm font-medium text-accent">
                 Khôi phục tài khoản
               </p>
-              <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-950">
+              <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-content">
                 Quên mật khẩu?
               </h1>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
+              <p className="mt-2 text-sm leading-6 text-muted">
                 Nhập email của bạn. Nếu tài khoản tồn tại, OmniDoc sẽ gửi một
                 liên kết dùng một lần có hiệu lực trong 15 phút.
               </p>
@@ -112,7 +106,7 @@ export function ForgotPasswordForm() {
 
             {error ? (
               <div
-                className="mt-5 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-sm text-rose-700"
+                className="mt-5 flex items-start gap-2.5 rounded-xl border border-danger bg-danger-subtle px-3.5 py-3 text-sm text-danger"
                 role="alert"
               >
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
@@ -122,11 +116,11 @@ export function ForgotPasswordForm() {
 
             <form className="mt-6" onSubmit={handleSubmit}>
               <label className="block">
-                <span className="mb-1.5 block text-sm font-medium text-slate-700">
+                <span className="mb-1.5 block text-sm font-medium text-content-secondary">
                   Email
                 </span>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
                   <Input
                     autoComplete="email"
                     autoFocus
@@ -154,7 +148,7 @@ export function ForgotPasswordForm() {
         )}
 
         <Link
-          className="mt-6 flex items-center justify-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-blue-600"
+          className="mt-6 flex min-h-11 items-center justify-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           href="/login"
         >
           <ArrowLeft className="size-4" />

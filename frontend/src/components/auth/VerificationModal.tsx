@@ -223,10 +223,10 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
     >
       {isVerified ? (
         <div className="py-4 text-center" role="status">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-success-subtle text-success">
             <CheckCircle2 className="size-8" />
           </div>
-          <p className="mt-4 text-sm font-medium text-emerald-700">
+          <p className="mt-4 text-sm font-medium text-success">
             Email của bạn đã được xác minh.
           </p>
         </div>
@@ -234,7 +234,7 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
         <>
           {error ? (
             <div
-              className="mb-5 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+              className="mb-5 flex items-start gap-2.5 rounded-xl border border-danger bg-danger-subtle px-4 py-3 text-sm text-danger"
               role="alert"
             >
               <AlertCircle className="mt-0.5 size-4 shrink-0" />
@@ -253,10 +253,10 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
                   autoComplete={index === 0 ? "one-time-code" : "off"}
                   autoFocus={index === 0}
                   className={cn(
-                    "h-14 w-11 rounded-xl border bg-white text-center text-xl font-semibold text-slate-950 outline-none transition sm:h-16 sm:w-13 sm:text-2xl",
+                    "h-14 w-11 rounded-xl border bg-surface text-center text-xl font-semibold text-content outline-none transition sm:h-16 sm:w-13 sm:text-2xl",
                     error
-                      ? "border-rose-300 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10"
-                      : "border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10",
+                      ? "border-danger focus:border-danger focus:ring-4 focus:ring-danger-glow"
+                      : "border-line-subtle focus:border-focus-ring focus:ring-4 focus:ring-focus-glow",
                   )}
                   disabled={isVerifying || isLoadingOtp}
                   inputMode="numeric"
@@ -295,10 +295,10 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
             </Button>
           </form>
 
-          <div className="mt-4 text-center text-sm text-slate-500">
+          <div className="mt-4 text-center text-sm text-muted">
             Không nhận được mã?{" "}
             <button
-              className="inline-flex items-center gap-1 font-medium text-blue-600 transition hover:text-blue-700 disabled:cursor-not-allowed disabled:text-slate-400"
+              className="inline-flex min-h-11 items-center gap-1 font-medium text-accent transition-colors hover:text-accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:text-muted"
               disabled={countdown > 0 || isResending || isLoadingOtp}
               onClick={() => void resendOtp()}
               type="button"
@@ -317,9 +317,9 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
           </div>
 
           {debugOtp ? (
-            <div className="mt-5 border-t border-dashed border-slate-200 pt-5 text-center">
+            <div className="mt-5 border-t border-dashed border-line-subtle pt-5 text-center">
               <button
-                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-50 hover:text-amber-800 disabled:opacity-50"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-warning bg-warning-subtle px-3 py-2 text-sm font-medium text-warning transition-[filter,box-shadow] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:opacity-50"
                 disabled={isVerifying}
                 onClick={() => void handleDemoOtp()}
                 type="button"
@@ -327,7 +327,7 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
                 <Zap className="size-4" />
                 Demo: Tự động điền mã
               </button>
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-muted">
                 Chỉ hiển thị trong môi trường Development.
               </p>
             </div>

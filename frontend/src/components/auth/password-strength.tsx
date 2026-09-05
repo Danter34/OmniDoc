@@ -32,27 +32,27 @@ export function PasswordStrength({ password }: { password: string }) {
             className={cn(
               "h-1.5 rounded-full transition-colors",
               index >= strength
-                ? "bg-slate-200"
+                ? "bg-surface-tertiary"
                 : strength <= 2
-                  ? "bg-rose-500"
+                  ? "bg-danger"
                   : strength === 3
-                    ? "bg-amber-500"
-                    : "bg-emerald-500",
+                    ? "bg-warning"
+                    : "bg-success",
             )}
             key={index}
           />
         ))}
       </div>
       <div className="mt-1.5 flex items-center justify-between text-xs">
-        <span className="text-slate-400">Tối thiểu 8 ký tự</span>
+        <span className="text-muted">Tối thiểu 8 ký tự</span>
         <span
           className={cn(
             "font-medium",
             strength <= 2
-              ? "text-rose-600"
+              ? "text-danger"
               : strength === 3
-                ? "text-amber-600"
-                : "text-emerald-600",
+                ? "text-warning"
+                : "text-success",
           )}
         >
           {labels[strength]}

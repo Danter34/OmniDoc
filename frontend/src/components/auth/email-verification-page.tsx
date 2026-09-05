@@ -183,11 +183,11 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
     return (
       <VerificationShell>
         <div className="text-center">
-          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-success-subtle text-success">
             <CheckCircle2 className="size-8" />
           </div>
-          <h1 className="mt-5 text-2xl font-semibold text-slate-950">Email đã được xác minh</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">Tài khoản của bạn đã sẵn sàng. Đang chuyển về workspace...</p>
+          <h1 className="mt-5 text-2xl font-semibold text-content">Email đã được xác minh</h1>
+          <p className="mt-2 text-sm leading-6 text-muted">Tài khoản của bạn đã sẵn sàng. Đang chuyển về workspace...</p>
           <Button className="mt-6 w-full" onClick={() => router.replace(redirectTo)} size="lg">
             Tiếp tục <ArrowRight className="size-4" />
           </Button>
@@ -199,20 +199,20 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
   return (
     <VerificationShell>
       <div className="text-center">
-        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-info-subtle text-accent">
           <MailCheck className="size-7" />
         </div>
-        <p className="mt-5 text-sm font-medium text-blue-600">Xác minh tài khoản</p>
-        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-slate-950">Nhập mã xác minh</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-500">
+        <p className="mt-5 text-sm font-medium text-accent">Xác minh tài khoản</p>
+        <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-content">Nhập mã xác minh</h1>
+        <p className="mt-3 text-sm leading-6 text-muted">
           {hasOtpBeenSent ? "Mã OTP 6 số đã được gửi tới " : "Gửi mã OTP 6 số tới "}
-          <strong className="font-medium text-slate-700">{user?.email}</strong>.
+          <strong className="font-medium text-content-secondary">{user?.email}</strong>.
           {hasOtpBeenSent ? " Mã có hiệu lực trong 10 phút." : " để bắt đầu xác minh."}
         </p>
       </div>
 
       {error ? (
-        <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
+        <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-danger bg-danger-subtle px-4 py-3 text-sm text-danger" role="alert">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -226,10 +226,10 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
               autoComplete={index === 0 ? "one-time-code" : "off"}
               autoFocus={index === 0}
               className={cn(
-                "h-14 w-11 rounded-xl border bg-white text-center text-xl font-semibold text-slate-950 outline-none transition sm:h-16 sm:w-13 sm:text-2xl",
+                "h-14 w-11 rounded-xl border bg-surface text-center text-xl font-semibold text-content outline-none transition sm:h-16 sm:w-13 sm:text-2xl",
                 error
-                  ? "border-rose-300 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10"
-                  : "border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10",
+                  ? "border-danger focus:border-danger focus:ring-4 focus:ring-danger-glow"
+                  : "border-line-subtle focus:border-focus-ring focus:ring-4 focus:ring-focus-glow",
               )}
               inputMode="numeric"
               key={index}
@@ -253,10 +253,10 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
         </Button>
       </form>
 
-      <div className="mt-5 text-center text-sm text-slate-500">
+      <div className="mt-5 text-center text-sm text-muted">
         {hasOtpBeenSent ? "Không nhận được mã?" : "Bạn chưa có mã?"}{" "}
         <button
-          className="inline-flex items-center gap-1 font-medium text-blue-600 transition hover:text-blue-700 disabled:cursor-not-allowed disabled:text-slate-400"
+          className="inline-flex min-h-11 items-center gap-1 font-medium text-accent transition-colors hover:text-accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:text-muted"
           disabled={countdown > 0 || isResending}
           onClick={() => void resendOtp()}
           type="button"
@@ -277,13 +277,8 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
 
 function VerificationShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-10">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-32 top-20 size-80 rounded-full bg-blue-100/70 blur-3xl" />
-        <div className="absolute -right-28 bottom-16 size-72 rounded-full bg-amber-100/60 blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f044_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f044_1px,transparent_1px)] bg-[size:32px_32px]" />
-      </div>
-      <section className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-7 shadow-2xl shadow-slate-950/[0.08] sm:p-9">
+    <main className="ambient-bg relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <section className="glass-panel relative w-full max-w-lg rounded-3xl p-7 sm:p-9">
         <Logo className="mb-8 justify-center" />
         {children}
       </section>

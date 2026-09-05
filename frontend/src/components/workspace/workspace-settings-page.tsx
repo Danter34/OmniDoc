@@ -45,8 +45,8 @@ export function WorkspaceSettingsPage({ workspaceId }: { workspaceId: string }) 
   if (isLoading || !workspace) {
     return (
       <div className="flex min-h-[calc(100vh-9rem)] items-center justify-center">
-        <div className="flex items-center gap-3 text-sm text-slate-500">
-          <Spinner className="size-5 text-blue-600" />
+        <div className="flex items-center gap-3 text-sm text-muted">
+          <Spinner className="size-5 text-accent" />
           Đang tải workspace...
         </div>
       </div>

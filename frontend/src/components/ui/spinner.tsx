@@ -8,9 +8,9 @@ export function Spinner({ className }: { className?: string }) {
 
 export function FullPageLoader({ label }: { label: string }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50">
-      <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-sm text-slate-600 shadow-sm">
-        <Spinner className="size-5 text-blue-600" />
+    <div className="ambient-bg flex min-h-screen items-center justify-center">
+      <div className="glass-panel flex items-center gap-3 rounded-2xl px-5 py-4 text-sm text-content-secondary">
+        <Spinner className="size-5 text-accent" />
         {label}
       </div>
     </div>

@@ -21,43 +21,43 @@ interface StatusConfig {
 const statusConfig: Record<string, StatusConfig> = {
   Pending: {
     label: "Đang chờ",
-    badgeClass: "bg-slate-100 text-slate-700 ring-slate-200",
+    badgeClass: "bg-surface-tertiary text-content-secondary ring-line",
     icon: CircleDashed,
   },
   Processing: {
     label: "Đang xử lý",
-    badgeClass: "bg-blue-50 text-blue-700 ring-blue-200",
+    badgeClass: "bg-info-subtle text-info ring-info",
     icon: LoaderCircle,
     spinning: true,
   },
   Extracting: {
     label: "Trích xuất",
-    badgeClass: "bg-blue-50 text-blue-700 ring-blue-200",
+    badgeClass: "bg-info-subtle text-info ring-info",
     icon: FileSearch,
   },
   Chunking: {
     label: "Chia đoạn",
-    badgeClass: "bg-violet-50 text-violet-700 ring-violet-200",
+    badgeClass: "bg-role-admin-subtle text-role-admin ring-role-admin-line",
     icon: Scissors,
   },
   Embedding: {
     label: "Embedding",
-    badgeClass: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+    badgeClass: "bg-role-owner-subtle text-role-owner ring-role-owner-line",
     icon: Sparkles,
   },
   Completed: {
     label: "Đã lập chỉ mục",
-    badgeClass: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    badgeClass: "bg-success-subtle text-success ring-success",
     icon: CheckCircle2,
   },
   Indexed: {
     label: "Đã lập chỉ mục",
-    badgeClass: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    badgeClass: "bg-success-subtle text-success ring-success",
     icon: CheckCircle2,
   },
   Failed: {
     label: "Thất bại",
-    badgeClass: "bg-rose-50 text-rose-700 ring-rose-200",
+    badgeClass: "bg-danger-subtle text-danger ring-danger",
     icon: XCircle,
   },
 };

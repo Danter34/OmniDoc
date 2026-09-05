@@ -28,8 +28,8 @@ export default function WorkspacesPage() {
   if (isLoading || activeWorkspaceId) {
     return (
       <div className="flex min-h-[calc(100vh-9rem)] items-center justify-center">
-        <div className="flex items-center gap-3 text-sm text-slate-500">
-          <Spinner className="size-5 text-blue-600" />
+        <div className="flex items-center gap-3 text-sm text-muted">
+          <Spinner className="size-5 text-accent" />
           Đang mở workspace...
         </div>
       </div>
@@ -39,12 +39,12 @@ export default function WorkspacesPage() {
   if (error) {
     return (
       <div className="flex min-h-[calc(100vh-9rem)] items-center justify-center">
-        <div className="max-w-md rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-sm">
-          <AlertCircle className="mx-auto size-8 text-rose-500" />
-          <h1 className="mt-3 font-semibold text-slate-900">
+        <div className="glass-panel max-w-md rounded-2xl border-danger p-6 text-center">
+          <AlertCircle className="mx-auto size-8 text-danger" />
+          <h1 className="mt-3 font-semibold text-content">
             Không thể tải Workspace
           </h1>
-          <p className="mt-2 text-sm leading-6 text-slate-500">{error}</p>
+          <p className="mt-2 text-sm leading-6 text-muted">{error}</p>
           <Button
             className="mt-5"
             icon={<RefreshCw className="size-4" />}

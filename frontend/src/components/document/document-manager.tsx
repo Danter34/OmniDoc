@@ -64,18 +64,18 @@ export function DocumentManager({ workspace }: { workspace: Workspace }) {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+            <h1 className="text-2xl font-semibold tracking-tight text-content">
               {workspace.name}
             </h1>
             <span
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset",
                 realtimeConnected
-                  ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                  ? "bg-success-subtle text-success ring-success"
                   : realtimeStatus === "connecting" ||
                       realtimeStatus === "reconnecting"
-                    ? "bg-amber-50 text-amber-700 ring-amber-200"
-                    : "bg-slate-100 text-slate-600 ring-slate-200",
+                    ? "bg-warning-subtle text-warning ring-warning"
+                    : "bg-surface-tertiary text-content-secondary ring-line",
               )}
             >
               {realtimeConnected ? (
@@ -91,15 +91,24 @@ export function DocumentManager({ workspace }: { workspace: Workspace }) {
                   : "Ngoại tuyến"}
             </span>
           </div>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
             {workspace.description ||
               "Quản lý và theo dõi quá trình lập chỉ mục tài liệu PDF trong workspace."}
           </p>
         </div>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted">
           Quyền truy cập:{" "}
-          <span className="font-medium text-slate-600">
-            {workspace.role === "Member" ? "Member" : "Owner"}
+          <span
+            className={cn(
+              "rounded-full px-2 py-1 font-semibold ring-1 ring-inset",
+              workspace.role === "Owner"
+                ? "bg-role-owner-subtle text-role-owner ring-role-owner-line"
+                : workspace.role === "Admin"
+                  ? "bg-role-admin-subtle text-role-admin ring-role-admin-line"
+                  : "bg-role-member-subtle text-role-member ring-role-member-line",
+            )}
+          >
+            {workspace.role}
           </span>
         </p>
       </div>
@@ -108,19 +117,19 @@ export function DocumentManager({ workspace }: { workspace: Workspace }) {
         <StatCard
           icon={Files}
           label="Tổng tài liệu"
-          tone="blue"
+          tone="info"
           value={stats.total}
         />
         <StatCard
           icon={Clock3}
           label="Đang xử lý"
-          tone="amber"
+          tone="warning"
           value={stats.processing}
         />
         <StatCard
           icon={CheckCircle2}
           label="Đã lập chỉ mục"
-          tone="emerald"
+          tone="success"
           value={stats.indexed}
         />
       </div>
@@ -147,16 +156,16 @@ function StatCard({
   icon: typeof Files;
   label: string;
   value: number;
-  tone: "blue" | "amber" | "emerald";
+  tone: "info" | "warning" | "success";
 }) {
   const toneClasses = {
-    blue: "bg-blue-50 text-blue-600",
-    amber: "bg-amber-50 text-amber-600",
-    emerald: "bg-emerald-50 text-emerald-600",
+    info: "bg-info-subtle text-info",
+    warning: "bg-warning-subtle text-warning",
+    success: "bg-success-subtle text-success",
   };
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="glass-panel flex items-center gap-3 rounded-2xl p-4">
       <span
         className={cn(
           "flex size-10 items-center justify-center rounded-xl",
@@ -166,10 +175,10 @@ function StatCard({
         <Icon className="size-5" />
       </span>
       <div>
-        <p className="text-2xl font-semibold tabular-nums text-slate-950">
+        <p className="text-2xl font-semibold tabular-nums text-content">
           {value}
         </p>
-        <p className="text-xs text-slate-500">{label}</p>
+        <p className="text-xs text-muted">{label}</p>
       </div>
     </div>
   );

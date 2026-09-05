@@ -13,6 +13,19 @@ import { useEffect, useRef, useState } from "react";
 import { CreateWorkspaceModal } from "@/components/workspace/create-workspace-modal";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { cn } from "@/lib/utils";
+import type { WorkspaceRole } from "@/types/workspace.types";
+
+function roleClasses(role: WorkspaceRole) {
+  if (role === "Owner") {
+    return "bg-role-owner-subtle text-role-owner ring-role-owner-line";
+  }
+
+  if (role === "Admin") {
+    return "bg-role-admin-subtle text-role-admin ring-role-admin-line";
+  }
+
+  return "bg-role-member-subtle text-role-member ring-role-member-line";
+}
 
 export function WorkspaceSelector() {
   const router = useRouter();
@@ -68,8 +81,13 @@ export function WorkspaceSelector() {
                 : (activeWorkspace?.name ?? "Chọn Workspace")}
             </span>
             {activeWorkspace ? (
-              <span className="block text-[11px] text-muted">
-                {activeWorkspace.role === "Member" ? "Member" : "Owner"}
+              <span
+                className={cn(
+                  "mt-0.5 inline-flex rounded-full px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset",
+                  roleClasses(activeWorkspace.role),
+                )}
+              >
+                {activeWorkspace.role}
               </span>
             ) : null}
           </span>
@@ -122,8 +140,13 @@ export function WorkspaceSelector() {
                           {workspace.name}
                         </span>
                         <span className="mt-0.5 flex items-center gap-2 text-xs text-muted">
-                          <span>
-                            {workspace.role === "Member" ? "Member" : "Owner"}
+                          <span
+                            className={cn(
+                              "rounded-full px-1.5 py-0.5 font-semibold ring-1 ring-inset",
+                              roleClasses(workspace.role),
+                            )}
+                          >
+                            {workspace.role}
                           </span>
                           <span className="text-line-strong">•</span>
                           <span className="inline-flex items-center gap-1">
