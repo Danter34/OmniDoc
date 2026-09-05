@@ -36,12 +36,33 @@ const themeBootstrapScript = `(() => {
 })();`;
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  ),
   title: {
-    default: "OmniDoc",
-    template: "%s · OmniDoc",
+    default: "OmniDoc - Enterprise AI Document Platform",
+    template: "%s | OmniDoc",
   },
   description:
-    "Không gian tri thức thông minh cho tài liệu PDF doanh nghiệp.",
+    "Enterprise RAG & Document Intelligence Platform powered by .NET 10 and Gemini",
+  icons: {
+    icon: [
+      { url: "/images/logo-icon.png", type: "image/png" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: "/images/logo-icon.png",
+  },
+  openGraph: {
+    title: "OmniDoc - Enterprise AI Document Platform",
+    description: "Intelligence in every document",
+    images: [
+      {
+        url: "/images/logo-full.png",
+        width: 1200,
+        height: 630,
+      },
+    ],
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

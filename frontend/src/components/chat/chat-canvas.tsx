@@ -3,7 +3,6 @@
 import {
   ArrowDown,
   BookOpenCheck,
-  Bot,
   FileText,
   Menu,
   MessageSquareText,
@@ -11,6 +10,7 @@ import {
   Radio,
   Sparkles,
 } from "lucide-react";
+import Image from "next/image";
 import {
   useCallback,
   useEffect,
@@ -743,16 +743,23 @@ function EmptyChatState({
   return (
     <div className="flex min-h-full items-center justify-center px-5 py-10">
       <div className="w-full max-w-2xl text-center">
-        <span className="mx-auto flex size-16 items-center justify-center rounded-3xl text-brand-icon shadow-[0_0_32px_var(--brand-icon-shadow)] [background-image:var(--gradient-brand)]">
-          <Bot className="size-8" />
+        <span className="glow-border mx-auto flex size-20 items-center justify-center rounded-full p-1 shadow-[0_0_32px_var(--brand-icon-shadow)]">
+          <Image
+            alt="Biểu tượng OmniDoc"
+            className="size-[72px] rounded-full"
+            height={72}
+            src="/images/logo-icon.png"
+            width={72}
+          />
         </span>
-        <p className="mt-6 text-sm font-medium text-accent">
+        <h2 className="mt-6 text-2xl font-semibold tracking-tight text-content">
           OmniDoc RAG Assistant
-        </p>
-        <h2 className="mt-1.5 text-2xl font-semibold tracking-tight text-content">
-          Khám phá tri thức trong {workspaceName}
         </h2>
+        <p className="mt-1.5 text-sm font-medium text-accent">
+          Intelligence in every document
+        </p>
         <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-muted">
+          Khám phá tri thức trong {workspaceName}.{" "}
           Đặt câu hỏi để nhận câu trả lời có căn cứ, kèm trích dẫn đến đúng tài
           liệu và số trang.
         </p>

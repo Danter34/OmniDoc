@@ -20,7 +20,12 @@ export function DashboardHeader() {
     <>
       <header className="glass-panel sticky top-0 z-30 border-x-0 border-t-0">
         <div className="mx-auto flex h-16 max-w-[var(--layout-max)] items-center gap-3 px-4 sm:px-6 lg:px-8">
-          <Logo className="mr-1 shrink-0" />
+          <Logo
+            className="mr-1 shrink-0"
+            href="/workspaces"
+            imageSize={32}
+            priority
+          />
           <div
             aria-hidden="true"
             className="hidden h-6 w-px bg-line-subtle sm:block"

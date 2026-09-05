@@ -1,9 +1,9 @@
 import {
   AlertCircle,
-  Bot,
   CircleStop,
   UserRound,
 } from "lucide-react";
+import Image from "next/image";
 import { memo } from "react";
 
 import {
@@ -35,9 +35,13 @@ function ChatMessageItemComponent({
       )}
     >
       {!isUser ? (
-        <span className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl text-brand-icon shadow-[0_0_20px_var(--brand-icon-shadow)] [background-image:var(--gradient-brand)]">
-          <Bot className="size-5" />
-        </span>
+        <Image
+          alt="OmniDoc AI"
+          className="mt-1 size-7 shrink-0 rounded-full border border-line-subtle shadow-[0_0_20px_var(--brand-icon-shadow)]"
+          height={28}
+          src="/images/logo-icon.png"
+          width={28}
+        />
       ) : null}
 
       <div

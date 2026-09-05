@@ -67,7 +67,7 @@ export function ResetPasswordForm({
   return (
     <main className="ambient-bg relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
       <section className="glass-panel relative w-full max-w-md rounded-2xl p-7 sm:p-9">
-        <Logo />
+        <Logo priority />
 
         {isComplete ? (
           <div className="mt-8 text-center">
