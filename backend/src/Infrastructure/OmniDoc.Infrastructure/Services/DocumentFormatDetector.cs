@@ -1,6 +1,7 @@
 using System.Text;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Domain.Enums;
+using OmniDoc.Domain.Exceptions;
 using UglyToad.PdfPig;
 
 namespace OmniDoc.Infrastructure.Services;
@@ -15,6 +16,20 @@ public sealed class DocumentFormatDetector : IDocumentFormatDetector
         {
             ct.ThrowIfCancellationRequested();
             var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            if (extension is ".docm" or ".pptm")
+                throw new InvalidDataException("Macro-enabled Office files are not supported.");
+            if (extension is ".docx" or ".pptx")
+            {
+                var signature = new byte[8];
+                await source.ReadExactlyAsync(signature, ct);
+                source.Position = position;
+                if (signature.AsSpan().SequenceEqual(new byte[] { 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1 }))
+                    throw new PasswordRequiredException();
+                if (!signature.AsSpan(0, 4).SequenceEqual("PK\x03\x04"u8))
+                    throw new InvalidDataException("Office documents must be valid OOXML ZIP packages.");
+                try { return await OoxmlPreflight.InspectAsync(source, extension, ct); }
+                catch (NotSupportedException ex) { throw new InvalidDataException("Unsupported Office ZIP compression or encryption.", ex); }
+            }
             if (extension == ".pdf")
             {
                 var header = new byte[5];
@@ -31,7 +46,7 @@ public sealed class DocumentFormatDetector : IDocumentFormatDetector
                 return new(DocumentFormat.Pdf, "application/pdf");
             }
             if (extension is not (".txt" or ".md" or ".markdown"))
-                throw new InvalidDataException("Only PDF, TXT and Markdown files are supported.");
+                throw new InvalidDataException("Only PDF, TXT, Markdown, DOCX and PPTX files are supported.");
             using var reader = new StreamReader(source, new UTF8Encoding(false, true), false, 4096, leaveOpen: true);
             var buffer = new char[4096];
             var hasText = false;

@@ -6,6 +6,7 @@ using OmniDoc.Application.Common.Models;
 using OmniDoc.Application.Features.Documents.DTOs;
 using OmniDoc.Domain.Entities;
 using OmniDoc.Domain.Enums;
+using OmniDoc.Domain.Exceptions;
 
 namespace OmniDoc.Application.Features.Documents.Commands.UploadDocument;
 
@@ -27,8 +28,8 @@ public class UploadDocumentCommandValidator : AbstractValidator<UploadDocumentCo
 
         RuleFor(x => x.FileName)
             .NotEmpty()
-            .Must(name => new[] { ".pdf", ".txt", ".md", ".markdown" }.Contains(Path.GetExtension(name).ToLowerInvariant()))
-            .WithMessage("Only PDF, TXT and Markdown files are supported.");
+            .Must(name => new[] { ".pdf", ".txt", ".md", ".markdown", ".docx", ".pptx" }.Contains(Path.GetExtension(name).ToLowerInvariant()))
+            .WithMessage("Only PDF, TXT, Markdown, DOCX and PPTX files are supported.");
 
         RuleFor(x => x.FileSizeBytes)
             .GreaterThan(0)
@@ -73,6 +74,7 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
 
         DetectedDocumentFormat detected;
         try { detected = await _detector.DetectAsync(request.FileStream, request.FileName, cancellationToken); }
+        catch (DocumentProcessingException ex) { return Result<DocumentDto>.Failure(ex.Message, 400, ex.Code.ToString()); }
         catch (InvalidDataException ex) { return Result<DocumentDto>.Failure(ex.Message, 400); }
 
         var document = new Document

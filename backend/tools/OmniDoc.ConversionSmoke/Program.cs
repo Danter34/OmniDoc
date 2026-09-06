@@ -20,3 +20,26 @@ foreach (var format in new[] { DocumentFormat.Txt, DocumentFormat.Markdown })
         throw new InvalidOperationException($"{format} pagination/Unicode extraction failed.");
     Console.WriteLine($"{format}: {pages.Count} pages; {pdf.Length} PDF bytes; Vietnamese text extracted successfully.");
 }
+
+var office = new GotenbergLibreOfficeNormalizer(client, new DocumentFormatDetector());
+foreach (var (format, bytes, ratio) in new[]
+{
+    (DocumentFormat.Docx, OfficeSmokeFixtures.Word(), 0d),
+    (DocumentFormat.Pptx, OfficeSmokeFixtures.Slides(true), 16d / 9),
+    (DocumentFormat.Pptx, OfficeSmokeFixtures.Slides(false), 4d / 3)
+})
+{
+    using var source = new MemoryStream(bytes);
+    var result = await office.NormalizeAsync(source, format, default);
+    await using var pdf = result.Content;
+    using var parsed = UglyToad.PdfPig.PdfDocument.Open(pdf);
+    var pages = parsed.GetPages().ToList();
+    if (pages.Count != 2 || pages.Any(p => !p.Text.Contains("OmniDoc")) ||
+        pages.Any(p => p.Text.Contains("HIDDEN_SECRET") || p.Text.Contains("SPEAKER_SECRET")))
+        throw new InvalidOperationException($"{format}: page/hidden-slide/notes check failed.");
+    if (ratio > 0 && pages.Any(p => Math.Abs(p.Width / p.Height - ratio) > 0.01))
+        throw new InvalidOperationException("PPTX slide aspect ratio changed.");
+    if (format == DocumentFormat.Docx && pages.Any(p => !p.Text.Contains("bằng chứng")))
+        throw new InvalidOperationException("DOCX Unicode extraction failed.");
+    Console.WriteLine($"{format}: {pages.Count} pages; canvas {pages[0].Width:F1}x{pages[0].Height:F1}; source preserved; notes/hidden slides absent.");
+}

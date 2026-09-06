@@ -29,6 +29,12 @@ public static class DependencyInjection
             client.MaxResponseContentBufferSize = 60L * 1024 * 1024;
         });
         services.AddScoped<IPdfParserService, PdfPigParserService>();
+        services.AddHttpClient<GotenbergLibreOfficeNormalizer>(client =>
+        {
+            client.BaseAddress = new Uri((configuration["Gotenberg:BaseUrl"] ?? "http://gotenberg:3000").TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(120);
+            client.MaxResponseContentBufferSize = 60L * 1024 * 1024;
+        });
         services.AddSingleton<ITextChunkerService, RecursiveTextChunkerService>();
         services.AddScoped<IRetrievalService, VectorRetrievalService>();
         services.AddScoped<IDocumentProcessingJob, DocumentProcessingJob>();

@@ -160,6 +160,34 @@ public sealed class GetDocumentContentQueryTests
         Assert.Null(result.Data);
     }
 
+    [Theory]
+    [InlineData(DocumentFormat.Docx, "original.docx", OfficeFixture.DocxMime)]
+    [InlineData(DocumentFormat.Pptx, "original.pptx", OfficeFixture.PptxMime)]
+    public async Task OfficeSourceReturnsOriginalMimeAndBytes(DocumentFormat format, string name, string mime)
+    {
+        var owner = Guid.NewGuid();
+        await using var context = await SeedDocumentAsync(owner);
+        var doc = Assert.Single(context.Documents);
+        doc.DetectedFormat = format;
+        var bytes = OfficeFixture.Create(format);
+        var source = new DocumentArtifact { DocumentId = doc.Id, Kind = ArtifactKind.Source, FileName = name,
+            ContentType = mime, FileSizeBytes = bytes.Length, StoragePath = name };
+        doc.AddArtifact(source);
+        context.DocumentArtifacts.Add(source);
+        await context.SaveChangesAsync();
+        var storage = new Mock<IFileStorageService>(MockBehavior.Strict);
+        storage.Setup(s => s.GetFileAsync(name, It.IsAny<CancellationToken>())).ReturnsAsync(new MemoryStream(bytes));
+        var handler = CreateHandler(context, storage.Object, owner);
+        var result = await handler.Handle(new(doc.WorkspaceId, doc.Id, Source: true), default);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(mime, result.Data!.ContentType);
+        Assert.Equal(name, result.Data.FileName);
+        await using var output = result.Data.Stream;
+        Assert.Equal(bytes, ((MemoryStream)output).ToArray());
+        var content = await handler.Handle(new(doc.WorkspaceId, doc.Id), default);
+        Assert.Equal(409, content.StatusCode);
+    }
+
     private static GetDocumentContentQueryHandler CreateHandler(
         TestApplicationDbContext context,
         IFileStorageService storage,

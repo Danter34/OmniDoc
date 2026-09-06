@@ -4,6 +4,7 @@ using Moq;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Domain.Entities;
 using OmniDoc.Domain.Enums;
+using OmniDoc.Domain.Exceptions;
 using OmniDoc.Infrastructure.Jobs;
 using OmniDoc.Infrastructure.Services;
 
@@ -30,6 +31,8 @@ public sealed class MultiFormatPipelineTests
     [Theory]
     [InlineData(DocumentFormat.Txt)]
     [InlineData(DocumentFormat.Markdown)]
+    [InlineData(DocumentFormat.Docx)]
+    [InlineData(DocumentFormat.Pptx)]
     public async Task ProcessesCanonicalPdfAndPreservesSourceOnRedelivery(DocumentFormat format)
     {
         await using var context = new TestApplicationDbContext();
@@ -39,8 +42,9 @@ public sealed class MultiFormatPipelineTests
         var original = files.Files[doc.StoragePath].ToArray();
         var pdf = PdfFixture.Create();
         var normalizer = new Mock<IDocumentNormalizer>();
+        var producer = format is DocumentFormat.Docx or DocumentFormat.Pptx ? "GotenbergLibreOffice" : "GotenbergChromium";
         normalizer.Setup(n => n.NormalizeAsync(It.IsAny<Stream>(), format, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => new CanonicalPdfResult(new MemoryStream(pdf), "GotenbergChromium"));
+            .ReturnsAsync(() => new CanonicalPdfResult(new MemoryStream(pdf), producer));
         var notifier = new RecordingProgressNotifier();
         var job = Job(context, files, normalizer.Object, new FakeEmbeddingService(), notifier);
         await job.ProcessDocumentAsync(doc.Id);
@@ -53,6 +57,7 @@ public sealed class MultiFormatPipelineTests
         Assert.Contains("Canonical evidence", context.DocumentChunks.Single().Content);
         Assert.Equal(original, files.Files[doc.StoragePath]);
         var canonical = doc.Artifacts.Single(a => a.Id == doc.CanonicalArtifactId);
+        Assert.Equal(producer, canonical.Producer);
         Assert.Equal(pdf, files.Files[canonical.StoragePath]);
         Assert.Equal(Convert.ToHexStringLower(SHA256.HashData(pdf)), canonical.Sha256);
         Assert.NotEqual(doc.StoragePath, canonical.StoragePath);
@@ -102,11 +107,34 @@ public sealed class MultiFormatPipelineTests
         Assert.Empty(context.DocumentChunks);
     }
 
+    [Theory]
+    [InlineData(DocumentFailureCode.ConversionTimeout)]
+    [InlineData(DocumentFailureCode.ConverterUnavailable)]
+    [InlineData(DocumentFailureCode.PasswordRequired)]
+    public async Task PersistsTypedFailureCodeAndLeavesSourceIntact(DocumentFailureCode code)
+    {
+        await using var context = new TestApplicationDbContext();
+        var files = new MemoryArtifactFiles();
+        var doc = await Seed(context, new DocumentArtifactStorage(files), DocumentFormat.Docx);
+        var original = files.Files[doc.StoragePath].ToArray();
+        var normalizer = new Mock<IDocumentNormalizer>();
+        normalizer.Setup(n => n.NormalizeAsync(It.IsAny<Stream>(), DocumentFormat.Docx, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DocumentProcessingException(code, "Office conversion failed"));
+        await Job(context, files, normalizer.Object, new FakeEmbeddingService()).ProcessDocumentAsync(doc.Id);
+        Assert.Equal(code.ToString(), context.Documents.Single().FailureCode);
+        Assert.Equal(ProcessingStage.Failed, doc.ProcessingStage);
+        Assert.Null(doc.CanonicalArtifactId);
+        Assert.Equal(original, Assert.Single(files.Files).Value);
+        Assert.Empty(context.DocumentChunks);
+    }
+
     private static async Task<Document> Seed(TestApplicationDbContext context, IDocumentArtifactStorage storage, DocumentFormat format)
     {
-        var doc = new Document { WorkspaceId = Guid.NewGuid(), DetectedFormat = format, FileName = format == DocumentFormat.Txt ? "note.txt" : "note.md" };
-        using var source = new MemoryStream("Original source text"u8.ToArray());
-        var artifact = await storage.SaveAsync(source, doc.WorkspaceId, doc.Id, ArtifactKind.Source, doc.FileName, "text/plain", "Upload", default);
+        var fileName = format switch { DocumentFormat.Docx => "report.docx", DocumentFormat.Pptx => "slides.pptx", DocumentFormat.Txt => "note.txt", _ => "note.md" };
+        var doc = new Document { WorkspaceId = Guid.NewGuid(), DetectedFormat = format, FileName = fileName };
+        using var source = new MemoryStream(format is DocumentFormat.Docx or DocumentFormat.Pptx ? OfficeFixture.Create(format) : "Original source text"u8.ToArray());
+        var mime = format switch { DocumentFormat.Docx => OfficeFixture.DocxMime, DocumentFormat.Pptx => OfficeFixture.PptxMime, _ => "text/plain" };
+        var artifact = await storage.SaveAsync(source, doc.WorkspaceId, doc.Id, ArtifactKind.Source, doc.FileName, mime, "Upload", default);
         doc.AddArtifact(artifact);
         doc.StoragePath = artifact.StoragePath;
         context.Documents.Add(doc);

@@ -39,6 +39,7 @@ services:
     environment:
       CHROMIUM_DISABLE_JAVASCRIPT: "true"
       CHROMIUM_DENY_LIST: '^https?://.*'
+      LIBREOFFICE_DENY_LIST: '^https?://.*'
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:3000/health"]
       interval: 10s

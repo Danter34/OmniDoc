@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Domain.Entities;
 using OmniDoc.Domain.Enums;
+using OmniDoc.Domain.Exceptions;
 
 namespace OmniDoc.Infrastructure.Jobs;
 
@@ -166,7 +167,7 @@ public class DocumentProcessingJob : IDocumentProcessingJob
             }
 
             document.Status = DocumentStatus.Failed;
-            document.FailureCode = document.ProcessingStage switch
+            document.FailureCode = ex is DocumentProcessingException failure ? failure.Code.ToString() : document.ProcessingStage switch
             {
                 ProcessingStage.Normalizing => "NORMALIZATION_FAILED",
                 ProcessingStage.Validating => "VALIDATION_FAILED",
