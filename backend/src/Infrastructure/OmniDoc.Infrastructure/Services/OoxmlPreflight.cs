@@ -17,6 +17,7 @@ internal static class OoxmlPreflight
     private const int MaxCompressionRatio = 200;
     internal const string DocxMime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     internal const string PptxMime = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    internal const string XlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     internal static async Task<DetectedDocumentFormat> InspectAsync(Stream source, string extension, CancellationToken ct)
     {
@@ -42,9 +43,12 @@ internal static class OoxmlPreflight
 
         var word = archive.GetEntry("word/document.xml");
         var slides = archive.GetEntry("ppt/presentation.xml");
-        if ((word is null) == (slides is null) || (extension == ".docx") != (word is not null))
+        var workbook = archive.GetEntry("xl/workbook.xml");
+        var candidates = new[] { word, slides, workbook }.Where(e => e is not null).ToList();
+        var expectedPath = extension switch { ".docx" => "word/document.xml", ".pptx" => "ppt/presentation.xml", ".xlsx" => "xl/workbook.xml", _ => "" };
+        if (candidates.Count != 1 || candidates[0]!.FullName != expectedPath)
             throw new InvalidDataException("Office package content does not match its extension.");
-        var main = word ?? slides!;
+        var main = candidates[0]!;
         var types = archive.GetEntry("[Content_Types].xml") ?? throw new InvalidDataException("Missing OOXML content types.");
         var relationships = archive.GetEntry("_rels/.rels") ?? throw new InvalidDataException("Missing OOXML package relationships.");
         var xml = new Dictionary<string, XDocument>();
@@ -82,14 +86,18 @@ internal static class OoxmlPreflight
         if (contentTypes.Root?.Name != contentNs + "Types" || contentTypes.Descendants().Attributes("ContentType").Any(a =>
             a.Value.Contains("macroEnabled", StringComparison.OrdinalIgnoreCase) || a.Value.Contains("vbaProject", StringComparison.OrdinalIgnoreCase)))
             throw new InvalidDataException("Invalid or macro-enabled Office content types.");
-        var expectedType = word is not null
-            ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"
-            : "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml";
+        var expectedType = extension switch
+        {
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+            ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml",
+            _ => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"
+        };
         if (!contentTypes.Descendants(contentNs + "Override").Any(e => (string?)e.Attribute("PartName") == "/" + main.FullName && (string?)e.Attribute("ContentType") == expectedType))
             throw new InvalidDataException("Missing or incorrect Office main content type.");
         var root = xml[main.FullName].Root;
-        var namespaceName = word is not null ? "wordprocessingml" : "presentationml";
-        if (root?.Name.LocalName != (word is not null ? "document" : "presentation") ||
+        var namespaceName = extension switch { ".docx" => "wordprocessingml", ".pptx" => "presentationml", _ => "spreadsheetml" };
+        var rootName = extension switch { ".docx" => "document", ".pptx" => "presentation", _ => "workbook" };
+        if (root?.Name.LocalName != rootName ||
             (root.Name.NamespaceName != $"http://schemas.openxmlformats.org/{namespaceName}/2006/main" &&
              root.Name.NamespaceName != $"http://purl.oclc.org/ooxml/{namespaceName}/main"))
             throw new InvalidDataException("Invalid Office document root.");
@@ -101,6 +109,11 @@ internal static class OoxmlPreflight
         if (officeRelations.Count != 1 || ((string?)officeRelations[0].Attribute("Target"))?.TrimStart('/') != main.FullName ||
             string.Equals((string?)officeRelations[0].Attribute("TargetMode"), "External", StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("Invalid Office package document relationship.");
-        return word is not null ? new(DocumentFormat.Docx, DocxMime) : new(DocumentFormat.Pptx, PptxMime);
+        return extension switch
+        {
+            ".docx" => new(DocumentFormat.Docx, DocxMime),
+            ".pptx" => new(DocumentFormat.Pptx, PptxMime),
+            _ => new(DocumentFormat.Xlsx, XlsxMime)
+        };
     }
 }

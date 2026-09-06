@@ -13,6 +13,7 @@ public sealed class LibreOfficeNormalizerTests
     [Theory]
     [InlineData(DocumentFormat.Docx, "source.docx", OfficeFixture.DocxMime)]
     [InlineData(DocumentFormat.Pptx, "source.pptx", OfficeFixture.PptxMime)]
+    [InlineData(DocumentFormat.Xlsx, "source.xlsx", OfficeFixture.XlsxMime)]
     public async Task RouterSendsOfficeBytesWithLayoutOptions(DocumentFormat format, string name, string mime)
     {
         var bytes = OfficeFixture.Create(format);
@@ -31,11 +32,13 @@ public sealed class LibreOfficeNormalizerTests
                 foreach (var field in new[] { "updateIndexes", "exportNotes", "exportNotesPages", "exportHiddenSlides" })
                     Assert.Equal("false", await form.Single(f => f.Headers.ContentDisposition?.Name?.Trim('"') == field).ReadAsStringAsync(ct));
                 Assert.DoesNotContain(form, f => f.Headers.ContentDisposition?.Name?.Trim('"') is "landscape" or "paperWidth" or "paperHeight");
+                if (format == DocumentFormat.Xlsx)
+                    Assert.Equal("false", await form.Single(f => f.Headers.ContentDisposition?.Name?.Trim('"') == "singlePageSheets").ReadAsStringAsync(ct));
                 return Response(HttpStatusCode.OK, pdfBytes);
             });
         using var client = new HttpClient(handler.Object) { BaseAddress = new Uri("http://converter/") };
         var detector = new DocumentFormatDetector();
-        var router = new DocumentNormalizer(new(detector), new(client, detector), new(client, detector));
+        var router = new DocumentNormalizer(new(detector), new(client, detector), new(client, detector), new(new(client, detector)));
         using var source = new MemoryStream(bytes);
         var result = await router.NormalizeAsync(source, format, default);
         await using var pdf = result.Content;
@@ -65,16 +68,18 @@ public sealed class LibreOfficeNormalizerTests
     }
 
     [Theory]
-    [InlineData(true, DocumentFailureCode.ConversionTimeout)]
-    [InlineData(false, DocumentFailureCode.ConverterUnavailable)]
-    public async Task MapsTimeoutAndNetworkFailure(bool timeout, DocumentFailureCode code)
+    [InlineData(true, DocumentFailureCode.ConversionTimeout, DocumentFormat.Pptx)]
+    [InlineData(false, DocumentFailureCode.ConverterUnavailable, DocumentFormat.Pptx)]
+    [InlineData(true, DocumentFailureCode.ConversionTimeout, DocumentFormat.Xlsx)]
+    [InlineData(false, DocumentFailureCode.ConverterUnavailable, DocumentFormat.Xlsx)]
+    public async Task MapsTimeoutAndNetworkFailure(bool timeout, DocumentFailureCode code, DocumentFormat format)
     {
         var handler = new Mock<HttpMessageHandler>();
         handler.Protected().Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
             .ThrowsAsync(timeout ? new TaskCanceledException("timeout") : new HttpRequestException("connection refused"));
         using var client = new HttpClient(handler.Object) { BaseAddress = new Uri("http://converter/") };
-        using var source = new MemoryStream(OfficeFixture.Create(DocumentFormat.Pptx));
-        var ex = await Assert.ThrowsAsync<DocumentProcessingException>(() => new GotenbergLibreOfficeNormalizer(client, new DocumentFormatDetector()).NormalizeAsync(source, DocumentFormat.Pptx, default));
+        using var source = new MemoryStream(OfficeFixture.Create(format));
+        var ex = await Assert.ThrowsAsync<DocumentProcessingException>(() => new GotenbergLibreOfficeNormalizer(client, new DocumentFormatDetector()).NormalizeAsync(source, format, default));
         Assert.Equal(code, ex.Code);
     }
 

@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<IDocumentArtifactStorage, DocumentArtifactStorage>();
         services.AddSingleton<IDocumentFormatDetector, DocumentFormatDetector>();
         services.AddScoped<PassThroughPdfNormalizer>();
+        services.AddScoped<CsvCanonicalPdfNormalizer>();
         services.AddScoped<IDocumentNormalizer, DocumentNormalizer>();
         services.AddHttpClient<GotenbergChromiumNormalizer>(client =>
         {

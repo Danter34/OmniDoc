@@ -10,4 +10,4 @@ public class DocumentProcessingException(DocumentFailureCode code, string messag
 
 public sealed class PasswordRequiredException()
     : DocumentProcessingException(DocumentFailureCode.PasswordRequired,
-        "This Office file is encrypted or OLE-packaged. Upload an unencrypted DOCX or PPTX file.");
+        "This Office file is encrypted or OLE-packaged. Upload an unencrypted DOCX, PPTX or XLSX file.");

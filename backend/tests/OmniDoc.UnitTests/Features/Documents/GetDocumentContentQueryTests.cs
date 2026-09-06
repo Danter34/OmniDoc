@@ -163,6 +163,7 @@ public sealed class GetDocumentContentQueryTests
     [Theory]
     [InlineData(DocumentFormat.Docx, "original.docx", OfficeFixture.DocxMime)]
     [InlineData(DocumentFormat.Pptx, "original.pptx", OfficeFixture.PptxMime)]
+    [InlineData(DocumentFormat.Xlsx, "original.xlsx", OfficeFixture.XlsxMime)]
     public async Task OfficeSourceReturnsOriginalMimeAndBytes(DocumentFormat format, string name, string mime)
     {
         var owner = Guid.NewGuid();
@@ -186,6 +187,32 @@ public sealed class GetDocumentContentQueryTests
         Assert.Equal(bytes, ((MemoryStream)output).ToArray());
         var content = await handler.Handle(new(doc.WorkspaceId, doc.Id), default);
         Assert.Equal(409, content.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(false, "text/csv; charset=utf-8")]
+    [InlineData(true, "text/csv; charset=iso-8859-1")]
+    public async Task CsvSourceReturnsDetectedCharsetAndExactUploadedBytes(bool latin1, string mime)
+    {
+        var owner = Guid.NewGuid();
+        await using var context = await SeedDocumentAsync(owner);
+        var doc = Assert.Single(context.Documents);
+        var bytes = (latin1 ? System.Text.Encoding.Latin1 : System.Text.Encoding.UTF8).GetBytes("Name;Price\nCafé;42");
+        using var input = new MemoryStream(bytes);
+        var detected = await new OmniDoc.Infrastructure.Services.DocumentFormatDetector().DetectAsync(input, "table.csv", default);
+        var files = new MemoryArtifactFiles();
+        var artifact = await new OmniDoc.Infrastructure.Services.DocumentArtifactStorage(files).SaveAsync(input, doc.WorkspaceId, doc.Id,
+            ArtifactKind.Source, "table.csv", detected.ContentType, "Upload", default);
+        doc.DetectedFormat = detected.Format;
+        doc.AddArtifact(artifact);
+        context.DocumentArtifacts.Add(artifact);
+        await context.SaveChangesAsync();
+        var result = await CreateHandler(context, files, owner).Handle(new(doc.WorkspaceId, doc.Id, Source: true), default);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(mime, result.Data!.ContentType);
+        await using var output = result.Data.Stream;
+        Assert.Equal(bytes, ((MemoryStream)output).ToArray());
+        Assert.Equal(Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes)), artifact.Sha256);
     }
 
     private static GetDocumentContentQueryHandler CreateHandler(

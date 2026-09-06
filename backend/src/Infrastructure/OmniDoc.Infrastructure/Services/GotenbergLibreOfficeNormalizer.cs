@@ -10,8 +10,8 @@ public sealed class GotenbergLibreOfficeNormalizer(HttpClient client, IDocumentF
 {
     public async Task<CanonicalPdfResult> NormalizeAsync(Stream sourceStream, DocumentFormat format, CancellationToken ct)
     {
-        if (format is not (DocumentFormat.Docx or DocumentFormat.Pptx)) throw new NotSupportedException("Expected DOCX or PPTX.");
-        var fileName = format == DocumentFormat.Docx ? "source.docx" : "source.pptx";
+        if (format is not (DocumentFormat.Docx or DocumentFormat.Pptx or DocumentFormat.Xlsx)) throw new NotSupportedException("Expected DOCX, PPTX or XLSX.");
+        var fileName = format switch { DocumentFormat.Docx => "source.docx", DocumentFormat.Pptx => "source.pptx", _ => "source.xlsx" };
         var detected = await detector.DetectAsync(sourceStream, fileName, ct);
         // Own the multipart copy; disposing the request must not dispose the caller's stream.
         using var upload = new MemoryStream();
@@ -25,6 +25,8 @@ public sealed class GotenbergLibreOfficeNormalizer(HttpClient client, IDocumentF
         form.Add(new StringContent("false"), "exportNotes");
         form.Add(new StringContent("false"), "exportNotesPages");
         form.Add(new StringContent("false"), "exportHiddenSlides");
+        if (format == DocumentFormat.Xlsx)
+            form.Add(new StringContent("false"), "singlePageSheets");
         // Do not set paper dimensions/orientation: Impress preserves the slide canvas.
         try
         {

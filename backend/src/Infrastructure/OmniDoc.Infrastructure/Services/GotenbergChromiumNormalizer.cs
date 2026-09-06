@@ -30,6 +30,11 @@ public sealed class GotenbergChromiumNormalizer(HttpClient client, IDocumentForm
             tr, img { break-inside: avoid; } code { font-family: monospace; }
             </style></head><body>
             """ + body + "</body></html>";
+        return await ConvertHtmlAsync(html, ct);
+    }
+
+    public async Task<CanonicalPdfResult> ConvertHtmlAsync(string html, CancellationToken ct)
+    {
         using var form = new MultipartFormDataContent();
         form.Add(new StringContent(html, Encoding.UTF8, "text/html"), "files", "index.html");
         form.Add(new StringContent("true"), "preferCssPageSize");

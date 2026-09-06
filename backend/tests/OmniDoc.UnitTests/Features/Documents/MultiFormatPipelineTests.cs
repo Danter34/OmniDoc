@@ -33,6 +33,8 @@ public sealed class MultiFormatPipelineTests
     [InlineData(DocumentFormat.Markdown)]
     [InlineData(DocumentFormat.Docx)]
     [InlineData(DocumentFormat.Pptx)]
+    [InlineData(DocumentFormat.Xlsx)]
+    [InlineData(DocumentFormat.Csv)]
     public async Task ProcessesCanonicalPdfAndPreservesSourceOnRedelivery(DocumentFormat format)
     {
         await using var context = new TestApplicationDbContext();
@@ -42,7 +44,7 @@ public sealed class MultiFormatPipelineTests
         var original = files.Files[doc.StoragePath].ToArray();
         var pdf = PdfFixture.Create();
         var normalizer = new Mock<IDocumentNormalizer>();
-        var producer = format is DocumentFormat.Docx or DocumentFormat.Pptx ? "GotenbergLibreOffice" : "GotenbergChromium";
+        var producer = format is DocumentFormat.Docx or DocumentFormat.Pptx or DocumentFormat.Xlsx ? "GotenbergLibreOffice" : "GotenbergChromium";
         normalizer.Setup(n => n.NormalizeAsync(It.IsAny<Stream>(), format, It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => new CanonicalPdfResult(new MemoryStream(pdf), producer));
         var notifier = new RecordingProgressNotifier();
@@ -130,10 +132,10 @@ public sealed class MultiFormatPipelineTests
 
     private static async Task<Document> Seed(TestApplicationDbContext context, IDocumentArtifactStorage storage, DocumentFormat format)
     {
-        var fileName = format switch { DocumentFormat.Docx => "report.docx", DocumentFormat.Pptx => "slides.pptx", DocumentFormat.Txt => "note.txt", _ => "note.md" };
+        var fileName = format switch { DocumentFormat.Docx => "report.docx", DocumentFormat.Pptx => "slides.pptx", DocumentFormat.Xlsx => "table.xlsx", DocumentFormat.Csv => "table.csv", DocumentFormat.Txt => "note.txt", _ => "note.md" };
         var doc = new Document { WorkspaceId = Guid.NewGuid(), DetectedFormat = format, FileName = fileName };
-        using var source = new MemoryStream(format is DocumentFormat.Docx or DocumentFormat.Pptx ? OfficeFixture.Create(format) : "Original source text"u8.ToArray());
-        var mime = format switch { DocumentFormat.Docx => OfficeFixture.DocxMime, DocumentFormat.Pptx => OfficeFixture.PptxMime, _ => "text/plain" };
+        using var source = new MemoryStream(format is DocumentFormat.Docx or DocumentFormat.Pptx or DocumentFormat.Xlsx ? OfficeFixture.Create(format) : format == DocumentFormat.Csv ? "Name,Value\nEvidence,42"u8.ToArray() : "Original source text"u8.ToArray());
+        var mime = format switch { DocumentFormat.Docx => OfficeFixture.DocxMime, DocumentFormat.Pptx => OfficeFixture.PptxMime, DocumentFormat.Xlsx => OfficeFixture.XlsxMime, DocumentFormat.Csv => "text/csv; charset=utf-8", _ => "text/plain" };
         var artifact = await storage.SaveAsync(source, doc.WorkspaceId, doc.Id, ArtifactKind.Source, doc.FileName, mime, "Upload", default);
         doc.AddArtifact(artifact);
         doc.StoragePath = artifact.StoragePath;

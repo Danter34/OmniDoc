@@ -27,6 +27,8 @@ public sealed class MultiFormatUploadTests
     [InlineData("note.pdf", "Pdf", "application/pdf", 2)]
     [InlineData("note.docx", "Docx", OfficeFixture.DocxMime, 1)]
     [InlineData("note.pptx", "Pptx", OfficeFixture.PptxMime, 1)]
+    [InlineData("note.xlsx", "Xlsx", OfficeFixture.XlsxMime, 1)]
+    [InlineData("note.csv", "Csv", "text/csv; charset=utf-8", 1)]
     public async Task Upload_UsesDetectedMimeAndCreatesArtifactsBeforeEnqueue(string name, string format, string mime, int artifactCount)
     {
         await using var context = new TestApplicationDbContext();
@@ -44,6 +46,8 @@ public sealed class MultiFormatUploadTests
             ".pdf" => PdfFixture.Create(),
             ".docx" => OfficeFixture.Create(DocumentFormat.Docx),
             ".pptx" => OfficeFixture.Create(DocumentFormat.Pptx),
+            ".xlsx" => OfficeFixture.Create(DocumentFormat.Xlsx),
+            ".csv" => "Name,Value\nEvidence,42"u8.ToArray(),
             _ => "# Original evidence"u8.ToArray()
         };
         using var stream = new MemoryStream(bytes);
@@ -83,8 +87,9 @@ public sealed class MultiFormatUploadTests
     [InlineData("note.pptx", true)]
     [InlineData("note.docm", false)]
     [InlineData("note.pptm", false)]
-    [InlineData("note.csv", false)]
-    [InlineData("note.xlsx", false)]
+    [InlineData("note.csv", true)]
+    [InlineData("note.xlsx", true)]
+    [InlineData("note.xlsm", false)]
     [InlineData("note.pdf.exe", false)]
     public void Validator_EnforcesSprintScope(string name, bool accepted)
     {

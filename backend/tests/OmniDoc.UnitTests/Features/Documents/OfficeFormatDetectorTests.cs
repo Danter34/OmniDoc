@@ -11,6 +11,7 @@ public sealed class OfficeFormatDetectorTests
     [Theory]
     [InlineData(DocumentFormat.Docx, "report.DOCX", OfficeFixture.DocxMime)]
     [InlineData(DocumentFormat.Pptx, "slides.pptx", OfficeFixture.PptxMime)]
+    [InlineData(DocumentFormat.Xlsx, "table.XLSX", OfficeFixture.XlsxMime)]
     public async Task AcceptsMatchingOpenXmlPackage(DocumentFormat format, string name, string mime)
     {
         using var stream = new MemoryStream(OfficeFixture.Create(format));
@@ -25,6 +26,9 @@ public sealed class OfficeFormatDetectorTests
     [InlineData(DocumentFormat.Pptx, "fake.docx")]
     [InlineData(DocumentFormat.Docx, "macro.docm")]
     [InlineData(DocumentFormat.Pptx, "macro.pptm")]
+    [InlineData(DocumentFormat.Xlsx, "macro.xlsm")]
+    [InlineData(DocumentFormat.Xlsx, "fake.docx")]
+    [InlineData(DocumentFormat.Pptx, "fake.xlsx")]
     public async Task RejectsMismatchAndMacroExtensions(DocumentFormat format, string name)
     {
         using var stream = new MemoryStream(OfficeFixture.Create(format));
@@ -35,6 +39,7 @@ public sealed class OfficeFormatDetectorTests
     [Theory]
     [InlineData("protected.docx")]
     [InlineData("protected.pptx")]
+    [InlineData("protected.xlsx")]
     public async Task OleEncryptionReturnsTypedPasswordError(string name)
     {
         using var stream = new MemoryStream(new byte[] { 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1 });

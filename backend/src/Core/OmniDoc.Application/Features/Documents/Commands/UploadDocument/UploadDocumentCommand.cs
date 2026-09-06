@@ -28,8 +28,8 @@ public class UploadDocumentCommandValidator : AbstractValidator<UploadDocumentCo
 
         RuleFor(x => x.FileName)
             .NotEmpty()
-            .Must(name => new[] { ".pdf", ".txt", ".md", ".markdown", ".docx", ".pptx" }.Contains(Path.GetExtension(name).ToLowerInvariant()))
-            .WithMessage("Only PDF, TXT, Markdown, DOCX and PPTX files are supported.");
+            .Must(name => new[] { ".pdf", ".txt", ".md", ".markdown", ".docx", ".pptx", ".csv", ".xlsx" }.Contains(Path.GetExtension(name).ToLowerInvariant()))
+            .WithMessage("Only PDF, TXT, Markdown, DOCX, PPTX, CSV and XLSX files are supported.");
 
         RuleFor(x => x.FileSizeBytes)
             .GreaterThan(0)

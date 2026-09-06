@@ -62,6 +62,41 @@ internal static class OfficeSmokeFixtures
         return buffer.ToArray();
     }
 
+    internal static byte[] Workbook()
+    {
+        using var buffer = new MemoryStream();
+        using (var zip = new ZipArchive(buffer, ZipArchiveMode.Create, true))
+        {
+            Add(zip, "[Content_Types].xml", Types("""
+                <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+                <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+                <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+                """));
+            Add(zip, "_rels/.rels", Relationships($"<Relationship Id=\"rId1\" Type=\"{RelNs}/officeDocument\" Target=\"xl/workbook.xml\"/>"));
+            Add(zip, "xl/workbook.xml", $"""
+                <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="{RelNs}">
+                  <sheets><sheet name="Ledger" sheetId="1" r:id="rId1"/><sheet name="HiddenData" sheetId="2" state="hidden" r:id="rId2"/></sheets>
+                  <definedNames><definedName name="_xlnm.Print_Area" localSheetId="0">Ledger!$A$1:$C$81</definedName><definedName name="_xlnm.Print_Titles" localSheetId="0">Ledger!$1:$1</definedName></definedNames>
+                </workbook>
+                """);
+            Add(zip, "xl/_rels/workbook.xml.rels", Relationships($"<Relationship Id=\"rId1\" Type=\"{RelNs}/worksheet\" Target=\"worksheets/sheet1.xml\"/><Relationship Id=\"rId2\" Type=\"{RelNs}/worksheet\" Target=\"worksheets/sheet2.xml\"/>"));
+            var rows = new StringBuilder("<row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>OmniDoc Ledger</t></is></c></row>");
+            for (var i = 2; i <= 81; i++)
+                rows.Append($"<row r=\"{i}\"><c r=\"A{i}\" t=\"inlineStr\"><is><t>Row{i - 1}</t></is></c><c r=\"B{i}\"><v>{i}</v></c><c r=\"C{i}\" t=\"inlineStr\"><is><t>Bằng chứng</t></is></c><c r=\"Z{i}\" t=\"inlineStr\"><is><t>OUTSIDE_PRINT_AREA</t></is></c></row>");
+            Add(zip, "xl/worksheets/sheet1.xml", $"""
+                <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+                  <cols><col min="1" max="1" width="22" customWidth="1"/><col min="2" max="3" width="18" customWidth="1"/></cols>
+                  <sheetData>{rows}</sheetData><printOptions headings="0" gridLines="1"/>
+                  <pageMargins left="0.5" right="0.5" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>
+                  <pageSetup paperSize="9" scale="100" orientation="portrait"/>
+                  <rowBreaks count="1" manualBreakCount="1"><brk id="41" min="0" max="16383" man="1"/></rowBreaks>
+                </worksheet>
+                """);
+            Add(zip, "xl/worksheets/sheet2.xml", "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData><row r=\"1\"><c r=\"A1\" t=\"inlineStr\"><is><t>HIDDEN_SHEET_SECRET</t></is></c></row></sheetData></worksheet>");
+        }
+        return buffer.ToArray();
+    }
+
     private static string ShapeTree(string text, bool notes = false) => $"""
         <p:spTree>
           <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>

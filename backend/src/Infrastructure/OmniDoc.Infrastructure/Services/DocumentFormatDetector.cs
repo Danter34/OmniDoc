@@ -16,9 +16,14 @@ public sealed class DocumentFormatDetector : IDocumentFormatDetector
         {
             ct.ThrowIfCancellationRequested();
             var extension = Path.GetExtension(fileName).ToLowerInvariant();
-            if (extension is ".docm" or ".pptm")
+            if (extension == ".csv")
+            {
+                var csv = await new CsvDocumentReader().ReadAsync(source, null, ct);
+                return new(DocumentFormat.Csv, csv.ContentType);
+            }
+            if (extension is ".docm" or ".pptm" or ".xlsm")
                 throw new InvalidDataException("Macro-enabled Office files are not supported.");
-            if (extension is ".docx" or ".pptx")
+            if (extension is ".docx" or ".pptx" or ".xlsx")
             {
                 var signature = new byte[8];
                 await source.ReadExactlyAsync(signature, ct);
@@ -46,7 +51,7 @@ public sealed class DocumentFormatDetector : IDocumentFormatDetector
                 return new(DocumentFormat.Pdf, "application/pdf");
             }
             if (extension is not (".txt" or ".md" or ".markdown"))
-                throw new InvalidDataException("Only PDF, TXT, Markdown, DOCX and PPTX files are supported.");
+                throw new InvalidDataException("Only PDF, TXT, Markdown, DOCX, PPTX, CSV and XLSX files are supported.");
             using var reader = new StreamReader(source, new UTF8Encoding(false, true), false, 4096, leaveOpen: true);
             var buffer = new char[4096];
             var hasText = false;
