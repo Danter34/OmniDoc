@@ -36,6 +36,9 @@ function DocumentItemComponent({
             {document.title || document.fileName}
           </p>
           <p className="mt-1 truncate text-xs text-muted">
+            <span className="mr-2 inline-flex rounded bg-info-subtle px-1.5 py-0.5 font-semibold text-info">
+              {document.detectedFormat === "Markdown" ? "MD" : document.detectedFormat?.toUpperCase() ?? "PDF"}
+            </span>
             {document.fileName}
           </p>
           {document.status === "Failed" && document.errorMessage ? (

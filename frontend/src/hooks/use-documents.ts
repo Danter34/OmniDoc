@@ -30,8 +30,8 @@ function getInitialProgress(document: DocumentDto) {
 function toWorkspaceDocument(document: DocumentDto): WorkspaceDocument {
   return {
     ...document,
-    stage: document.status as DocumentStage,
-    progress: getInitialProgress(document),
+    stage: document.status === "Pending" ? "Pending" : document.processingStage ?? document.status as DocumentStage,
+    progress: document.progressPercentage ?? getInitialProgress(document),
   };
 }
 

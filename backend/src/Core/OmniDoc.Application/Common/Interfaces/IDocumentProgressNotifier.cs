@@ -2,6 +2,8 @@ namespace OmniDoc.Application.Common.Interfaces;
 
 public static class DocumentProcessingStage
 {
+    public const string Validating = "Validating";
+    public const string Normalizing = "Normalizing";
     public const string Extracting = "Extracting";
     public const string Chunking = "Chunking";
     public const string Embedding = "Embedding";

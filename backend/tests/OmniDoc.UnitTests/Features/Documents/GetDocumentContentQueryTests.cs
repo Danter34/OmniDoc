@@ -1,3 +1,4 @@
+using Moq;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Common.Services;
 using OmniDoc.Application.Features.Documents.Queries.GetDocumentContent;
@@ -49,8 +50,10 @@ public sealed class GetDocumentContentQueryTests
         Assert.NotNull(result.Data?.Stream);
     }
 
-    [Fact]
-    public async Task Handle_ReturnsForbiddenForWorkspaceOutsider()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Handle_ReturnsForbiddenForWorkspaceOutsider(bool source)
     {
         await using var context = await SeedDocumentAsync(Guid.NewGuid());
         var document = Assert.Single(context.Documents);
@@ -60,15 +63,17 @@ public sealed class GetDocumentContentQueryTests
             Guid.NewGuid());
 
         var result = await handler.Handle(
-            new GetDocumentContentQuery(document.WorkspaceId, document.Id),
+            new GetDocumentContentQuery(document.WorkspaceId, document.Id, source),
             CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(403, result.StatusCode);
     }
 
-    [Fact]
-    public async Task Handle_ReturnsNotFoundWhenDocumentBelongsToAnotherWorkspace()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Handle_ReturnsNotFoundWhenDocumentBelongsToAnotherWorkspace(bool source)
     {
         var ownerId = Guid.NewGuid();
         await using var context = await SeedDocumentAsync(ownerId);
@@ -86,7 +91,7 @@ public sealed class GetDocumentContentQueryTests
             ownerId);
 
         var result = await handler.Handle(
-            new GetDocumentContentQuery(otherWorkspace.Id, document.Id),
+            new GetDocumentContentQuery(otherWorkspace.Id, document.Id, source),
             CancellationToken.None);
 
         Assert.False(result.IsSuccess);
@@ -110,6 +115,49 @@ public sealed class GetDocumentContentQueryTests
 
         Assert.False(result.IsSuccess);
         Assert.Equal(404, result.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(false, "canonical.pdf", "application/pdf")]
+    [InlineData(true, "original.md", "text/markdown")]
+    public async Task Handle_SelectsCorrectArtifact(bool source, string filename, string mime)
+    {
+        var owner = Guid.NewGuid();
+        await using var context = await SeedDocumentAsync(owner);
+        var document = Assert.Single(context.Documents);
+        document.DetectedFormat = DocumentFormat.Markdown;
+        var original = new DocumentArtifact { DocumentId = document.Id, Kind = ArtifactKind.Source, FileName = "original.md",
+            ContentType = "text/markdown", StoragePath = "original.md", FileSizeBytes = 10 };
+        var canonical = new DocumentArtifact { DocumentId = document.Id, Kind = ArtifactKind.CanonicalPdf, FileName = "canonical.pdf",
+            ContentType = "application/pdf", StoragePath = "canonical.pdf", FileSizeBytes = 20 };
+        document.AddArtifact(original);
+        document.AddArtifact(canonical);
+        context.DocumentArtifacts.AddRange(original, canonical);
+        await context.SaveChangesAsync();
+        var storage = new Moq.Mock<IFileStorageService>(Moq.MockBehavior.Strict);
+        var bytes = source ? "# Original"u8.ToArray() : PdfFixture.Create();
+        storage.Setup(s => s.GetFileAsync(filename, Moq.It.IsAny<CancellationToken>())).ReturnsAsync(new MemoryStream(bytes));
+        var result = await CreateHandler(context, storage.Object, owner).Handle(new(document.WorkspaceId, document.Id, source), default);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(filename, result.Data!.FileName);
+        Assert.Equal(mime, result.Data.ContentType);
+        using var output = new MemoryStream();
+        await result.Data.Stream.CopyToAsync(output);
+        await result.Data.Stream.DisposeAsync();
+        Assert.Equal(bytes, output.ToArray());
+    }
+
+    [Fact]
+    public async Task Handle_DoesNotServeTextAsPdfBeforeConversion()
+    {
+        var owner = Guid.NewGuid();
+        await using var context = await SeedDocumentAsync(owner);
+        var document = Assert.Single(context.Documents);
+        document.DetectedFormat = DocumentFormat.Txt;
+        await context.SaveChangesAsync();
+        var result = await CreateHandler(context, new FakeFileStorageService(), owner).Handle(new(document.WorkspaceId, document.Id), default);
+        Assert.Equal(409, result.StatusCode);
+        Assert.Null(result.Data);
     }
 
     private static GetDocumentContentQueryHandler CreateHandler(

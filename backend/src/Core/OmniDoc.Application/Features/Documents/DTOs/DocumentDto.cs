@@ -10,4 +10,8 @@ public record DocumentDto(
     string Status,
     string? ErrorMessage,
     int ChunkCount,
-    DateTime CreatedAtUtc);
+    DateTime CreatedAtUtc,
+    string DetectedFormat,
+    string ProcessingStage,
+    int ProgressPercentage,
+    string? FailureCode);

@@ -23,11 +23,8 @@ interface DocumentDropzoneProps {
   onUpload: (file: File) => Promise<WorkspaceDocument>;
 }
 
-function isPdf(file: File) {
-  return (
-    file.type === "application/pdf" ||
-    file.name.toLowerCase().endsWith(".pdf")
-  );
+function isSupportedDocument(file: File) {
+  return /\.(pdf|txt|md|markdown)$/i.test(file.name);
 }
 
 export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
@@ -46,26 +43,26 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
       return;
     }
 
-    const pdfFiles = files.filter(isPdf);
+    const supportedFiles = files.filter(isSupportedDocument);
 
-    if (pdfFiles.length !== files.length) {
+    if (supportedFiles.length !== files.length) {
       setMessage({
         type: "error",
-        text: "OmniDoc chỉ hỗ trợ tệp PDF. Các tệp không hợp lệ đã được bỏ qua.",
+        text: "OmniDoc hỗ trợ PDF, TXT và Markdown. Các tệp không hợp lệ đã được bỏ qua.",
       });
     }
 
-    if (pdfFiles.length === 0) {
+    if (supportedFiles.length === 0) {
       return;
     }
 
     setIsUploading(true);
     setCompleted(0);
-    setTotal(pdfFiles.length);
+    setTotal(supportedFiles.length);
     let successCount = 0;
 
     try {
-      for (const file of pdfFiles) {
+      for (const file of supportedFiles) {
         try {
           await onUpload(file);
           successCount += 1;
@@ -79,13 +76,13 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
         }
       }
 
-      if (successCount === pdfFiles.length) {
+      if (successCount === files.length) {
         setMessage({
           type: "success",
           text:
             successCount === 1
-              ? "Đã tải PDF lên. OmniDoc đang bắt đầu xử lý."
-              : `Đã tải ${successCount} PDF lên. OmniDoc đang bắt đầu xử lý.`,
+              ? "Đã tải tài liệu lên. OmniDoc đang bắt đầu xử lý."
+              : `Đã tải ${successCount} tài liệu lên. OmniDoc đang bắt đầu xử lý.`,
         });
       }
     } finally {
@@ -120,7 +117,7 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
     <section className="glass-panel rounded-2xl p-4 sm:p-5">
       <div
         aria-disabled={isUploading}
-        aria-label="Tải tài liệu PDF"
+        aria-label="Tải tài liệu PDF, TXT hoặc Markdown"
         className={cn(
           "relative flex min-h-48 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed px-6 py-8 text-center outline-none transition",
           isDragging
@@ -151,7 +148,7 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
         tabIndex={0}
       >
         <input
-          accept=".pdf,application/pdf"
+          accept=".pdf,.txt,.md,.markdown"
           className="sr-only"
           disabled={isUploading}
           multiple
@@ -203,11 +200,11 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
             </span>
             <p className="mt-4 text-sm font-semibold text-content">
               {isDragging
-                ? "Thả PDF để tải lên"
-                : "Kéo thả PDF vào đây hoặc nhấp để chọn"}
+                ? "Thả tài liệu để tải lên"
+                : "Kéo thả tài liệu vào đây hoặc nhấp để chọn"}
             </p>
             <p className="mt-1.5 text-xs leading-5 text-muted">
-              Có thể chọn nhiều tệp PDF. Quá trình lập chỉ mục chạy nền.
+              PDF, TXT và Markdown (UTF-8), tối đa 50 MB mỗi tệp. Quá trình lập chỉ mục chạy nền.
             </p>
           </>
         )}

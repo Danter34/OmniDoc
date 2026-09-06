@@ -31,6 +31,23 @@ services:
     networks:
       - omnidoc-internal
 
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: unless-stopped
+    cpus: '1.5'
+    mem_limit: 1536m
+    environment:
+      CHROMIUM_DISABLE_JAVASCRIPT: "true"
+      CHROMIUM_DENY_LIST: '^https?://.*'
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - omnidoc-internal
+
   backend:
     build:
       context: ./backend
@@ -43,6 +60,7 @@ services:
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=${POSTGRES_DB:-omnidoc_db};Username=${POSTGRES_USER:-omnidoc};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       ConnectionStrings__RedisConnection: redis:6379
       FileStorage__RootPath: /app/data/documents
+      Gotenberg__BaseUrl: ${GOTENBERG_BASE_URL:-http://gotenberg:3000}
       Frontend__BaseUrl: ${APP_URL:-http://localhost}
       JwtSettings__Secret: ${JWT_SECRET:?Set JWT_SECRET in .env}
       JwtSettings__Issuer: ${JWT_ISSUER:-OmniDocApi}
@@ -64,6 +82,8 @@ services:
       db:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      gotenberg:
         condition: service_healthy
     expose:
       - "8080"
