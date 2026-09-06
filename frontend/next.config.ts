@@ -6,6 +6,7 @@ const backendUrl = (process.env.OMNIDOC_API_URL ?? "http://localhost:5151").repl
 );
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   async rewrites() {
     return [
       {

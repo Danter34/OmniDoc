@@ -17,7 +17,14 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
-app.UseHttpsRedirection();
+// Production TLS is terminated by the Nginx edge proxy. Keeping Kestrel's redirect
+// enabled behind that proxy would redirect the Compose HTTP entrypoint to an
+// unconfigured container HTTPS endpoint.
+if (!app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 
