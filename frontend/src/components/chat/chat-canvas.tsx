@@ -151,7 +151,8 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
       .getMessages(workspace.id, activeConversationId, controller.signal)
       .then((items) => {
         if (controller.signal.aborted) return;
-        replaceMessages(items);
+        // Post-stream history refresh must not erase a provider/quota error before it can be read.
+        replaceMessages(items, true);
         setLoadedConversationId(activeConversationId);
         setMessagesError(null);
       })
@@ -214,6 +215,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
       }
 
       if (conversationId === activeConversationId && !messagesError) return;
+      replaceMessages([]);
       setHistoryRequest((current) => current + 1);
       setMessagesLoading(true);
       setMessagesError(null);
@@ -223,7 +225,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
       selectConversation(conversationId);
       scrollToBottom("auto");
     },
-    [activeConversationId, messagesError, isStreaming, scrollToBottom, selectConversation],
+    [activeConversationId, messagesError, isStreaming, replaceMessages, scrollToBottom, selectConversation],
   );
 
   const createNewConversation = useCallback(async () => {
@@ -245,6 +247,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     }
 
     const created = await createConversation("Cuộc trò chuyện mới");
+    replaceMessages([]);
     setMessagesLoading(true);
     setMessagesError(null);
     setLoadedConversationId(null);

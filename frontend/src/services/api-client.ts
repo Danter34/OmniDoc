@@ -3,6 +3,7 @@ import { tokenStorage } from "@/services/token-storage";
 const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
 export const API_BASE_URL = configuredApiUrl?.replace(/\/$/, "") ?? "";
 export const UNAUTHORIZED_EVENT = "omnidoc:unauthorized";
+export const RATE_LIMIT_MESSAGE = "Bạn đang thao tác quá nhanh, vui lòng thử lại sau giây lát.";
 
 export class ApiError extends Error {
   constructor(
@@ -80,11 +81,15 @@ function createApiError(response: Response, body: unknown) {
   }
 
   return new ApiError(
-    errors[0] ?? fallbackMessage,
+    response.status === 429 ? RATE_LIMIT_MESSAGE : errors[0] ?? fallbackMessage,
     response.status,
     errors,
     errorCode,
   );
+}
+
+export async function readApiError(response: Response) {
+  return createApiError(response, await readResponseBody(response));
 }
 
 export async function apiFetch(

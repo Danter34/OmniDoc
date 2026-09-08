@@ -58,7 +58,7 @@ public static class ApiRateLimits
                     context.HttpContext.Response.Headers.RetryAfter = Math.Ceiling(retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
                 await context.HttpContext.Response.WriteAsJsonAsync(new
                 {
-                    errors = new[] { "Quá nhiều yêu cầu. Vui lòng đợi trước khi thử lại." }
+                    errors = new[] { "Bạn đang thao tác quá nhanh, vui lòng thử lại sau giây lát." }
                 }, token);
             };
         });

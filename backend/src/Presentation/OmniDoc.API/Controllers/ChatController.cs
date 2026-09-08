@@ -12,6 +12,8 @@ using OmniDoc.Application.Features.Chat.DTOs;
 using OmniDoc.Application.Features.Chat.Queries.GetConversationMessages;
 using OmniDoc.Application.Features.Chat.Queries.GetConversationsByWorkspace;
 using OmniDoc.Application.Features.Chat.Streaming.StreamMessage;
+using OmniDoc.Application.Features.Chat.Services;
+using OmniDoc.Application.Common.Exceptions;
 
 namespace OmniDoc.API.Controllers;
 
@@ -73,8 +75,12 @@ public class ChatController : BaseApiController
         }
         catch (Exception exception)
         {
+            // Upstream responses may contain provider/account details. Keep them out of SSE.
+            var message = exception is ForbiddenException
+                ? exception.Message
+                : ChatFailureMessages.ProviderUnavailable;
             await WriteEventAsync(
-                new ChatStreamEvent(StreamEventType.Error, exception.Message),
+                new ChatStreamEvent(StreamEventType.Error, message),
                 CancellationToken.None);
         }
     }

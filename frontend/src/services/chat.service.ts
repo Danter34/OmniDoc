@@ -1,7 +1,7 @@
 import {
   ApiError,
-  UNAUTHORIZED_EVENT,
   apiFetch,
+  readApiError,
 } from "@/services/api-client";
 import type { SendChatMessageRequest } from "@/types/chat.types";
 
@@ -21,16 +21,7 @@ export const chatService = {
     );
 
     if (!response.ok) {
-      const text = await response.text();
-
-      if (response.status === 401 && typeof window !== "undefined") {
-        window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
-      }
-
-      throw new ApiError(
-        text || `Không thể bắt đầu luồng trả lời (${response.status}).`,
-        response.status,
-      );
+      throw await readApiError(response);
     }
 
     if (!response.body) {

@@ -151,14 +151,14 @@ export function useChatStream({
     [],
   );
 
-  const replaceMessages = useCallback((items: ChatMessage[]) => {
+  const replaceMessages = useCallback((items: ChatMessage[], preserveError = false) => {
     setMessages(
       items.map((message) => ({
         ...message,
         status: "complete",
       })),
     );
-    setError(null);
+    if (!preserveError) setError(null);
   }, []);
 
   const sendMessage = useCallback(

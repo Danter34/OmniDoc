@@ -123,11 +123,11 @@ public class StreamMessageQueryHandler : IStreamRequestHandler<StreamMessageQuer
                 citations).ConfigureAwait(false);
         }
 
-        if (failure.Exception is { } streamException)
+        if (failure.Exception is not null)
         {
             yield return new ChatStreamEvent(
                 StreamEventType.Error,
-                $"Việc sinh câu trả lời bị lỗi giữa luồng: {streamException.Message}",
+                ChatFailureMessages.ProviderUnavailable,
                 ConversationId: conversation.Id,
                 MessageId: assistantMessage?.Id);
 

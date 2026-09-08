@@ -1,4 +1,5 @@
 using Hangfire;
+using Microsoft.EntityFrameworkCore;
 using OmniDoc.API;
 using OmniDoc.API.Hubs;
 using OmniDoc.Application;
@@ -15,6 +16,15 @@ builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 var app = builder.Build();
+
+// Explicit one-off deployment command, before seeding or starting request/background workers.
+if (app.Configuration.GetValue<bool>("migrate-only"))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    await scope.ServiceProvider.GetRequiredService<OmniDoc.Persistence.Contexts.ApplicationDbContext>()
+        .Database.MigrateAsync();
+    return;
+}
 
 app.UseExceptionHandler();
 app.UseForwardedHeaders();
