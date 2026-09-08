@@ -300,7 +300,11 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
 
 function VerificationShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="ambient-bg relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_30%_20%,rgb(0_240_255/8%),transparent_45%),radial-gradient(ellipse_at_75%_70%,rgb(37_99_235/10%),transparent_45%)]"
+      />
       <section className="glass-panel relative w-full max-w-lg rounded-3xl p-7 sm:p-9">
         <Logo className="mb-8 justify-center" />
         {children}

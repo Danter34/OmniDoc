@@ -2,7 +2,6 @@ import { ArrowRight, Code2, Database, FileStack, Radio, ScanText } from "lucide-
 import Link from "next/link";
 
 import { CitationPreview } from "@/components/landing/citation-preview";
-import { Logo } from "@/components/ui/logo";
 import { showcase } from "@/lib/showcase";
 
 const highlights = [
@@ -35,6 +34,18 @@ const highlights = [
 const focus =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-4 focus-visible:ring-offset-[#0B0F17]";
 
+/** Fixed dark-mode brand mark — always white "Omni" + Cyan→Blue "Doc" gradient */
+function BrandMark() {
+  return (
+    <span className="inline-flex items-baseline gap-0 whitespace-nowrap">
+      <span className="font-bold text-white">Omni</span>
+      <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text font-bold text-transparent">
+        Doc
+      </span>
+    </span>
+  );
+}
+
 export function PortfolioLanding() {
   return (
     <div className="min-h-screen bg-[#0B0F17] text-slate-100 selection:bg-cyan-300 selection:text-slate-950">
@@ -46,12 +57,20 @@ export function PortfolioLanding() {
       </a>
 
       <header className="relative mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-6 sm:px-8">
-        {/* Reuse the canonical Logo component for consistent branding */}
-        <Logo
+        <Link
           href="/"
-          imageSize={32}
-          className={`rounded-lg ${focus}`}
-        />
+          aria-label="OmniDoc — Trang chủ"
+          className={`flex items-center gap-2 rounded-lg text-xl tracking-tight ${focus}`}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            alt=""
+            aria-hidden="true"
+            className="size-8 shrink-0 rounded-full border border-white/10 shadow-[0_0_18px_rgba(0,240,255,0.25)]"
+            src="/images/logo-icon.png"
+          />
+          <BrandMark />
+        </Link>
         <nav aria-label="Điều hướng chính" className="flex items-center gap-6 text-sm">
           <a
             href="#architecture"
@@ -73,7 +92,7 @@ export function PortfolioLanding() {
           aria-labelledby="hero-title"
           className="relative isolate overflow-hidden px-5 pb-16 pt-16 sm:px-8 sm:pt-24"
         >
-          {/* Ambient background — Hyper Blue / Cyan per brand palette */}
+          {/* Ambient background — Hyper Blue / Cyan brand palette */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_20%_20%,#164e634d,transparent_50%),radial-gradient(ellipse_at_85%_45%,#1d4ed826,transparent_50%)]"
@@ -87,18 +106,18 @@ export function PortfolioLanding() {
               className="max-w-5xl text-4xl font-semibold leading-[1.12] tracking-tight sm:text-6xl lg:text-7xl"
             >
               OmniDoc — Enterprise RAG &amp;{" "}
-              {/* Gradient matches --gradient-brand-text: cyan → blue-500 → violet-neon */}
+              {/* Matches --gradient-brand-text: cyan → blue-500 → violet-neon */}
               <span className="bg-[linear-gradient(90deg,#00f0ff_0%,#3b82f6_45%,#a855f7_100%)] bg-clip-text text-transparent">
                 Document Intelligence
               </span>
             </h1>
             <p className="mt-7 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
-              Đối mặt với bài toán ảo giác (Hallucination) trong hỏi đáp tài liệu doanh nghiệp bằng
-              bằng chứng có thể kiểm tra. Dual-Pane Citation đặt câu trả lời và tài liệu nguồn song
-              song, giúp bạn đối soát từng nhận định ngay tại trang được trích dẫn.
+              Đối mặt với bài toán ảo giác (Hallucination) trong hỏi đáp tài liệu doanh nghiệp
+              bằng bằng chứng có thể kiểm tra. Dual-Pane Citation đặt câu trả lời và tài liệu
+              nguồn song song, giúp bạn đối soát từng nhận định ngay tại trang được trích dẫn.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              {/* CTA gradient uses --gradient-action: blue-700 → violet-700 (on-brand) */}
+              {/* CTA: --gradient-action (blue-700 → violet-700) */}
               <Link
                 href={showcase.enabled ? "/login?mode=showcase" : "/login"}
                 className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[linear-gradient(135deg,#1d4ed8_0%,#6d28d9_100%)] px-6 font-semibold text-white hover:brightness-125 ${focus}`}
@@ -185,7 +204,10 @@ export function PortfolioLanding() {
       <footer className="border-t border-slate-800 px-5 py-8 sm:px-8">
         <div className="mx-auto flex max-w-7xl flex-col gap-5 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-slate-200">OmniDoc · Portfolio Engineering Showcase</p>
+            {/* Footer brand: same fixed colours */}
+            <p className="inline-flex items-baseline gap-1 text-slate-200">
+              <BrandMark /> · Portfolio Engineering Showcase
+            </p>
             <p className="mt-2">© {new Date().getFullYear()} OmniDoc. Từ tài liệu đến tri thức có thể đối soát.</p>
           </div>
           <div className="flex items-center gap-5">
