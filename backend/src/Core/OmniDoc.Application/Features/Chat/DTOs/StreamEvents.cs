@@ -16,4 +16,5 @@ public record ChatStreamEvent(
     string? Content = null,
     CitationDto? Citation = null,
     Guid? ConversationId = null,
-    Guid? MessageId = null);
+    Guid? MessageId = null,
+    string? ConversationTitle = null);

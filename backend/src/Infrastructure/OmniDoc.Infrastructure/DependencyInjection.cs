@@ -18,7 +18,24 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<IDocumentArtifactStorage, DocumentArtifactStorage>();
+        services.AddSingleton<IDocumentFormatDetector, DocumentFormatDetector>();
+        services.AddScoped<PassThroughPdfNormalizer>();
+        services.AddScoped<CsvCanonicalPdfNormalizer>();
+        services.AddScoped<IDocumentNormalizer, DocumentNormalizer>();
+        services.AddHttpClient<GotenbergChromiumNormalizer>(client =>
+        {
+            client.BaseAddress = new Uri((configuration["Gotenberg:BaseUrl"] ?? "http://gotenberg:3000").TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(120);
+            client.MaxResponseContentBufferSize = 60L * 1024 * 1024;
+        });
         services.AddScoped<IPdfParserService, PdfPigParserService>();
+        services.AddHttpClient<GotenbergLibreOfficeNormalizer>(client =>
+        {
+            client.BaseAddress = new Uri((configuration["Gotenberg:BaseUrl"] ?? "http://gotenberg:3000").TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(120);
+            client.MaxResponseContentBufferSize = 60L * 1024 * 1024;
+        });
         services.AddSingleton<ITextChunkerService, RecursiveTextChunkerService>();
         services.AddScoped<IRetrievalService, VectorRetrievalService>();
         services.AddScoped<IDocumentProcessingJob, DocumentProcessingJob>();

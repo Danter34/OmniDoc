@@ -28,7 +28,6 @@ public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
 
 public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Result<ChatResponseDto>>
 {
-    private const int TitleLength = 30;
     private const int ExcerptLength = 400;
     private const float MinSimilarityScore = 0.0f;
 
@@ -86,11 +85,13 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
             conversation = new Conversation
             {
                 WorkspaceId = request.WorkspaceId,
-                Title = BuildTitle(request.Message)
+                Title = ConversationNaming.BuildTitle(request.Message)
             };
 
             _context.Conversations.Add(conversation);
         }
+
+        await ConversationNaming.UpdateAsync(_context, conversation, request.Message, cancellationToken);
 
         var history = await _context.LoadRecentHistoryAsync(conversation.Id, cancellationToken: cancellationToken);
 
@@ -101,7 +102,9 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
             MinSimilarityScore,
             cancellationToken);
 
-        var prompt = RagPromptBuilder.BuildPrompt(matches, history, request.Message);
+        var hasDocuments = matches.Count > 0 || await _context.Documents
+            .AnyAsync(document => document.WorkspaceId == request.WorkspaceId, cancellationToken);
+        var prompt = RagPromptBuilder.BuildPrompt(matches, history, request.Message, hasDocuments);
 
         var answer = await _chatCompletion.GenerateResponseAsync(prompt, cancellationToken);
 
@@ -141,18 +144,10 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
         var response = new ChatResponseDto(
             conversation.Id,
             userMessage.ToDto(),
-            assistantMessage.ToDto());
+            assistantMessage.ToDto(),
+            conversation.Title);
 
         return Result<ChatResponseDto>.Success(response);
-    }
-
-    private static string BuildTitle(string message)
-    {
-        var normalized = message.Trim();
-
-        return normalized.Length <= TitleLength
-            ? normalized
-            : normalized[..TitleLength].TrimEnd() + "...";
     }
 
     private static string Truncate(string value, int maxLength) =>

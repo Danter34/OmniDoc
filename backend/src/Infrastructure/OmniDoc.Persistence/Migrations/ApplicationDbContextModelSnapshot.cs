@@ -147,6 +147,9 @@ namespace OmniDoc.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CanonicalArtifactId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("ChunkCount")
                         .HasColumnType("integer");
 
@@ -161,7 +164,13 @@ namespace OmniDoc.Persistence.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
+                    b.Property<int>("DetectedFormat")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ErrorMessage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FailureCode")
                         .HasColumnType("text");
 
                     b.Property<string>("FileName")
@@ -171,6 +180,15 @@ namespace OmniDoc.Persistence.Migrations
 
                     b.Property<long>("FileSizeBytes")
                         .HasColumnType("bigint");
+
+                    b.Property<int>("ProcessingStage")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProgressPercentage")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("SourceArtifactId")
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -199,6 +217,65 @@ namespace OmniDoc.Persistence.Migrations
                     b.HasIndex("WorkspaceId", "Status");
 
                     b.ToTable("Documents");
+                });
+
+            modelBuilder.Entity("OmniDoc.Domain.Entities.DocumentArtifact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Generation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Producer")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("StoragePath")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId", "Kind", "Generation")
+                        .IsUnique();
+
+                    b.ToTable("DocumentArtifacts", t =>
+                        {
+                            t.HasCheckConstraint("CK_DocumentArtifacts_Generation", "\"Generation\" >= 1");
+                        });
                 });
 
             modelBuilder.Entity("OmniDoc.Domain.Entities.DocumentChunk", b =>
@@ -562,6 +639,15 @@ namespace OmniDoc.Persistence.Migrations
                     b.Navigation("Workspace");
                 });
 
+            modelBuilder.Entity("OmniDoc.Domain.Entities.DocumentArtifact", b =>
+                {
+                    b.HasOne("OmniDoc.Domain.Entities.Document", null)
+                        .WithMany("Artifacts")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("OmniDoc.Domain.Entities.DocumentChunk", b =>
                 {
                     b.HasOne("OmniDoc.Domain.Entities.Document", "Document")
@@ -654,6 +740,8 @@ namespace OmniDoc.Persistence.Migrations
 
             modelBuilder.Entity("OmniDoc.Domain.Entities.Document", b =>
                 {
+                    b.Navigation("Artifacts");
+
                     b.Navigation("Chunks");
                 });
 

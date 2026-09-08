@@ -87,7 +87,7 @@ function PdfViewerComponent({
         const signature = new TextDecoder().decode(buffer.slice(0, 5));
 
         if (signature !== "%PDF-") {
-          throw new Error("Tệp nhận được không phải là một tài liệu PDF hợp lệ.");
+          throw new Error("Tệp nhận được không phải là một tài liệu hợp lệ.");
         }
 
         if (controller.signal.aborted) {
@@ -277,10 +277,10 @@ function PdfViewerComponent({
           <Download className="size-4" />
         </Button>
         <Button
-          aria-label="Đóng trình xem PDF"
+          aria-label="Đóng trình xem tài liệu"
           className="size-9 px-0"
           onClick={onClose}
-          title="Đóng trình xem PDF"
+          title="Đóng trình xem tài liệu"
           variant="ghost"
         >
           <X className="size-4.5" />
@@ -297,7 +297,7 @@ function PdfViewerComponent({
                 <FileWarning className="size-5" />
               </span>
               <p className="mt-4 text-sm font-semibold text-content">
-                Không thể mở tài liệu PDF
+                Không thể mở tài liệu
               </p>
               <p className="mt-2 text-sm leading-6 text-muted">{error}</p>
               <Button
@@ -394,7 +394,7 @@ function PdfFrame({
         className="h-full w-full border-0 bg-pdf-page"
         onLoad={() => setIsLoading(false)}
         src={viewerUrl}
-        title={`Tài liệu PDF ${fileName}, trang ${pageNumber}`}
+        title={`Tài liệu ${fileName}, trang ${pageNumber}`}
       />
     </>
   );

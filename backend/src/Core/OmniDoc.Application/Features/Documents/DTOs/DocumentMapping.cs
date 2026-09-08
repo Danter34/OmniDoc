@@ -15,7 +15,8 @@ public static class DocumentMapping
         document.Status.ToString(),
         document.ErrorMessage,
         document.ChunkCount,
-        document.CreatedAtUtc);
+        document.CreatedAtUtc,
+        document.DetectedFormat.ToString(), document.ProcessingStage.ToString(), document.ProgressPercentage, document.FailureCode);
 
     public static DocumentDto ToDto(this Document document) => new(
         document.Id,
@@ -27,5 +28,6 @@ public static class DocumentMapping
         document.Status.ToString(),
         document.ErrorMessage,
         document.ChunkCount,
-        document.CreatedAtUtc);
+        document.CreatedAtUtc,
+        document.DetectedFormat.ToString(), document.ProcessingStage.ToString(), document.ProgressPercentage, document.FailureCode);
 }

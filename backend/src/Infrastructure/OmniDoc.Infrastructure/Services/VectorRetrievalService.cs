@@ -36,17 +36,21 @@ public class VectorRetrievalService : IRetrievalService
             return [];
         }
 
+        var searchableChunks = _context.DocumentChunks.AsNoTracking()
+            .Where(chunk => chunk.Embedding != null
+                && chunk.Document!.WorkspaceId == workspaceId
+                && chunk.Document.Status == DocumentStatus.Indexed);
+
+        // Empty workspaces can chat without invoking the embedding provider.
+        if (!await searchableChunks.AnyAsync(cancellationToken)) return [];
+
         var queryVector = await _embeddingService.GenerateEmbeddingAsync(query, cancellationToken);
 
         // Pgvector's operators only bind against a Vector-typed parameter; passing the
         // raw float[] makes Postgres look for a non-existent "vector <=> real[]" operator.
         var parameter = new Vector(queryVector);
 
-        var matches = await _context.DocumentChunks
-            .AsNoTracking()
-            .Where(chunk => chunk.Embedding != null
-                && chunk.Document!.WorkspaceId == workspaceId
-                && chunk.Document.Status == DocumentStatus.Indexed)
+        var matches = await searchableChunks
             .Select(chunk => new
             {
                 ChunkId = chunk.Id,

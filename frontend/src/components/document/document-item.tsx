@@ -36,6 +36,20 @@ function DocumentItemComponent({
             {document.title || document.fileName}
           </p>
           <p className="mt-1 truncate text-xs text-muted">
+            <span className={cn(
+              "mr-2 inline-flex rounded px-1.5 py-0.5 font-semibold",
+              document.detectedFormat === "Docx"
+                ? "bg-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-200"
+                : document.detectedFormat === "Pptx"
+                  ? "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+                  : document.detectedFormat === "Csv"
+                    ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+                    : document.detectedFormat === "Xlsx"
+                      ? "bg-green-800 text-green-50 dark:bg-green-900 dark:text-green-100"
+                  : "bg-info-subtle text-info",
+            )}>
+              {document.detectedFormat === "Markdown" ? "MD" : document.detectedFormat?.toUpperCase() ?? "PDF"}
+            </span>
             {document.fileName}
           </p>
           {document.status === "Failed" && document.errorMessage ? (

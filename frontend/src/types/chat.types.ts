@@ -48,4 +48,5 @@ export interface ChatStreamEvent {
   citation?: Citation;
   conversationId?: string;
   messageId?: string;
+  conversationTitle?: string;
 }

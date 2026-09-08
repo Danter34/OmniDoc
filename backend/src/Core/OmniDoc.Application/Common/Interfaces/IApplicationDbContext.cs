@@ -12,6 +12,7 @@ public interface IApplicationDbContext
     DbSet<EmailOutboxMessage> EmailOutboxMessages { get; }
     DbSet<Notification> Notifications { get; }
     DbSet<Document> Documents { get; }
+    DbSet<DocumentArtifact> DocumentArtifacts { get; }
     DbSet<DocumentChunk> DocumentChunks { get; }
     DbSet<Conversation> Conversations { get; }
     DbSet<ChatMessage> ChatMessages { get; }

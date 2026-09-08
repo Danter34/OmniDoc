@@ -108,6 +108,15 @@ export function useConversations(workspaceId: string) {
     [activeConversationId, conversations],
   );
 
+  const updateConversationTitle = useCallback((id: string, title: string) => {
+    const now = new Date().toISOString();
+    setConversations((current) => sortConversations(
+      current.some((item) => item.id === id)
+        ? current.map((item) => item.id === id ? { ...item, title, lastActivityAtUtc: now } : item)
+        : [{ id, title, workspaceId, createdAtUtc: now, lastActivityAtUtc: now }, ...current],
+    ));
+  }, [workspaceId]);
+
   return {
     conversations,
     activeConversation,
@@ -118,5 +127,6 @@ export function useConversations(workspaceId: string) {
     createConversation,
     deleteConversation,
     refreshConversations,
+    updateConversationTitle,
   };
 }

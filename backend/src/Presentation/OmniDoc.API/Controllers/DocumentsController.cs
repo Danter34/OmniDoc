@@ -13,6 +13,8 @@ public class DocumentsController : BaseApiController
 {
     [HttpPost("/api/workspaces/{workspaceId:guid}/documents")]
     [HttpPost("/api/workspaces/{workspaceId:guid}/documents/upload")]
+    [RequestSizeLimit(60L * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 60L * 1024 * 1024)]
     public async Task<ActionResult<DocumentDto>> Upload(
         Guid workspaceId,
         IFormFile file,
@@ -68,6 +70,17 @@ public class DocumentsController : BaseApiController
             result.Data.Stream,
             result.Data.ContentType,
             enableRangeProcessing: true);
+    }
+
+    [HttpGet("/api/workspaces/{workspaceId:guid}/documents/{documentId:guid}/source")]
+    public async Task<IActionResult> GetDocumentSource(Guid workspaceId, Guid documentId, CancellationToken cancellationToken)
+    {
+        var result = await Sender.Send(new GetDocumentContentQuery(workspaceId, documentId, Source: true), cancellationToken);
+        if (!result.IsSuccess || result.Data is null)
+            return StatusCode(result.StatusCode, new { errors = result.Errors });
+        Response.Headers.CacheControl = "private, no-store";
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+        return File(result.Data.Stream, result.Data.ContentType, result.Data.FileName, enableRangeProcessing: true);
     }
 
     [HttpGet("/api/documents/{id:guid}")]

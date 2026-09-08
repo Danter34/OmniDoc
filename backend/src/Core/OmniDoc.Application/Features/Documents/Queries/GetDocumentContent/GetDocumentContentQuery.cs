@@ -9,7 +9,8 @@ namespace OmniDoc.Application.Features.Documents.Queries.GetDocumentContent;
 
 public sealed record GetDocumentContentQuery(
     Guid WorkspaceId,
-    Guid DocumentId) : IRequest<Result<DocumentFileStreamDto>>;
+    Guid DocumentId,
+    bool Source = false) : IRequest<Result<DocumentFileStreamDto>>;
 
 public sealed class GetDocumentContentQueryHandler
     : IRequestHandler<GetDocumentContentQuery, Result<DocumentFileStreamDto>>
@@ -48,14 +49,10 @@ public sealed class GetDocumentContentQueryHandler
 
         var document = await _context.Documents
             .AsNoTracking()
+            .Include(item => item.Artifacts)
             .Where(item =>
                 item.Id == request.DocumentId &&
                 item.WorkspaceId == request.WorkspaceId)
-            .Select(item => new
-            {
-                item.FileName,
-                item.StoragePath
-            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (document is null)
@@ -65,8 +62,15 @@ public sealed class GetDocumentContentQueryHandler
                 404);
         }
 
+        var artifactId = request.Source ? document.SourceArtifactId : document.CanonicalArtifactId;
+        var kind = request.Source ? ArtifactKind.Source : ArtifactKind.CanonicalPdf;
+        var artifact = document.Artifacts.SingleOrDefault(a => a.Id == artifactId && a.Kind == kind);
+        // Legacy fallback is exclusively for PDF rows without artifact pointers.
+        if (artifact is null && (artifactId is not null || document.DetectedFormat != DocumentFormat.Pdf))
+            return Result<DocumentFileStreamDto>.Failure(request.Source ? "Source artifact is missing." : "Canonical PDF is not available yet.", request.Source ? 404 : 409);
+
         var stream = await _fileStorage.GetFileAsync(
-            document.StoragePath,
+            artifact?.StoragePath ?? document.StoragePath,
             cancellationToken);
 
         if (stream is null)
@@ -79,7 +83,7 @@ public sealed class GetDocumentContentQueryHandler
         return Result<DocumentFileStreamDto>.Success(
             new DocumentFileStreamDto(
                 stream,
-                PdfContentType,
-                Path.GetFileName(document.FileName)));
+                request.Source ? artifact?.ContentType ?? document.ContentType : PdfContentType,
+                request.Source ? Path.GetFileName(artifact?.FileName ?? document.FileName) : Path.ChangeExtension(Path.GetFileName(artifact?.FileName ?? document.FileName), ".pdf")));
     }
 }

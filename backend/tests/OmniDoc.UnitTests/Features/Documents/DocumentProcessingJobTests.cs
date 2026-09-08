@@ -42,7 +42,9 @@ public class DocumentProcessingJobTests
             new FakeTextChunkerService(),
             embeddingService ?? new FakeEmbeddingService(),
             notifier,
-            NullLogger<DocumentProcessingJob>.Instance);
+            NullLogger<DocumentProcessingJob>.Instance,
+            new Moq.Mock<IDocumentNormalizer>(Moq.MockBehavior.Strict).Object,
+            new OmniDoc.Infrastructure.Services.DocumentArtifactStorage(fileStorage ?? new FakeFileStorageService()));
 
     private static FakePdfParserService ParserWithPages(int pageCount) =>
         new()

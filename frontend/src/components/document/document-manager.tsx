@@ -93,7 +93,7 @@ export function DocumentManager({ workspace }: { workspace: Workspace }) {
           </div>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
             {workspace.description ||
-              "Quản lý và theo dõi quá trình lập chỉ mục tài liệu PDF trong workspace."}
+              "Quản lý và theo dõi quá trình lập chỉ mục tài liệu trong workspace."}
           </p>
         </div>
         <p className="text-xs text-muted">

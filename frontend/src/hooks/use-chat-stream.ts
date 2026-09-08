@@ -12,7 +12,7 @@ import type {
 interface UseChatStreamOptions {
   workspaceId: string;
   conversationId: string | null;
-  onConversationResolved?: (conversationId: string) => void;
+  onConversationResolved?: (conversationId: string, title?: string) => void;
   onSettled?: () => void;
 }
 
@@ -225,6 +225,7 @@ export function useChatStream({
             if (streamEvent.conversationId) {
               onConversationResolvedRef.current?.(
                 streamEvent.conversationId,
+                streamEvent.conversationTitle,
               );
             }
 

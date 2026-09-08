@@ -203,11 +203,10 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
     }
   }
 
-  async function handleDemoOtp() {
+  function handleDemoOtp() {
     if (!debugOtp) return;
 
     applyOtp(debugOtp);
-    await verifyWithOtp(debugOtp);
   }
 
   return (
@@ -320,15 +319,15 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
             <div className="mt-5 border-t border-dashed border-line-subtle pt-5 text-center">
               <button
                 className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-warning bg-warning-subtle px-3 py-2 text-sm font-medium text-warning transition-[filter,box-shadow] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:opacity-50"
-                disabled={isVerifying}
+                disabled={isVerifying || isResending}
                 onClick={() => void handleDemoOtp()}
                 type="button"
               >
                 <Zap className="size-4" />
-                Demo: Tự động điền mã
+                Điền mã OTP Demo
               </button>
               <p className="mt-1 text-xs text-muted">
-                Chỉ hiển thị trong môi trường Development.
+                Mã kiểm thử được máy chủ cung cấp cho môi trường demo.
               </p>
             </div>
           ) : null}

@@ -19,6 +19,17 @@ interface StatusConfig {
 }
 
 const statusConfig: Record<string, StatusConfig> = {
+  Validating: {
+    label: "Kiểm tra tài liệu",
+    badgeClass: "bg-info-subtle text-info ring-info",
+    icon: FileSearch,
+  },
+  Normalizing: {
+    label: "Chuyển đổi PDF",
+    badgeClass: "bg-info-subtle text-info ring-info",
+    icon: LoaderCircle,
+    spinning: true,
+  },
   Pending: {
     label: "Đang chờ",
     badgeClass: "bg-surface-tertiary text-content-secondary ring-line",

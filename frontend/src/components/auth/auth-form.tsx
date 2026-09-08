@@ -125,7 +125,7 @@ export function AuthForm({
           </h1>
           <p className="mt-2 text-sm leading-6 text-muted">
             {isRegister
-              ? "Tạo workspace và biến tài liệu PDF thành tri thức có thể tìm kiếm."
+              ? "Tạo workspace và biến tài liệu thành tri thức có thể tìm kiếm."
               : "Tiếp tục quản lý tài liệu và không gian làm việc của bạn."}
           </p>
         </div>

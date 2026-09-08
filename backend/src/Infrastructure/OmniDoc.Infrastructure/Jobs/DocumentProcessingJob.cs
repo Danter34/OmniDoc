@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Domain.Entities;
 using OmniDoc.Domain.Enums;
+using OmniDoc.Domain.Exceptions;
 
 namespace OmniDoc.Infrastructure.Jobs;
 
@@ -19,6 +20,8 @@ public class DocumentProcessingJob : IDocumentProcessingJob
     private readonly IEmbeddingService _embeddingService;
     private readonly IDocumentProgressNotifier _notifier;
     private readonly ILogger<DocumentProcessingJob> _logger;
+    private readonly IDocumentNormalizer _normalizer;
+    private readonly IDocumentArtifactStorage _artifacts;
 
     public DocumentProcessingJob(
         IApplicationDbContext dbContext,
@@ -27,7 +30,9 @@ public class DocumentProcessingJob : IDocumentProcessingJob
         ITextChunkerService chunker,
         IEmbeddingService embeddingService,
         IDocumentProgressNotifier notifier,
-        ILogger<DocumentProcessingJob> logger)
+        ILogger<DocumentProcessingJob> logger,
+        IDocumentNormalizer normalizer,
+        IDocumentArtifactStorage artifacts)
     {
         _dbContext = dbContext;
         _fileStorage = fileStorage;
@@ -36,11 +41,14 @@ public class DocumentProcessingJob : IDocumentProcessingJob
         _embeddingService = embeddingService;
         _notifier = notifier;
         _logger = logger;
+        _normalizer = normalizer;
+        _artifacts = artifacts;
     }
 
     public async Task ProcessDocumentAsync(Guid documentId, CancellationToken cancellationToken = default)
     {
         var document = await _dbContext.Documents
+            .Include(d => d.Artifacts)
             .FirstOrDefaultAsync(d => d.Id == documentId, cancellationToken);
 
         if (document is null)
@@ -49,8 +57,12 @@ public class DocumentProcessingJob : IDocumentProcessingJob
             return;
         }
 
+        // A retried/completed job must not duplicate chunks or regenerate evidence.
+        if (document.Status == DocumentStatus.Indexed) return;
+
         document.Status = DocumentStatus.Processing;
         document.ErrorMessage = null;
+        document.FailureCode = null;
         document.UpdatedAtUtc = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -58,14 +70,36 @@ public class DocumentProcessingJob : IDocumentProcessingJob
 
         try
         {
-            await NotifyAsync(document, 10, DocumentProcessingStage.Extracting, cancellationToken);
+            if (document.CanonicalArtifactId is null && document.DetectedFormat != DocumentFormat.Pdf)
+            {
+                await NotifyAsync(document, 5, DocumentProcessingStage.Validating, cancellationToken);
+                var source = document.Artifacts.SingleOrDefault(a => a.Id == document.SourceArtifactId && a.Kind == ArtifactKind.Source)
+                    ?? throw new InvalidDataException("Source artifact is missing.");
+                await using var sourceStream = await _artifacts.OpenAsync(source, cancellationToken)
+                    ?? throw new FileNotFoundException($"Stored file '{source.StoragePath}' is missing.");
+                await NotifyAsync(document, 30, DocumentProcessingStage.Normalizing, cancellationToken);
+                var normalized = await _normalizer.NormalizeAsync(sourceStream, document.DetectedFormat, cancellationToken);
+                await using var pdf = normalized.Content;
+                var artifact = await _artifacts.SaveAsync(pdf, document.WorkspaceId, document.Id,
+                    ArtifactKind.CanonicalPdf, Path.ChangeExtension(source.FileName, ".pdf"), "application/pdf", normalized.Producer, cancellationToken);
+                document.AddArtifact(artifact);
+                _dbContext.DocumentArtifacts.Add(artifact);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
 
-            await using var fileStream = await _fileStorage.GetFileAsync(document.StoragePath, cancellationToken)
-                ?? throw new FileNotFoundException($"Stored file '{document.StoragePath}' is missing.");
+            var canonical = document.Artifacts.SingleOrDefault(a => a.Id == document.CanonicalArtifactId && a.Kind == ArtifactKind.CanonicalPdf);
+            if (canonical is null && (document.DetectedFormat != DocumentFormat.Pdf || document.CanonicalArtifactId is not null))
+                throw new InvalidDataException("Canonical PDF artifact is missing.");
+            var storagePath = canonical?.StoragePath ?? document.StoragePath;
+            var extractionProgress = document.DetectedFormat == DocumentFormat.Pdf ? 10 : 40;
+            await NotifyAsync(document, extractionProgress, DocumentProcessingStage.Extracting, cancellationToken);
+
+            await using var fileStream = await _fileStorage.GetFileAsync(storagePath, cancellationToken)
+                ?? throw new FileNotFoundException($"Stored file '{storagePath}' is missing.");
 
             var pages = await _pdfParser.ExtractPagesAsync(fileStream, cancellationToken);
 
-            await NotifyAsync(document, 30, DocumentProcessingStage.Extracting, cancellationToken);
+            await NotifyAsync(document, document.DetectedFormat == DocumentFormat.Pdf ? 30 : 45, DocumentProcessingStage.Extracting, cancellationToken);
 
             var chunks = _chunker.ChunkPages(pages);
 
@@ -109,6 +143,8 @@ public class DocumentProcessingJob : IDocumentProcessingJob
             _dbContext.DocumentChunks.AddRange(pendingChunks);
 
             document.Status = DocumentStatus.Indexed;
+            document.ProcessingStage = ProcessingStage.Completed;
+            document.ProgressPercentage = 100;
             document.ChunkCount = pendingChunks.Count;
             document.UpdatedAtUtc = DateTime.UtcNow;
 
@@ -131,6 +167,13 @@ public class DocumentProcessingJob : IDocumentProcessingJob
             }
 
             document.Status = DocumentStatus.Failed;
+            document.FailureCode = ex is DocumentProcessingException failure ? failure.Code.ToString() : document.ProcessingStage switch
+            {
+                ProcessingStage.Normalizing => "NORMALIZATION_FAILED",
+                ProcessingStage.Validating => "VALIDATION_FAILED",
+                ProcessingStage.Extracting => "EXTRACTION_FAILED",
+                _ => "INDEXING_FAILED"
+            };
             document.ErrorMessage = ex.Message;
             document.ChunkCount = 0;
             document.UpdatedAtUtc = DateTime.UtcNow;
@@ -143,13 +186,26 @@ public class DocumentProcessingJob : IDocumentProcessingJob
     private static int ScaleEmbeddingProgress(int embedded, int total) =>
         EmbeddingProgressStart + (int)((double)embedded / total * (EmbeddingProgressEnd - EmbeddingProgressStart));
 
-    private Task NotifyAsync(
+    private async Task NotifyAsync(
         Document document,
         int percentage,
         string stage,
         CancellationToken cancellationToken,
-        string? errorMessage = null) =>
-        _notifier.NotifyProgressAsync(
-            new DocumentProgressNotification(document.Id, document.WorkspaceId, percentage, stage, errorMessage),
-            cancellationToken);
+        string? errorMessage = null)
+    {
+        document.ProcessingStage = Enum.Parse<ProcessingStage>(stage);
+        document.ProgressPercentage = percentage;
+        // Completion was committed atomically with chunks above. Do not introduce
+        // a second database failure after successful indexing.
+        if (stage != DocumentProcessingStage.Completed)
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _notifier.NotifyProgressAsync(
+                new DocumentProgressNotification(document.Id, document.WorkspaceId, percentage, stage, errorMessage),
+                cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        { _logger.LogWarning(ex, "Could not publish document progress for {DocumentId}.", document.Id); }
+    }
 }

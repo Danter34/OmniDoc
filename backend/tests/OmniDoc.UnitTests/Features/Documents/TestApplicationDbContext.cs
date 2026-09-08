@@ -22,6 +22,7 @@ internal sealed class TestApplicationDbContext : DbContext, IApplicationDbContex
     public DbSet<EmailOutboxMessage> EmailOutboxMessages => Set<EmailOutboxMessage>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<Document> Documents => Set<Document>();
+    public DbSet<DocumentArtifact> DocumentArtifacts => Set<DocumentArtifact>();
     public DbSet<DocumentChunk> DocumentChunks => Set<DocumentChunk>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
