@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/hooks/use-auth";
+import { showcase } from "@/lib/showcase";
 import { getErrorMessage } from "@/services/api-client";
 
 type AuthMode = "login" | "register";
@@ -55,9 +56,11 @@ function validate(
 export function AuthForm({
   mode,
   redirectTo = "/workspaces",
+  highlightShowcase = false,
 }: {
   mode: AuthMode;
   redirectTo?: string;
+  highlightShowcase?: boolean;
 }) {
   const isRegister = mode === "register";
   const { user, isLoading, login, register } = useAuth();
@@ -71,6 +74,7 @@ export function AuthForm({
   const [requestError, setRequestError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showcaseFilled, setShowcaseFilled] = useState(false);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -129,6 +133,39 @@ export function AuthForm({
               : "Tiếp tục quản lý tài liệu và không gian làm việc của bạn."}
           </p>
         </div>
+
+        {!isRegister && showcase.enabled ? (
+          <aside
+            id="showcase-quick-fill"
+            aria-label="Tài khoản trải nghiệm"
+            className={`mt-6 rounded-xl border border-line bg-surface-subtle p-4 ${highlightShowcase ? "ring-2 ring-focus-ring ring-offset-2 ring-offset-surface" : ""}`}
+          >
+            <p className="text-xs font-semibold text-accent">
+              Dành cho nhà tuyển dụng &amp; kiểm thử
+            </p>
+            <p className="mt-2 text-sm leading-6 text-content-secondary">
+              Điền tài khoản mẫu, sau đó nhấn Đăng nhập để trải nghiệm.
+            </p>
+            <Button
+              className="mt-3 h-auto min-h-11 w-full py-2"
+              disabled={isSubmitting}
+              type="button"
+              onClick={() => {
+                setValues((current) => ({ ...current, email: showcase.email, password: showcase.password }));
+                setErrors({});
+                setRequestError(null);
+                setShowcaseFilled(true);
+              }}
+            >
+              Sử dụng tài khoản Trải nghiệm
+            </Button>
+            <p className="mt-2 text-xs leading-5 text-muted" role="status">
+              {showcaseFilled
+                ? "Đã điền thông tin. Nhấn Đăng nhập để tiếp tục."
+                : "Không gian dùng chung. Vui lòng không nhập thông tin cá nhân hoặc nội dung bí mật."}
+            </p>
+          </aside>
+        ) : null}
 
         {requestError ? (
           <div

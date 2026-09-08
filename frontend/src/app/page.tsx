@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { PortfolioLanding } from "@/components/landing/portfolio-landing";
 
 export default function HomePage() {
-  redirect("/workspaces");
+  return <PortfolioLanding />;
 }
