@@ -13,12 +13,13 @@ export function WorkspaceChatPage({ workspaceId }: { workspaceId: string }) {
     workspaces,
     activeWorkspaceId,
     isLoading,
+    error,
     setActiveWorkspaceId,
   } = useWorkspace();
   const workspace = workspaces.find((item) => item.id === workspaceId);
 
   useEffect(() => {
-    if (isLoading) {
+    if (isLoading || error) {
       return;
     }
 
@@ -35,12 +36,16 @@ export function WorkspaceChatPage({ workspaceId }: { workspaceId: string }) {
   }, [
     activeWorkspaceId,
     isLoading,
+    error,
     router,
     setActiveWorkspaceId,
     workspace,
   ]);
 
-  if (isLoading || !workspace) {
+  if (!workspace) {
+    if (!isLoading && error) {
+      return <p role="alert" className="p-6 text-danger">Không thể mở workspace. {error}</p>;
+    }
     return (
       <div className="flex min-h-[calc(100vh-12rem)] items-center justify-center">
         <div className="flex items-center gap-3 text-sm text-muted">

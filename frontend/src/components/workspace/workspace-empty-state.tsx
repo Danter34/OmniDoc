@@ -27,7 +27,7 @@ export function WorkspaceEmptyState() {
               Tạo Workspace đầu tiên
             </h1>
             <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-content-secondary">
-              Workspace giúp bạn tổ chức PDF theo dự án, phòng ban hoặc nhóm tri
+              Workspace giúp bạn tổ chức tài liệu theo dự án, phòng ban hoặc nhóm tri
               thức riêng biệt.
             </p>
             <Button
@@ -48,7 +48,7 @@ export function WorkspaceEmptyState() {
                 Tải lên tài liệu
               </h2>
               <p className="mt-1.5 text-sm leading-6 text-muted">
-                Kéo thả PDF và theo dõi quá trình lập chỉ mục theo thời gian thực.
+                Kéo thả tài liệu và theo dõi quá trình lập chỉ mục theo thời gian thực.
               </p>
             </div>
             <div className="bg-surface p-6">

@@ -79,8 +79,8 @@ function ChatInputComponent({
           onKeyDown={handleKeyDown}
           placeholder={
             disabled
-              ? "Cần ít nhất một tài liệu đã lập chỉ mục..."
-              : "Hỏi OmniDoc về tài liệu trong Workspace..."
+              ? disabledReason ?? "Đang tải hội thoại..."
+              : "Trò chuyện với OmniDoc hoặc hỏi về tài liệu..."
           }
           ref={textareaRef}
           rows={1}

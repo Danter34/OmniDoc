@@ -31,6 +31,17 @@ services:
     networks:
       - omnidoc-internal
 
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "127.0.0.1:1025:1025"
+    expose:
+      - "1025"
+    networks:
+      - omnidoc-internal
+
   gotenberg:
     image: gotenberg/gotenberg:8
     restart: unless-stopped
@@ -71,15 +82,17 @@ services:
       AiSettings__Gemini__ApiKey: ${GEMINI_API_KEY:-}
       AiSettings__Gemini__ChatModel: ${GEMINI_CHAT_MODEL:-gemini-3.6-flash}
       AiSettings__Gemini__EmbeddingModel: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-2}
-      EmailSettings__Host: ${SMTP_HOST:-smtp.example.com}
-      EmailSettings__Port: ${SMTP_PORT:-587}
+      EmailSettings__Host: ${SMTP_HOST:-mailpit}
+      EmailSettings__Port: ${SMTP_PORT:-1025}
       EmailSettings__Username: ${SMTP_USERNAME:-}
       EmailSettings__Password: ${SMTP_PASSWORD:-}
       EmailSettings__FromEmail: ${SMTP_FROM_EMAIL:-no-reply@example.com}
       EmailSettings__FromName: ${SMTP_FROM_NAME:-OmniDoc}
-      EmailSettings__EnableSsl: ${SMTP_ENABLE_SSL:-true}
+      EmailSettings__EnableSsl: ${SMTP_ENABLE_SSL:-false}
       EmailSettings__ShowDemoOtp: ${EMAIL_SHOW_DEMO_OTP:-false}
     depends_on:
+      mailpit:
+        condition: service_started
       db:
         condition: service_healthy
       redis:

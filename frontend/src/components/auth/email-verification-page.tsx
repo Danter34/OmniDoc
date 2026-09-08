@@ -22,7 +22,7 @@ import { Logo } from "@/components/ui/logo";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { getErrorMessage } from "@/services/api-client";
+import { ApiError, getErrorMessage } from "@/services/api-client";
 import { authService } from "@/services/auth.service";
 
 const OTP_LENGTH = 6;
@@ -44,12 +44,27 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
     secondsUntil(user?.otpResendAvailableAt),
   );
   const [error, setError] = useState<string | null>(null);
+  const [debugOtp, setDebugOtp] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [isVerified, setIsVerified] = useState(Boolean(user?.emailConfirmed));
   const [hasOtpBeenSent, setHasOtpBeenSent] = useState(
     Boolean(user?.otpResendAvailableAt),
   );
+
+  useEffect(() => {
+    let active = true;
+    authService.sendVerificationOtp().then((response) => {
+      if (!active) return;
+      setDebugOtp(response.debugOtp);
+      setCountdown(secondsUntil(response.resendAvailableAt));
+      setHasOtpBeenSent(true);
+    }).catch((requestError: unknown) => {
+      if (!active || (requestError instanceof ApiError && requestError.status === 429)) return;
+      setError(getErrorMessage(requestError));
+    });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (countdown <= 0) {
@@ -168,6 +183,7 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
 
     try {
       const response = await authService.sendVerificationOtp();
+      setDebugOtp(response.debugOtp);
       setCountdown(secondsUntil(response.resendAvailableAt));
       setHasOtpBeenSent(true);
       setDigits(Array(OTP_LENGTH).fill(""));
@@ -252,6 +268,13 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
           {isVerifying ? "Đang xác minh..." : "Xác minh Email"}
         </Button>
       </form>
+
+      {debugOtp ? (
+        <Button className="mt-5 w-full" disabled={isVerifying || isResending}
+          onClick={() => applyPastedOtp(debugOtp)} variant="secondary">
+          Điền mã OTP Demo
+        </Button>
+      ) : null}
 
       <div className="mt-5 text-center text-sm text-muted">
         {hasOtpBeenSent ? "Không nhận được mã?" : "Bạn chưa có mã?"}{" "}

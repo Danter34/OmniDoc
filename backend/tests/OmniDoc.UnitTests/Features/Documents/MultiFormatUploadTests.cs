@@ -87,11 +87,11 @@ public sealed class MultiFormatUploadTests
     [InlineData("note.pptx", true)]
     [InlineData("note.docm", false)]
     [InlineData("note.pptm", false)]
-    [InlineData("note.csv", true)]
-    [InlineData("note.xlsx", true)]
+    [InlineData("note.csv", false)]
+    [InlineData("note.xlsx", false)]
     [InlineData("note.xlsm", false)]
     [InlineData("note.pdf.exe", false)]
-    public void Validator_EnforcesSprintScope(string name, bool accepted)
+    public void Validator_EnforcesV11Scope(string name, bool accepted)
     {
         using var stream = new MemoryStream();
         Assert.Equal(accepted, new UploadDocumentCommandValidator().Validate(new UploadDocumentCommand(Guid.NewGuid(), stream, name, "", 1)).IsValid);
@@ -110,6 +110,18 @@ public sealed class MultiFormatUploadTests
         Assert.Equal("PasswordRequired", result.ErrorCode);
         Assert.Empty(context.Documents);
         Assert.Empty(files.Files);
+    }
+
+    [Theory]
+    [InlineData("data.csv")]
+    [InlineData("data.XLSX")]
+    [InlineData("data.CSV")]
+    public void Validator_ExplainsSpreadsheetRestriction(string name)
+    {
+        var result = new UploadDocumentCommandValidator().Validate(
+            new UploadDocumentCommand(Guid.NewGuid(), Stream.Null, name, "application/pdf", 1));
+        Assert.Contains(result.Errors, error => error.ErrorMessage ==
+            "Định dạng bảng tính (CSV, Excel) tạm thời chưa được hỗ trợ trong phiên bản này.");
     }
 
     private static Mock<IWorkspaceAuthorizationService> Authorization()

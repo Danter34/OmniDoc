@@ -24,7 +24,7 @@ interface DocumentDropzoneProps {
 }
 
 function isSupportedDocument(file: File) {
-  return /\.(pdf|txt|md|markdown|docx|pptx|csv|xlsx)$/i.test(file.name);
+  return /\.(pdf|txt|md|markdown|docx|pptx)$/i.test(file.name);
 }
 
 export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
@@ -48,7 +48,7 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
     if (supportedFiles.length !== files.length) {
       setMessage({
         type: "error",
-        text: "OmniDoc hỗ trợ PDF, TXT, Markdown, DOCX, PPTX, CSV và XLSX. Các tệp không hợp lệ đã được bỏ qua.",
+        text: "OmniDoc hỗ trợ PDF, TXT, Markdown, DOCX và PPTX. Các tệp không hợp lệ đã được bỏ qua.",
       });
     }
 
@@ -117,7 +117,7 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
     <section className="glass-panel rounded-2xl p-4 sm:p-5">
       <div
         aria-disabled={isUploading}
-        aria-label="Tải tài liệu PDF, TXT, Markdown, DOCX, PPTX, CSV hoặc XLSX"
+        aria-label="Tải lên tài liệu"
         className={cn(
           "relative flex min-h-48 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed px-6 py-8 text-center outline-none transition",
           isDragging
@@ -148,7 +148,7 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
         tabIndex={0}
       >
         <input
-          accept=".pdf,.txt,.md,.markdown,.docx,.pptx,.csv,.xlsx"
+          accept=".pdf,.docx,.pptx,.txt,.md,.markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/markdown"
           className="sr-only"
           disabled={isUploading}
           multiple
@@ -204,7 +204,7 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
                 : "Kéo thả tài liệu vào đây hoặc nhấp để chọn"}
             </p>
             <p className="mt-1.5 text-xs leading-5 text-muted">
-              PDF, TXT, Markdown (UTF-8), DOCX, PPTX, CSV và XLSX, tối đa 50 MB mỗi tệp. CSV tối đa 5.000 hàng dữ liệu.
+              PDF, TXT, Markdown (UTF-8), DOCX và PPTX, tối đa 50 MB mỗi tệp.
             </p>
           </>
         )}

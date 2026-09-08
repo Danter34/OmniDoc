@@ -104,7 +104,7 @@ export function CitationPanel({
                   {citation.documentName}
                 </p>
                 <p className="mt-1 text-xs text-muted">
-                  Tài liệu PDF · Trang {citation.pageNumber}
+                  Tài liệu · Trang {citation.pageNumber}
                 </p>
               </div>
             </div>

@@ -28,8 +28,10 @@ public class UploadDocumentCommandValidator : AbstractValidator<UploadDocumentCo
 
         RuleFor(x => x.FileName)
             .NotEmpty()
-            .Must(name => new[] { ".pdf", ".txt", ".md", ".markdown", ".docx", ".pptx", ".csv", ".xlsx" }.Contains(Path.GetExtension(name).ToLowerInvariant()))
-            .WithMessage("Only PDF, TXT, Markdown, DOCX, PPTX, CSV and XLSX files are supported.");
+            .Must(name => new[] { ".pdf", ".txt", ".md", ".markdown", ".docx", ".pptx" }.Contains(Path.GetExtension(name).ToLowerInvariant()))
+            .WithMessage(command => Path.GetExtension(command.FileName).ToLowerInvariant() is ".csv" or ".xlsx"
+                ? "Định dạng bảng tính (CSV, Excel) tạm thời chưa được hỗ trợ trong phiên bản này."
+                : "Chỉ hỗ trợ tài liệu PDF, DOCX, PPTX, TXT và Markdown.");
 
         RuleFor(x => x.FileSizeBytes)
             .GreaterThan(0)

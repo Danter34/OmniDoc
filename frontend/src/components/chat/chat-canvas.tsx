@@ -65,10 +65,12 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     createConversation,
     deleteConversation,
     refreshConversations,
+    updateConversationTitle,
   } = useConversations(workspace.id);
   const {
     documents,
     isLoading: documentsLoading,
+    error: documentsError,
     applyProgressUpdates,
   } = useDocuments(workspace.id);
   const realtimeStatus = useDocumentProgress(
@@ -103,16 +105,17 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
   const [loadedConversationId, setLoadedConversationId] = useState<
     string | null
   >(null);
-  const [messagesLoading, setMessagesLoading] = useState(true);
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const [messagesError, setMessagesError] = useState<string | null>(null);
+  const [historyRequest, setHistoryRequest] = useState(0);
 
   const handleConversationResolved = useCallback(
-    (conversationId: string) => {
+    (conversationId: string, title?: string) => {
       setLoadedConversationId(conversationId);
       selectConversation(conversationId);
-      void refreshConversations();
+      if (title) updateConversationTitle(conversationId, title);
     },
-    [refreshConversations, selectConversation],
+    [updateConversationTitle, selectConversation],
   );
 
   const handleStreamSettled = useCallback(() => {
@@ -143,6 +146,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     conversationService
       .getMessages(workspace.id, activeConversationId, controller.signal)
       .then((items) => {
+        if (controller.signal.aborted) return;
         replaceMessages(items);
         setLoadedConversationId(activeConversationId);
         setMessagesError(null);
@@ -169,6 +173,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     isStreaming,
     replaceMessages,
     workspace.id,
+    historyRequest,
   ]);
 
   const indexedDocuments = useMemo(
@@ -180,7 +185,6 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
       documents.find((document) => document.id === selectedDocumentId) ?? null,
     [documents, selectedDocumentId],
   );
-  const hasIndexedDocuments = indexedDocuments.length > 0;
   const lastMessage = messages.at(-1);
   const scrollTrigger = `${activeConversationId ?? "new"}:${messages.length}:${
     lastMessage?.content.length ?? 0
@@ -193,7 +197,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
   } = useSmartAutoScroll(scrollTrigger);
   const historyReady =
     !activeConversationId ||
-    loadedConversationId === activeConversationId ||
+    loadedConversationId === activeConversationId || Boolean(messagesError) ||
     isStreaming;
 
   const selectConversationAndReset = useCallback(
@@ -202,6 +206,8 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
         return;
       }
 
+      if (conversationId === activeConversationId && !messagesError) return;
+      setHistoryRequest((current) => current + 1);
       setMessagesLoading(true);
       setMessagesError(null);
       setLoadedConversationId(null);
@@ -210,7 +216,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
       selectConversation(conversationId);
       scrollToBottom("auto");
     },
-    [isStreaming, scrollToBottom, selectConversation],
+    [activeConversationId, messagesError, isStreaming, scrollToBottom, selectConversation],
   );
 
   const createNewConversation = useCallback(async () => {
@@ -242,6 +248,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
       await deleteConversation(conversationId);
 
       if (conversationId === activeConversationId) {
+        replaceMessages([]);
         setLoadedConversationId(null);
         setMessagesLoading(true);
         setMessagesError(null);
@@ -249,13 +256,13 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
         setActiveCitationKey(null);
       }
     },
-    [activeConversationId, deleteConversation, isStreaming],
+    [activeConversationId, deleteConversation, isStreaming, replaceMessages],
   );
 
   const submitMessage = useCallback(() => {
     const message = input.trim();
 
-    if (!message || !hasIndexedDocuments || isStreaming) {
+    if (!message || isStreaming) {
       return;
     }
 
@@ -265,7 +272,6 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     void sendMessage(message);
   }, [
     activeConversationId,
-    hasIndexedDocuments,
     input,
     isStreaming,
     sendMessage,
@@ -364,7 +370,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
 
       pendingPdfPaneWidthRef.current = Math.min(
         68,
-        Math.max(30, ((event.clientX - bounds.left) / bounds.width) * 100),
+        Math.max(30, ((bounds.right - event.clientX) / bounds.width) * 100),
       );
 
       if (resizeFrameRef.current !== null) {
@@ -433,9 +439,9 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
       let nextWidth = pdfPaneWidthRef.current;
 
       if (event.key === "ArrowLeft") {
-        nextWidth -= 2;
-      } else if (event.key === "ArrowRight") {
         nextWidth += 2;
+      } else if (event.key === "ArrowRight") {
+        nextWidth -= 2;
       } else if (event.key === "Home") {
         nextWidth = 30;
       } else if (event.key === "End") {
@@ -475,18 +481,10 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
   const historyUnavailable = Boolean(
     activeConversationId && (!historyReady || messagesLoading),
   );
-  const inputDisabled =
-    documentsLoading ||
-    conversationsLoading ||
-    historyUnavailable ||
-    !hasIndexedDocuments;
-  const disabledReason = documentsLoading
-    ? "Đang kiểm tra tài liệu trong Workspace..."
-    : conversationsLoading || historyUnavailable
-      ? "Đang tải dữ liệu hội thoại..."
-    : !hasIndexedDocuments
-      ? "Cần ít nhất một tài liệu ở trạng thái Đã lập chỉ mục"
-      : undefined;
+  const inputDisabled = conversationsLoading || historyUnavailable || Boolean(messagesError);
+  const disabledReason = messagesError
+    ? "Không thể tải lịch sử hội thoại. Hãy chọn lại hoặc tạo hội thoại mới."
+    : inputDisabled ? "Đang tải dữ liệu hội thoại..." : undefined;
 
   return (
     <>
@@ -514,7 +512,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
           }
         >
           {pdfViewerOpen && selectedDocument ? (
-            <aside className="absolute inset-0 z-30 w-full min-w-0 border-r border-line-subtle bg-surface lg:relative lg:z-auto lg:w-[var(--pdf-pane-width)] lg:shrink-0">
+            <aside className="absolute inset-0 z-30 order-3 w-full min-w-0 border-l border-line-subtle bg-surface lg:relative lg:z-auto lg:w-[var(--pdf-pane-width)] lg:shrink-0">
               <PdfViewer
                 document={selectedDocument}
                 documents={documents}
@@ -529,13 +527,13 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
 
           {pdfViewerOpen && selectedDocument ? (
             <div
-              aria-label="Thay đổi độ rộng trình xem PDF"
+              aria-label="Thay đổi độ rộng trình xem tài liệu"
               aria-orientation="vertical"
               aria-valuemax={68}
               aria-valuemin={30}
               aria-valuenow={Math.round(pdfPaneWidth)}
               className={cn(
-                "group relative z-10 hidden w-4 shrink-0 touch-none cursor-col-resize items-center justify-center bg-transparent transition-colors hover:bg-splitter-hit-active focus-visible:bg-splitter-hit-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring lg:flex",
+                "group relative z-10 order-2 hidden w-4 shrink-0 touch-none cursor-col-resize items-center justify-center bg-transparent transition-colors hover:bg-splitter-hit-active focus-visible:bg-splitter-hit-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus-ring lg:flex",
                 isResizingPdf && "bg-splitter-hit-active",
               )}
               onDoubleClick={() => setPdfPaneWidthValue(48)}
@@ -560,7 +558,17 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
             </div>
           ) : null}
 
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {!selectedDocument && (documentsLoading || documentsError || documents.length === 0) ? (
+            <aside aria-label="Trình xem tài liệu" className="order-3 hidden w-[var(--pdf-pane-width)] shrink-0 items-center justify-center border-l border-line-subtle bg-surface/35 p-8 text-center lg:flex">
+              <div role="status" className="max-w-sm text-sm leading-6 text-muted">
+                {documentsLoading ? <><Spinner className="mx-auto mb-3 size-5" />Đang tải tài liệu...</>
+                  : documentsError ? <>Không thể tải danh sách tài liệu. {documentsError}</>
+                  : <><FileText className="mx-auto mb-4 size-10 text-accent" />Chưa có tài liệu nào trong không gian làm việc này. Bạn có thể tải lên tài liệu để AI trích dẫn bằng chứng chi tiết.</>}
+              </div>
+            </aside>
+          ) : null}
+
+          <div className="order-1 flex min-h-0 min-w-0 flex-1 flex-col">
           <header className="flex h-16 shrink-0 items-center gap-3 border-b border-line-subtle bg-surface/65 px-4 backdrop-blur-xl sm:px-5">
             <Button
               aria-label="Mở danh sách hội thoại"
@@ -584,7 +592,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
             </div>
             <div className="hidden min-w-0 items-center gap-1.5 md:flex">
               <label className="sr-only" htmlFor="chat-document-selector">
-                Chọn tài liệu PDF
+                Chọn tài liệu
               </label>
               <select
                 className="h-11 max-w-44 rounded-lg border border-line-subtle bg-surface px-3 text-xs text-content-secondary outline-none transition focus:border-focus-ring focus:ring-2 focus:ring-focus-glow xl:max-w-56"
@@ -597,7 +605,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
                 }}
                 value={selectedDocumentId ?? ""}
               >
-                <option value="">Chọn tài liệu PDF</option>
+                <option value="">Chọn tài liệu</option>
                 {documents.map((document) => (
                   <option key={document.id} value={document.id}>
                     {document.title || document.fileName}
@@ -606,7 +614,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
               </select>
             </div>
             <Button
-              aria-label={pdfViewerOpen ? "Đóng trình xem PDF" : "Mở trình xem PDF"}
+              aria-label={pdfViewerOpen ? "Đóng trình xem tài liệu" : "Mở trình xem tài liệu"}
               className="size-9 shrink-0 px-0"
               disabled={documentsLoading || documents.length === 0}
               onClick={() => {
@@ -620,7 +628,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
                   openDocument(documentId, pdfTarget?.pageNumber ?? 1);
                 }
               }}
-              title={pdfViewerOpen ? "Đóng trình xem PDF" : "Mở trình xem PDF"}
+              title={pdfViewerOpen ? "Đóng trình xem tài liệu" : "Mở trình xem tài liệu"}
               variant="secondary"
             >
               {pdfViewerOpen ? (

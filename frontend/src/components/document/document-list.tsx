@@ -89,7 +89,7 @@ export function DocumentList({
             Chưa có tài liệu
           </p>
           <p className="mt-1.5 text-sm text-muted">
-            Tải PDF đầu tiên để bắt đầu xây dựng kho tri thức.
+            Tải tài liệu đầu tiên để bắt đầu xây dựng kho tri thức.
           </p>
         </div>
       ) : null}
