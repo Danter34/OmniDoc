@@ -76,19 +76,12 @@ export function WorkspaceSelector() {
           <span className="hidden size-7 shrink-0 items-center justify-center rounded-lg bg-info-subtle text-accent sm:flex">
             <Building2 className="size-4" />
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-medium text-content">
-              {isLoading
-                ? "Đang tải..."
-                : (activeWorkspace?.name ?? "Chọn Workspace")}
+          <span className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="truncate text-sm font-medium text-content">
+              {`${isLoading ? "Đang tải..." : (activeWorkspace?.name ?? "Chọn Workspace")}`}
             </span>
             {activeWorkspace ? (
-              <span
-                className={cn(
-                  "mt-0.5 inline-flex rounded-full px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset",
-                  roleClasses(activeWorkspace.role),
-                )}
-              >
+              <span className="shrink-0 text-[10px] font-medium text-muted">
                 {activeWorkspace.role}
               </span>
             ) : null}
@@ -169,21 +162,23 @@ export function WorkspaceSelector() {
                 </p>
               )}
             </div>
-            {!isShowcaseUser ? <div className="border-t border-line-subtle p-1.5">
-              <button
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-accent transition-colors hover:bg-info-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset"
-                onClick={() => {
-                  setOpen(false);
-                  setCreateOpen(true);
-                }}
-                type="button"
-              >
-                <span className="flex size-9 items-center justify-center rounded-xl border border-dashed border-line-strong bg-info-subtle">
-                  <Plus className="size-4" />
-                </span>
-                Tạo Workspace
-              </button>
-            </div> : null}
+            {!isShowcaseUser ? (
+              <div className="border-t border-line-subtle p-1.5">
+                <button
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-accent transition-colors hover:bg-info-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset"
+                  onClick={() => {
+                    setOpen(false);
+                    setCreateOpen(true);
+                  }}
+                  type="button"
+                >
+                  <span className="flex size-9 items-center justify-center rounded-xl border border-dashed border-line-strong bg-info-subtle">
+                    <Plus className="size-4" />
+                  </span>
+                  Tạo Workspace
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
