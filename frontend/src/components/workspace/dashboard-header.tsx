@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Logo } from "@/components/ui/logo";
 import { WorkspaceSelector } from "@/components/workspace/workspace-selector";
 import { useAuth } from "@/hooks/use-auth";
+import { isShowcaseUser } from "@/lib/showcase";
 import { getInitials } from "@/lib/utils";
 
 export function DashboardHeader() {
@@ -21,7 +22,7 @@ export function DashboardHeader() {
       <header className="glass-panel sticky top-0 z-30 border-x-0 border-t-0">
         <div className="mx-auto flex h-16 max-w-[var(--layout-max)] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <Logo
-            className="mr-1 shrink-0"
+            className="mr-1 shrink-0 [&>span]:hidden sm:[&>span]:inline-flex"
             href="/workspaces"
             imageSize={32}
             priority
@@ -32,7 +33,7 @@ export function DashboardHeader() {
           />
           <WorkspaceSelector />
 
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
             <NotificationBell />
             <ThemeToggle />
 
@@ -61,7 +62,7 @@ export function DashboardHeader() {
                       {user?.email}
                     </p>
                   </div>
-                  <button
+                  {!isShowcaseUser(user) ? <button
                     className="mt-1 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-content-secondary transition-colors hover:bg-surface-subtle hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset"
                     onClick={() => {
                       setProfileOpen(false);
@@ -72,7 +73,7 @@ export function DashboardHeader() {
                   >
                     <KeyRound aria-hidden="true" className="size-4" />
                     Đổi mật khẩu
-                  </button>
+                  </button> : null}
                   <button
                     className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-content-secondary transition-colors hover:bg-surface-subtle hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset"
                     onClick={logout}
@@ -88,7 +89,7 @@ export function DashboardHeader() {
           </div>
         </div>
       </header>
-      {changePasswordOpen ? (
+      {changePasswordOpen && !isShowcaseUser(user) ? (
         <ChangePasswordModal onClose={() => setChangePasswordOpen(false)} />
       ) : null}
     </>

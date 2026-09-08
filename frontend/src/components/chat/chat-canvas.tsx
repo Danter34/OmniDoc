@@ -30,6 +30,7 @@ import {
   type SelectedCitation,
 } from "@/components/chat/citation-panel";
 import { ConversationSidebar } from "@/components/chat/conversation-sidebar";
+import { ShowcaseBanner } from "@/components/chat/showcase-banner";
 import {
   PdfViewer,
   type PdfPageTarget,
@@ -42,6 +43,8 @@ import { useConversations } from "@/hooks/use-conversations";
 import { useDocumentProgress } from "@/hooks/use-document-progress";
 import { useDocuments } from "@/hooks/use-documents";
 import { useSmartAutoScroll } from "@/hooks/use-smart-auto-scroll";
+import { useShowcase } from "@/hooks/use-showcase";
+import { SHOWCASE_PROMPTS } from "@/lib/showcase";
 import { cn } from "@/lib/utils";
 import { getErrorMessage } from "@/services/api-client";
 import { conversationService } from "@/services/conversation.service";
@@ -55,6 +58,7 @@ const SUGGESTED_PROMPTS = [
 ];
 
 export function ChatCanvas({ workspace }: { workspace: Workspace }) {
+  const { isShowcaseWorkspace: isShowcase } = useShowcase(workspace.id);
   const {
     conversations,
     activeConversation,
@@ -66,7 +70,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     deleteConversation,
     refreshConversations,
     updateConversationTitle,
-  } = useConversations(workspace.id);
+  } = useConversations(workspace.id, !isShowcase);
   const {
     documents,
     isLoading: documentsLoading,
@@ -88,7 +92,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     null,
   );
   const [pdfTarget, setPdfTarget] = useState<PdfPageTarget | null>(null);
-  const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
+  const [pdfViewerOpen, setPdfViewerOpen] = useState(isShowcase);
   const [pdfPaneWidth, setPdfPaneWidth] = useState(48);
   const [isResizingPdf, setIsResizingPdf] = useState(false);
   const splitAreaRef = useRef<HTMLDivElement>(null);
@@ -182,8 +186,11 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
   );
   const selectedDocument = useMemo(
     () =>
-      documents.find((document) => document.id === selectedDocumentId) ?? null,
-    [documents, selectedDocumentId],
+      documents.find((document) => document.id === selectedDocumentId) ??
+      (isShowcase && selectedDocumentId === null
+        ? indexedDocuments.find((document) => document.detectedFormat === "Pdf") ?? indexedDocuments[0] ?? null
+        : null),
+    [documents, indexedDocuments, isShowcase, selectedDocumentId],
   );
   const lastMessage = messages.at(-1);
   const scrollTrigger = `${activeConversationId ?? "new"}:${messages.length}:${
@@ -224,6 +231,19 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
       return;
     }
 
+    if (isShowcase) {
+      selectConversation(null);
+      replaceMessages([]);
+      setInput("");
+      setMessagesLoading(false);
+      setMessagesError(null);
+      setLoadedConversationId(null);
+      setSelectedCitation(null);
+      setActiveCitationKey(null);
+      scrollToBottom("auto");
+      return;
+    }
+
     const created = await createConversation("Cuộc trò chuyện mới");
     setMessagesLoading(true);
     setMessagesError(null);
@@ -234,6 +254,8 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     scrollToBottom("auto");
   }, [
     createConversation,
+    isShowcase,
+    replaceMessages,
     isStreaming,
     scrollToBottom,
     selectConversation,
@@ -241,7 +263,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
 
   const removeConversation = useCallback(
     async (conversationId: string) => {
-      if (isStreaming) {
+      if (isStreaming || isShowcase) {
         return;
       }
 
@@ -256,13 +278,13 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
         setActiveCitationKey(null);
       }
     },
-    [activeConversationId, deleteConversation, isStreaming, replaceMessages],
+    [activeConversationId, deleteConversation, isShowcase, isStreaming, replaceMessages],
   );
 
-  const submitMessage = useCallback(() => {
-    const message = input.trim();
+  const submitMessage = useCallback((suggestion?: string) => {
+    const message = (suggestion ?? input).trim();
 
-    if (!message || isStreaming) {
+    if (!message || isStreaming || conversationsLoading || messagesLoading || messagesError) {
       return;
     }
 
@@ -272,6 +294,9 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     void sendMessage(message);
   }, [
     activeConversationId,
+    conversationsLoading,
+    messagesLoading,
+    messagesError,
     input,
     isStreaming,
     sendMessage,
@@ -488,7 +513,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
 
   return (
     <>
-      <section className="glass-panel flex h-[calc(100vh-11.5rem)] min-h-[640px] overflow-hidden rounded-2xl">
+      <section className={cn("glass-panel flex h-[calc(100vh-11.5rem)] min-h-[640px] overflow-hidden rounded-2xl", isShowcase && pdfViewerOpen && "min-h-[960px] lg:min-h-[640px]")}>
         <ConversationSidebar
           activeConversationId={activeConversationId}
           conversations={conversations}
@@ -498,12 +523,13 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
           mobileOpen={mobileSidebarOpen}
           onCreate={createNewConversation}
           onDelete={removeConversation}
+          canDelete={!isShowcase}
           onMobileClose={closeMobileSidebar}
           onSelect={selectConversationAndReset}
         />
 
         <div
-          className="relative flex min-h-0 min-w-0 flex-1"
+          className={cn("relative flex min-h-0 min-w-0 flex-1", isShowcase && "flex-col lg:flex-row")}
           ref={splitAreaRef}
           style={
             {
@@ -512,7 +538,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
           }
         >
           {pdfViewerOpen && selectedDocument ? (
-            <aside className="absolute inset-0 z-30 order-3 w-full min-w-0 border-l border-line-subtle bg-surface lg:relative lg:z-auto lg:w-[var(--pdf-pane-width)] lg:shrink-0">
+            <aside className={cn("order-3 min-w-0 border-l border-line-subtle bg-surface lg:relative lg:z-auto lg:w-[var(--pdf-pane-width)] lg:shrink-0", isShowcase ? "relative h-72 w-full shrink-0 border-t lg:h-auto lg:border-t-0" : "absolute inset-0 z-30 w-full")}>
               <PdfViewer
                 document={selectedDocument}
                 documents={documents}
@@ -563,7 +589,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
               <div role="status" className="max-w-sm text-sm leading-6 text-muted">
                 {documentsLoading ? <><Spinner className="mx-auto mb-3 size-5" />Đang tải tài liệu...</>
                   : documentsError ? <>Không thể tải danh sách tài liệu. {documentsError}</>
-                  : <><FileText className="mx-auto mb-4 size-10 text-accent" />Chưa có tài liệu nào trong không gian làm việc này. Bạn có thể tải lên tài liệu để AI trích dẫn bằng chứng chi tiết.</>}
+                  : <><FileText className="mx-auto mb-4 size-10 text-accent" />{isShowcase ? "Tài liệu trải nghiệm chưa sẵn sàng. Vui lòng quay lại sau." : "Chưa có tài liệu nào trong không gian làm việc này. Bạn có thể tải lên tài liệu để AI trích dẫn bằng chứng chi tiết."}</>}
               </div>
             </aside>
           ) : null}
@@ -583,7 +609,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
             </span>
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-sm font-semibold text-content">
-                {activeConversation?.title ?? "Hỏi đáp tài liệu"}
+                {activeConversation?.title ?? (isShowcase ? "Cuộc trò chuyện mới" : "Hỏi đáp tài liệu")}
               </h1>
               <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
                 <BookOpenCheck className="size-3.5" />
@@ -603,7 +629,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
                     openDocument(event.target.value);
                   }
                 }}
-                value={selectedDocumentId ?? ""}
+                value={selectedDocument?.id ?? ""}
               >
                 <option value="">Chọn tài liệu</option>
                 {documents.map((document) => (
@@ -623,7 +649,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
                   return;
                 }
 
-                const documentId = selectedDocumentId ?? documents[0]?.id;
+                const documentId = selectedDocument?.id ?? documents[0]?.id;
                 if (documentId) {
                   openDocument(documentId, pdfTarget?.pageNumber ?? 1);
                 }
@@ -656,6 +682,8 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
             </span>
           </header>
 
+          {isShowcase ? <ShowcaseBanner /> : null}
+
           <div className="relative min-h-0 flex-1">
             <div
               className="h-full overflow-y-auto overscroll-contain bg-surface/35"
@@ -682,8 +710,9 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
                 </div>
               ) : messages.length === 0 ? (
                 <EmptyChatState
-                  disabled={inputDisabled}
-                  onSuggestion={setInput}
+                  disabled={inputDisabled || (isShowcase && indexedDocuments.length === 0)}
+                  onSuggestion={isShowcase ? submitMessage : setInput}
+                  prompts={isShowcase ? SHOWCASE_PROMPTS : SUGGESTED_PROMPTS}
                   workspaceName={workspace.name}
                 />
               ) : (
@@ -744,10 +773,12 @@ function EmptyChatState({
   workspaceName,
   disabled,
   onSuggestion,
+  prompts,
 }: {
   workspaceName: string;
   disabled: boolean;
   onSuggestion: (prompt: string) => void;
+  prompts: string[];
 }) {
   return (
     <div className="flex min-h-full items-center justify-center px-5 py-10">
@@ -774,7 +805,7 @@ function EmptyChatState({
         </p>
 
         <div className="mt-7 grid gap-2.5 text-left sm:grid-cols-3">
-          {SUGGESTED_PROMPTS.map((prompt) => (
+          {prompts.map((prompt) => (
             <button
               className="glass-panel rounded-2xl p-3.5 text-xs leading-5 text-content-secondary transition-[background-color,border-color,color,box-shadow,transform] hover:-translate-y-0.5 hover:border-focus-ring hover:bg-info-subtle hover:text-accent hover:shadow-[var(--accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50"
               disabled={disabled}

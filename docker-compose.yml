@@ -122,6 +122,7 @@ services:
         NEXT_PUBLIC_SHOWCASE_ENABLED: ${SHOWCASE_ENABLED:-false}
         NEXT_PUBLIC_SHOWCASE_EMAIL: ${SHOWCASE_EMAIL:-recruiter@omnidoc.io}
         NEXT_PUBLIC_SHOWCASE_PASSWORD: ${SHOWCASE_PASSWORD:-OmniDoc-Showcase2026!}
+        NEXT_PUBLIC_SHOWCASE_WORKSPACE_ID: ${SHOWCASE_WORKSPACE_ID:-b4987f7e-48cc-4ba5-a117-10ac4cbced02}
     restart: unless-stopped
     environment:
       NODE_ENV: production

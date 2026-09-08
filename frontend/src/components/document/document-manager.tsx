@@ -11,6 +11,8 @@ import { useCallback, useMemo } from "react";
 
 import { DocumentDropzone } from "@/components/document/document-dropzone";
 import { DocumentList } from "@/components/document/document-list";
+import { Button } from "@/components/ui/button";
+import { useShowcase } from "@/hooks/use-showcase";
 import { useDocumentProgress } from "@/hooks/use-document-progress";
 import { useDocuments } from "@/hooks/use-documents";
 import { useWorkspace } from "@/hooks/use-workspace";
@@ -18,6 +20,8 @@ import { cn } from "@/lib/utils";
 import type { Workspace } from "@/types/workspace.types";
 
 export function DocumentManager({ workspace }: { workspace: Workspace }) {
+  const { isShowcaseWorkspace, isShowcaseUser } = useShowcase(workspace.id);
+  const readOnly = isShowcaseWorkspace || isShowcaseUser;
   const {
     documents,
     isLoading,
@@ -34,11 +38,12 @@ export function DocumentManager({ workspace }: { workspace: Workspace }) {
 
   const handleUpload = useCallback(
     async (file: File) => {
+      if (readOnly) throw new Error("Chức năng tải lên bị khóa trên không gian mẫu công khai.");
       const document = await uploadDocument(file);
       incrementDocumentCount(workspace.id);
       return document;
     },
-    [incrementDocumentCount, uploadDocument, workspace.id],
+    [incrementDocumentCount, readOnly, uploadDocument, workspace.id],
   );
 
   const stats = useMemo(() => {
@@ -135,7 +140,12 @@ export function DocumentManager({ workspace }: { workspace: Workspace }) {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(18rem,0.75fr)_minmax(0,1.75fr)] xl:items-start">
-        <DocumentDropzone onUpload={handleUpload} />
+        {readOnly ? (
+          <div className="glass-panel rounded-2xl p-6" title="Chức năng tải lên bị khóa trên không gian mẫu công khai.">
+            <Button disabled type="button">Tải lên tài liệu</Button>
+            <p className="mt-3 text-sm leading-6 text-muted">Chức năng tải lên bị khóa trên không gian mẫu công khai.</p>
+          </div>
+        ) : <DocumentDropzone onUpload={handleUpload} />}
         <DocumentList
           documents={documents}
           error={error}

@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { CreateWorkspaceModal } from "@/components/workspace/create-workspace-modal";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useShowcase } from "@/hooks/use-showcase";
 import { cn } from "@/lib/utils";
 import type { WorkspaceRole } from "@/types/workspace.types";
 
@@ -28,6 +29,7 @@ function roleClasses(role: WorkspaceRole) {
 }
 
 export function WorkspaceSelector() {
+  const { isShowcaseUser } = useShowcase();
   const router = useRouter();
   const {
     workspaces,
@@ -62,16 +64,16 @@ export function WorkspaceSelector() {
 
   return (
     <>
-      <div className="relative" ref={containerRef}>
+      <div className="relative min-w-0 flex-1 sm:max-w-80 sm:flex-initial" ref={containerRef}>
         <button
           aria-expanded={open}
           aria-haspopup="listbox"
-          className="flex h-11 min-w-0 items-center gap-2.5 rounded-xl border border-line-subtle bg-surface/80 px-3 text-left shadow-sm transition-[background-color,border-color,box-shadow] hover:border-line hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:min-w-64"
+          className="flex h-11 w-full min-w-0 items-center gap-2.5 rounded-xl border border-line-subtle bg-surface/80 px-3 text-left shadow-sm transition-[background-color,border-color,box-shadow] hover:border-line hover:bg-surface-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring sm:min-w-64"
           disabled={isLoading}
           onClick={() => setOpen((current) => !current)}
           type="button"
         >
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-info-subtle text-accent">
+          <span className="hidden size-7 shrink-0 items-center justify-center rounded-lg bg-info-subtle text-accent sm:flex">
             <Building2 className="size-4" />
           </span>
           <span className="min-w-0 flex-1">
@@ -100,7 +102,7 @@ export function WorkspaceSelector() {
         </button>
 
         {open ? (
-          <div className="glass-panel absolute left-0 top-[calc(100%+8px)] z-40 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl">
+          <div className="glass-panel absolute left-0 top-[calc(100%+8px)] z-40 w-[min(22rem,calc(100vw-6rem))] overflow-hidden rounded-2xl sm:w-88">
             <div className="border-b border-line-subtle px-3 py-2.5">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Workspaces
@@ -167,7 +169,7 @@ export function WorkspaceSelector() {
                 </p>
               )}
             </div>
-            <div className="border-t border-line-subtle p-1.5">
+            {!isShowcaseUser ? <div className="border-t border-line-subtle p-1.5">
               <button
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-accent transition-colors hover:bg-info-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset"
                 onClick={() => {
@@ -181,14 +183,14 @@ export function WorkspaceSelector() {
                 </span>
                 Tạo Workspace
               </button>
-            </div>
+            </div> : null}
           </div>
         ) : null}
       </div>
 
       <CreateWorkspaceModal
         onClose={() => setCreateOpen(false)}
-        open={createOpen}
+        open={createOpen && !isShowcaseUser}
       />
     </>
   );

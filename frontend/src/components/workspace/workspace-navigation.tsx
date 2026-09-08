@@ -5,11 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useWorkspace } from "@/hooks/use-workspace";
+import { useShowcase } from "@/hooks/use-showcase";
 import { cn } from "@/lib/utils";
 
 export function WorkspaceNavigation() {
   const pathname = usePathname();
   const { activeWorkspaceId } = useWorkspace();
+  const { isShowcaseWorkspace, isShowcaseUser } = useShowcase(activeWorkspaceId);
 
   if (!activeWorkspaceId) {
     return null;
@@ -41,7 +43,7 @@ export function WorkspaceNavigation() {
       aria-label="Điều hướng Workspace"
       className="glass-panel mb-5 flex w-fit items-center gap-1 rounded-xl p-1"
     >
-      {items.map((item) => {
+      {items.filter((item) => item.icon !== Settings || !(isShowcaseWorkspace || isShowcaseUser)).map((item) => {
         const Icon = item.icon;
 
         return (

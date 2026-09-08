@@ -17,8 +17,9 @@ import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/hooks/use-auth";
-import { showcase } from "@/lib/showcase";
+import { getShowcaseWorkspaceId, isShowcaseUser, showcase } from "@/lib/showcase";
 import { getErrorMessage } from "@/services/api-client";
+import { workspaceService } from "@/services/workspace.service";
 
 type AuthMode = "login" | "register";
 
@@ -77,9 +78,26 @@ export function AuthForm({
   const [showcaseFilled, setShowcaseFilled] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && user) {
+    if (isLoading || !user) return;
+    if (isRegister || !isShowcaseUser(user)) {
       router.replace(redirectTo);
+      return;
     }
+
+    if (showcase.workspaceId) {
+      router.replace(`/workspaces/${encodeURIComponent(showcase.workspaceId)}/chat`);
+      return;
+    }
+
+    const controller = new AbortController();
+    workspaceService.getAll(controller.signal).then((workspaces) => {
+      if (controller.signal.aborted) return;
+      const workspaceId = getShowcaseWorkspaceId(workspaces);
+      router.replace(workspaceId ? `/workspaces/${encodeURIComponent(workspaceId)}/chat` : "/workspaces");
+    }).catch(() => {
+      if (!controller.signal.aborted) router.replace("/workspaces");
+    });
+    return () => controller.abort();
   }, [isLoading, isRegister, redirectTo, router, user]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -108,7 +126,7 @@ export function AuthForm({
         });
       }
 
-      router.replace(redirectTo);
+      // The effect above routes using the authenticated user returned by the server.
     } catch (error) {
       setRequestError(getErrorMessage(error));
     } finally {

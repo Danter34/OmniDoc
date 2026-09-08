@@ -33,7 +33,7 @@ export function CitationBadge({
       type="button"
     >
       <FileText className="size-3.5" />
-      [{index}]
+      [Trang {citation.pageNumber}]
     </button>
   );
 }

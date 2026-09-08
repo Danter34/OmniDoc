@@ -5,9 +5,15 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { CreateWorkspaceModal } from "@/components/workspace/create-workspace-modal";
+import { useShowcase } from "@/hooks/use-showcase";
 
 export function WorkspaceEmptyState() {
   const [open, setOpen] = useState(false);
+  const { isShowcaseUser } = useShowcase();
+
+  if (isShowcaseUser) {
+    return <p role="status" className="glass-panel rounded-2xl p-6 text-sm leading-6 text-muted">Không gian trải nghiệm chưa sẵn sàng. Vui lòng quay lại sau.</p>;
+  }
 
   return (
     <>

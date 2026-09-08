@@ -30,6 +30,7 @@ interface ConversationSidebarProps {
   error: string | null;
   mobileOpen: boolean;
   disabled: boolean;
+  canDelete?: boolean;
   onMobileClose: () => void;
   onSelect: (conversationId: string) => void;
   onCreate: () => Promise<void>;
@@ -68,6 +69,7 @@ function SidebarContent({
   isLoading,
   error,
   disabled,
+  canDelete = true,
   onSelect,
   onCreate,
   onDelete,
@@ -265,7 +267,7 @@ function SidebarContent({
                       </span>
                     </span> : null}
                   </button>
-                  {!collapsed ? <button
+                  {!collapsed && canDelete ? <button
                     aria-label="Xóa hội thoại"
                     className={cn(
                       "mt-2.5 flex size-7 shrink-0 items-center justify-center rounded-lg text-muted opacity-100 transition hover:bg-danger-subtle hover:text-danger focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring lg:opacity-0 lg:group-hover:opacity-100",

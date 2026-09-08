@@ -14,7 +14,7 @@ function sortConversations(items: Conversation[]) {
   );
 }
 
-export function useConversations(workspaceId: string) {
+export function useConversations(workspaceId: string, autoSelectLatest = true) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
@@ -26,11 +26,11 @@ export function useConversations(workspaceId: string) {
     const sorted = sortConversations(items);
     setConversations(sorted);
     setActiveConversationId((current) =>
-      current && sorted.some((item) => item.id === current)
+      current && (!autoSelectLatest || sorted.some((item) => item.id === current))
         ? current
-        : (sorted[0]?.id ?? null),
+        : (autoSelectLatest ? sorted[0]?.id ?? null : null),
     );
-  }, []);
+  }, [autoSelectLatest]);
 
   const refreshConversations = useCallback(async () => {
     setError(null);
