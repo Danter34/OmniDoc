@@ -313,6 +313,7 @@ public sealed class EmailVerificationTests
         User user,
         TimeProvider timeProvider) =>
         new(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             AuthenticatedUser(user),
             new FakeEmailVerificationOtpService(),
@@ -332,6 +333,7 @@ public sealed class EmailVerificationTests
         IEmailOutboxScheduler scheduler,
         bool showDemoOtp) =>
         new(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             AuthenticatedUser(user),
             new FakeEmailVerificationOtpService(),

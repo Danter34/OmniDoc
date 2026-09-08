@@ -3,6 +3,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using OmniDoc.API.Services;
 using OmniDoc.Application.Features.Chat.Commands.CreateConversation;
 using OmniDoc.Application.Features.Chat.Commands.DeleteConversation;
 using OmniDoc.Application.Features.Chat.Commands.SendMessage;
@@ -25,6 +27,7 @@ public class ChatController : BaseApiController
     };
 
     [HttpPost("/api/workspaces/{workspaceId:guid}/chat")]
+    [EnableRateLimiting(ApiRateLimits.ChatPolicy)]
     public async Task<ActionResult<ChatResponseDto>> SendMessage(
         Guid workspaceId,
         [FromBody] SendMessageRequest request,
@@ -39,6 +42,7 @@ public class ChatController : BaseApiController
     /// instead of returning an ActionResult, because the status line has to go out before the
     /// first token exists; downstream errors therefore arrive as an "error" event, not a 4xx.
     [HttpPost("/api/workspaces/{workspaceId:guid}/chat/stream")]
+    [EnableRateLimiting(ApiRateLimits.ChatPolicy)]
     public async Task StreamMessage(
         Guid workspaceId,
         [FromBody] SendMessageRequest request,

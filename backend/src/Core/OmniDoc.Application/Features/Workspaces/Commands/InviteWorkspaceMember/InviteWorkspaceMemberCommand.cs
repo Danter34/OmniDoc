@@ -37,6 +37,7 @@ public sealed class InviteWorkspaceMemberCommandHandler
 {
     private static readonly TimeSpan InvitationLifetime = TimeSpan.FromDays(7);
 
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly IInvitationLinkService _invitationLinks;
@@ -46,6 +47,7 @@ public sealed class InviteWorkspaceMemberCommandHandler
     private readonly TimeProvider _timeProvider;
 
     public InviteWorkspaceMemberCommandHandler(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         ICurrentUserService currentUser,
         IInvitationLinkService invitationLinks,
@@ -54,6 +56,7 @@ public sealed class InviteWorkspaceMemberCommandHandler
         INotificationRealtimePublisher notificationPublisher,
         TimeProvider timeProvider)
     {
+        _showcase = showcase;
         _context = context;
         _currentUser = currentUser;
         _invitationLinks = invitationLinks;
@@ -67,6 +70,8 @@ public sealed class InviteWorkspaceMemberCommandHandler
         InviteWorkspaceMemberCommand request,
         CancellationToken cancellationToken)
     {
+        _showcase.EnsureCanModifyWorkspace(request.WorkspaceId);
+
         var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
             WorkspacePermission.InviteMembers,

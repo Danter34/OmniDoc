@@ -13,13 +13,16 @@ public record DeleteConversationCommand(
 public sealed class DeleteConversationCommandHandler
     : IRequestHandler<DeleteConversationCommand, Result<bool>>
 {
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
     public DeleteConversationCommandHandler(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         IWorkspaceAuthorizationService workspaceAuthorization)
     {
+        _showcase = showcase;
         _context = context;
         _workspaceAuthorization = workspaceAuthorization;
     }
@@ -28,6 +31,8 @@ public sealed class DeleteConversationCommandHandler
         DeleteConversationCommand request,
         CancellationToken cancellationToken)
     {
+        _showcase.EnsureCanDeleteConversation(request.WorkspaceId);
+
         var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
             WorkspacePermission.ViewWorkspace,

@@ -51,7 +51,7 @@ public sealed class MultiFormatUploadTests
             _ => "# Original evidence"u8.ToArray()
         };
         using var stream = new MemoryStream(bytes);
-        var handler = new UploadDocumentCommandHandler(context, new DocumentArtifactStorage(files), new DocumentFormatDetector(), jobs.Object, auth.Object);
+        var handler = new UploadDocumentCommandHandler(Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(), context, new DocumentArtifactStorage(files), new DocumentFormatDetector(), jobs.Object, auth.Object);
         var result = await handler.Handle(new(Guid.NewGuid(), stream, name, "application/x-fake", bytes.Length), default);
         Assert.True(result.IsSuccess);
         Assert.Equal(format, result.Data!.DetectedFormat);
@@ -71,7 +71,7 @@ public sealed class MultiFormatUploadTests
         var files = new MemoryArtifactFiles();
         var jobs = new Mock<IBackgroundJobClient>(MockBehavior.Strict);
         using var stream = new MemoryStream("fake PDF"u8.ToArray());
-        var result = await new UploadDocumentCommandHandler(context, new DocumentArtifactStorage(files), new DocumentFormatDetector(), jobs.Object, Authorization().Object)
+        var result = await new UploadDocumentCommandHandler(Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(), context, new DocumentArtifactStorage(files), new DocumentFormatDetector(), jobs.Object, Authorization().Object)
             .Handle(new(Guid.NewGuid(), stream, "fake.pdf", "application/pdf", stream.Length), default);
         Assert.Equal(400, result.StatusCode);
         Assert.Empty(files.Files);
@@ -103,7 +103,7 @@ public sealed class MultiFormatUploadTests
         await using var context = new TestApplicationDbContext();
         var files = new MemoryArtifactFiles();
         using var stream = new MemoryStream(new byte[] { 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1 });
-        var result = await new UploadDocumentCommandHandler(context, new DocumentArtifactStorage(files), new DocumentFormatDetector(),
+        var result = await new UploadDocumentCommandHandler(Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(), context, new DocumentArtifactStorage(files), new DocumentFormatDetector(),
                 new Mock<IBackgroundJobClient>(MockBehavior.Strict).Object, Authorization().Object)
             .Handle(new(Guid.NewGuid(), stream, "protected.docx", "application/octet-stream", stream.Length), default);
         Assert.Equal(400, result.StatusCode);

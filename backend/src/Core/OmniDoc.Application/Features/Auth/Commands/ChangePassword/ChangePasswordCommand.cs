@@ -30,17 +30,20 @@ public sealed class ChangePasswordCommandValidator
 public sealed class ChangePasswordCommandHandler
     : IRequestHandler<ChangePasswordCommand, Result<AuthResponseDto>>
 {
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _tokenGenerator;
 
     public ChangePasswordCommandHandler(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         ICurrentUserService currentUser,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator tokenGenerator)
     {
+        _showcase = showcase;
         _context = context;
         _currentUser = currentUser;
         _passwordHasher = passwordHasher;
@@ -57,6 +60,8 @@ public sealed class ChangePasswordCommandHandler
                 "Authentication is required.",
                 401);
         }
+
+        _showcase.EnsureCanModifyAccount(userId);
 
         var user = await _context.Users
             .FirstOrDefaultAsync(item => item.Id == userId, cancellationToken);

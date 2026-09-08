@@ -319,6 +319,7 @@ public sealed class PasswordLifecycleTests
         IEmailOutboxScheduler scheduler,
         bool showDemoUrl = false) =>
         new(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             new FakePasswordResetTokenService(),
             new FakePasswordResetLinkService(),
@@ -330,6 +331,7 @@ public sealed class PasswordLifecycleTests
         TestApplicationDbContext context,
         TimeProvider timeProvider) =>
         new(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             new FakePasswordResetTokenService(),
             new FakePasswordHasher(),
@@ -339,6 +341,7 @@ public sealed class PasswordLifecycleTests
         TestApplicationDbContext context,
         User user) =>
         new(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             new StubCurrentUserService
             {

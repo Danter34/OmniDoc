@@ -15,13 +15,16 @@ public sealed record UpdateMemberRoleCommand(
 public sealed class UpdateMemberRoleCommandHandler
     : IRequestHandler<UpdateMemberRoleCommand, Result<WorkspaceMemberDto>>
 {
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
     public UpdateMemberRoleCommandHandler(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         IWorkspaceAuthorizationService workspaceAuthorization)
     {
+        _showcase = showcase;
         _context = context;
         _workspaceAuthorization = workspaceAuthorization;
     }
@@ -30,6 +33,8 @@ public sealed class UpdateMemberRoleCommandHandler
         UpdateMemberRoleCommand request,
         CancellationToken cancellationToken)
     {
+        _showcase.EnsureCanModifyWorkspace(request.WorkspaceId);
+
         var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
             WorkspacePermission.ManageRoles,

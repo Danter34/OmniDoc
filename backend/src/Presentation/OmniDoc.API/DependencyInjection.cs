@@ -22,6 +22,17 @@ public static class DependencyInjection
                 options.JsonSerializerOptions.Converters.Add(
                     new JsonStringEnumConverter()));
         services.AddOpenApi();
+        services.AddExceptionHandler<ForbiddenExceptionHandler>();
+        services.AddProblemDetails();
+        services.AddApiRateLimits();
+        services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+                | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+            // Default loopback trust remains. Add only the immediate, trusted edge proxy.
+            foreach (var proxy in configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? [])
+                if (!string.IsNullOrWhiteSpace(proxy)) options.KnownProxies.Add(System.Net.IPAddress.Parse(proxy));
+        });
         services.AddSignalR();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();

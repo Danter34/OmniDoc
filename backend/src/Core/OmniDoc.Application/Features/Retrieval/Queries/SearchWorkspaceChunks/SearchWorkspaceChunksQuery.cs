@@ -40,7 +40,7 @@ public class SearchWorkspaceChunksQueryHandler : IRequestHandler<SearchWorkspace
     {
         var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
-            WorkspacePermission.ManageDocuments,
+            WorkspacePermission.ViewWorkspace,
             cancellationToken);
 
         if (!access.IsSuccess)

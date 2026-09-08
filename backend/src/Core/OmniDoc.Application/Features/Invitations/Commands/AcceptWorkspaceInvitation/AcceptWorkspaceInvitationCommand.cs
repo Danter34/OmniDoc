@@ -14,13 +14,16 @@ public sealed record AcceptWorkspaceInvitationCommand(string Token)
 public sealed class AcceptWorkspaceInvitationCommandHandler
     : IRequestHandler<AcceptWorkspaceInvitationCommand, Result<AcceptedInvitationDto>>
 {
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
 
     public AcceptWorkspaceInvitationCommandHandler(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         ICurrentUserService currentUser)
     {
+        _showcase = showcase;
         _context = context;
         _currentUser = currentUser;
     }
@@ -35,6 +38,8 @@ public sealed class AcceptWorkspaceInvitationCommandHandler
                 "Authentication is required.",
                 401);
         }
+
+        _showcase.EnsureCanModifyAccount(userId);
 
         if (string.IsNullOrWhiteSpace(request.Token))
         {
@@ -55,6 +60,8 @@ public sealed class AcceptWorkspaceInvitationCommandHandler
                 "Invitation was not found.",
                 404);
         }
+
+        _showcase.EnsureCanModifyWorkspace(invitation.WorkspaceId);
 
         if (invitation.Status == InvitationStatus.Pending &&
             invitation.ExpiresAt <= DateTime.UtcNow)

@@ -37,7 +37,7 @@ public class GetDocumentByIdQueryHandler : IRequestHandler<GetDocumentByIdQuery,
 
         var access = await _workspaceAuthorization.AuthorizeAsync(
             document.WorkspaceId,
-            WorkspacePermission.ManageDocuments,
+            WorkspacePermission.ViewWorkspace,
             cancellationToken);
 
         return access.IsSuccess

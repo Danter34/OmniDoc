@@ -16,6 +16,16 @@ builder.Services.AddInfrastructureServices(builder.Configuration);
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+app.UseForwardedHeaders();
+
+if (app.Configuration.GetValue<bool>("Showcase:SeedOnStartup"))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    await scope.ServiceProvider.GetRequiredService<OmniDoc.Infrastructure.Services.ShowcaseSeeder>()
+        .SeedAsync(app.Lifetime.ApplicationStopping);
+}
+
 // Configure the HTTP request pipeline
 // Production TLS is terminated by the Nginx edge proxy. Keeping Kestrel's redirect
 // enabled behind that proxy would redirect the Compose HTTP entrypoint to an
@@ -27,6 +37,7 @@ if (!app.Environment.IsProduction())
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
 {

@@ -74,6 +74,7 @@ public sealed class WorkspaceAuthorizationTests
     {
         await using var context = await SeedWorkspaceAsync(Guid.NewGuid());
         var service = new WorkspaceAuthorizationService(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             new StubCurrentUserService());
 
@@ -134,7 +135,7 @@ public sealed class WorkspaceAuthorizationTests
         var userId = Guid.NewGuid();
         await using var context = new TestApplicationDbContext();
         var currentUser = AuthenticatedUser(userId);
-        var handler = new CreateWorkspaceCommandHandler(context, currentUser);
+        var handler = new CreateWorkspaceCommandHandler(Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(), context, currentUser);
 
         var result = await handler.Handle(
             new CreateWorkspaceCommand("Private workspace", "Only invited members"),
@@ -234,6 +235,7 @@ public sealed class WorkspaceAuthorizationTests
         await context.SaveChangesAsync();
 
         var handler = new DeleteConversationCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             CreateAuthorizationService(context, ownerId));
         var result = await handler.Handle(
@@ -248,7 +250,7 @@ public sealed class WorkspaceAuthorizationTests
     private static WorkspaceAuthorizationService CreateAuthorizationService(
         TestApplicationDbContext context,
         Guid userId) =>
-        new(context, AuthenticatedUser(userId));
+        new(Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(), context, AuthenticatedUser(userId));
 
     private static StubCurrentUserService AuthenticatedUser(Guid userId) =>
         new()

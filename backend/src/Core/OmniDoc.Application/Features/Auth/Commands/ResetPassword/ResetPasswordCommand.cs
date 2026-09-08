@@ -38,17 +38,20 @@ public sealed class ResetPasswordCommandHandler
     private const string InvalidTokenMessage =
         "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.";
 
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly IPasswordResetTokenService _tokenService;
     private readonly IPasswordHasher _passwordHasher;
     private readonly TimeProvider _timeProvider;
 
     public ResetPasswordCommandHandler(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         IPasswordResetTokenService tokenService,
         IPasswordHasher passwordHasher,
         TimeProvider timeProvider)
     {
+        _showcase = showcase;
         _context = context;
         _tokenService = tokenService;
         _passwordHasher = passwordHasher;
@@ -64,6 +67,8 @@ public sealed class ResetPasswordCommandHandler
             .FirstOrDefaultAsync(
                 item => item.Email == normalizedEmail,
                 cancellationToken);
+
+        if (user is not null) _showcase.EnsureCanModifyAccount(user.Id);
 
         if (user is null ||
             user.PasswordResetTokenHash is null ||

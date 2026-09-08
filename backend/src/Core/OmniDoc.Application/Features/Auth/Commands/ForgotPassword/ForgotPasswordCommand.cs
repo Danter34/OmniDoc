@@ -29,6 +29,7 @@ public sealed class ForgotPasswordCommandHandler
     public const string NeutralMessage =
         "Nếu email tồn tại, hướng dẫn đặt lại mật khẩu đã được gửi.";
 
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly IPasswordResetTokenService _tokenService;
     private readonly IPasswordResetLinkService _resetLinks;
@@ -37,6 +38,7 @@ public sealed class ForgotPasswordCommandHandler
     private readonly TimeProvider _timeProvider;
 
     public ForgotPasswordCommandHandler(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         IPasswordResetTokenService tokenService,
         IPasswordResetLinkService resetLinks,
@@ -44,6 +46,7 @@ public sealed class ForgotPasswordCommandHandler
         IEmailOutboxScheduler emailScheduler,
         TimeProvider timeProvider)
     {
+        _showcase = showcase;
         _context = context;
         _tokenService = tokenService;
         _resetLinks = resetLinks;
@@ -67,6 +70,8 @@ public sealed class ForgotPasswordCommandHandler
             return Result<ForgotPasswordDto>.Success(
                 new ForgotPasswordDto(NeutralMessage, null));
         }
+
+        _showcase.EnsureCanModifyAccount(user.Id);
 
         var stalePayloads = await _context.EmailOutboxMessages
             .Where(item =>

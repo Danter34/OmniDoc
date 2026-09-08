@@ -17,6 +17,16 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddOptions<ShowcaseSettings>()
+            .Bind(configuration.GetSection(ShowcaseSettings.SectionName))
+            .Validate(s => !s.SeedOnStartup || s.Enabled, "Showcase seeding requires Showcase:Enabled=true.")
+            .Validate(s => !s.Enabled || (s.UserId != Guid.Empty && s.WorkspaceId != Guid.Empty &&
+                System.Net.Mail.MailAddress.TryCreate(s.Email, out _)), "Enabled showcase requires valid UserId, WorkspaceId and Email.")
+            .Validate(s => !s.SeedOnStartup || (s.Password.Length >= 8 && s.Password.Length <= 128 &&
+                !string.IsNullOrWhiteSpace(s.CorpusPath)), "Showcase seeding requires Password (8-128 characters) and CorpusPath.")
+            .ValidateOnStart();
+        services.AddSingleton<IShowcasePolicy, ShowcasePolicy>();
+        services.AddScoped<ShowcaseSeeder>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<IDocumentArtifactStorage, DocumentArtifactStorage>();
         services.AddSingleton<IDocumentFormatDetector, DocumentFormatDetector>();

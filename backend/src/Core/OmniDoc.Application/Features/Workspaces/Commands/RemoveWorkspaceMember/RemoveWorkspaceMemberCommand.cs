@@ -13,15 +13,18 @@ public sealed record RemoveWorkspaceMemberCommand(
 public sealed class RemoveWorkspaceMemberCommandHandler
     : IRequestHandler<RemoveWorkspaceMemberCommand, Result<bool>>
 {
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
     public RemoveWorkspaceMemberCommandHandler(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         ICurrentUserService currentUser,
         IWorkspaceAuthorizationService workspaceAuthorization)
     {
+        _showcase = showcase;
         _context = context;
         _currentUser = currentUser;
         _workspaceAuthorization = workspaceAuthorization;
@@ -35,6 +38,9 @@ public sealed class RemoveWorkspaceMemberCommandHandler
         {
             return Result<bool>.Failure("Authentication is required.", 401);
         }
+
+        _showcase.EnsureCanModifyAccount(actorUserId);
+        _showcase.EnsureCanModifyWorkspace(request.WorkspaceId);
 
         var workspace = await _context.Workspaces
             .Include(item => item.Members)

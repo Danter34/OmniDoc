@@ -22,7 +22,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Core\OmniDoc.Application\OmniDoc.Application.csproj" />
+    <ProjectReference Include="..\..\src\Presentation\OmniDoc.API\OmniDoc.API.csproj" />
     <ProjectReference Include="..\..\src\Infrastructure\OmniDoc.Infrastructure\OmniDoc.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="../../ShowcaseCorpus/**/*" Link="ShowcaseCorpus/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

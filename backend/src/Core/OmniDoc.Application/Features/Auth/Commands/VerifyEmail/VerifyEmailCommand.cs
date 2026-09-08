@@ -23,17 +23,20 @@ public sealed class VerifyEmailCommandValidator : AbstractValidator<VerifyEmailC
 public sealed class VerifyEmailCommandHandler
     : IRequestHandler<VerifyEmailCommand, Result<UserDto>>
 {
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly IEmailVerificationOtpService _otpService;
     private readonly TimeProvider _timeProvider;
 
     public VerifyEmailCommandHandler(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         ICurrentUserService currentUser,
         IEmailVerificationOtpService otpService,
         TimeProvider timeProvider)
     {
+        _showcase = showcase;
         _context = context;
         _currentUser = currentUser;
         _otpService = otpService;
@@ -48,6 +51,8 @@ public sealed class VerifyEmailCommandHandler
         {
             return Result<UserDto>.Failure("Authentication is required.", 401);
         }
+
+        _showcase.EnsureCanModifyAccount(userId);
 
         var user = await _context.Users
             .FirstOrDefaultAsync(item => item.Id == userId, cancellationToken);

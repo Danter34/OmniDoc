@@ -221,6 +221,7 @@ public sealed class GetDocumentContentQueryTests
         Guid userId)
     {
         var authorization = new WorkspaceAuthorizationService(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             new StubCurrentUserService
             {

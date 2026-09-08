@@ -26,7 +26,7 @@ public class GetDocumentsByWorkspaceQueryHandler : IRequestHandler<GetDocumentsB
     {
         var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
-            WorkspacePermission.ManageDocuments,
+            WorkspacePermission.ViewWorkspace,
             cancellationToken);
 
         if (!access.IsSuccess)

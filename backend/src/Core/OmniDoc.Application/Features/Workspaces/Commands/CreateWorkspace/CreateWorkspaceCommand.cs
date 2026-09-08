@@ -22,13 +22,16 @@ public class CreateWorkspaceCommandValidator : AbstractValidator<CreateWorkspace
 
 public class CreateWorkspaceCommandHandler : IRequestHandler<CreateWorkspaceCommand, Result<WorkspaceDto>>
 {
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
 
     public CreateWorkspaceCommandHandler(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         ICurrentUserService currentUser)
     {
+        _showcase = showcase;
         _context = context;
         _currentUser = currentUser;
     }
@@ -39,6 +42,8 @@ public class CreateWorkspaceCommandHandler : IRequestHandler<CreateWorkspaceComm
         {
             return Result<WorkspaceDto>.Failure("Authentication is required.", 401);
         }
+
+        _showcase.EnsureCanModifyAccount(userId);
 
         var workspace = new Workspace
         {

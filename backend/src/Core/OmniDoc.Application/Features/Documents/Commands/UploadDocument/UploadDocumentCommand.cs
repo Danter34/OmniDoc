@@ -42,6 +42,7 @@ public class UploadDocumentCommandValidator : AbstractValidator<UploadDocumentCo
 
 public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentCommand, Result<DocumentDto>>
 {
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly IDocumentArtifactStorage _artifactStorage;
     private readonly IDocumentFormatDetector _detector;
@@ -49,12 +50,14 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
     private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
 
     public UploadDocumentCommandHandler(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         IDocumentArtifactStorage artifactStorage,
         IDocumentFormatDetector detector,
         IBackgroundJobClient backgroundJobClient,
         IWorkspaceAuthorizationService workspaceAuthorization)
     {
+        _showcase = showcase;
         _context = context;
         _artifactStorage = artifactStorage;
         _detector = detector;
@@ -64,6 +67,8 @@ public class UploadDocumentCommandHandler : IRequestHandler<UploadDocumentComman
 
     public async Task<Result<DocumentDto>> Handle(UploadDocumentCommand request, CancellationToken cancellationToken)
     {
+        _showcase.EnsureCanModifyWorkspace(request.WorkspaceId);
+
         var access = await _workspaceAuthorization.AuthorizeAsync(
             request.WorkspaceId,
             WorkspacePermission.ManageDocuments,

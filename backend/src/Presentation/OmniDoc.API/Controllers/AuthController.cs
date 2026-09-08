@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using OmniDoc.API.Services;
 using OmniDoc.Application.Features.Auth.Commands.LoginUser;
 using OmniDoc.Application.Features.Auth.Commands.ChangePassword;
 using OmniDoc.Application.Features.Auth.Commands.ForgotPassword;
@@ -47,6 +49,7 @@ public sealed class AuthController : BaseApiController
 
     [AllowAnonymous]
     [HttpPost("login")]
+    [EnableRateLimiting(ApiRateLimits.LoginPolicy)]
     public async Task<ActionResult<AuthResponseDto>> Login(
         LoginRequest request,
         CancellationToken cancellationToken)

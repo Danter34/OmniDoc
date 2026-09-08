@@ -41,6 +41,7 @@ public sealed class WorkspaceCollaborationTests
         var seeded = GetSeededWorkspace(context);
         var otherMember = context.Users.Single(user => user.Email == "other@example.com");
         var handler = new RemoveWorkspaceMemberCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             AuthenticatedUser(seeded.Member),
             Authorization(context, seeded.Member.Id));
@@ -62,6 +63,7 @@ public sealed class WorkspaceCollaborationTests
         await using var context = await SeedWorkspaceAsync();
         var seeded = GetSeededWorkspace(context);
         var handler = new UpdateMemberRoleCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             Authorization(context, seeded.Owner.Id));
 
@@ -85,6 +87,7 @@ public sealed class WorkspaceCollaborationTests
         await using var context = await SeedWorkspaceAsync();
         var seeded = GetSeededWorkspace(context);
         var handler = new RemoveWorkspaceMemberCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             AuthenticatedUser(seeded.Owner),
             Authorization(context, seeded.Owner.Id));
@@ -112,6 +115,7 @@ public sealed class WorkspaceCollaborationTests
         context.WorkspaceInvitations.Add(invitation);
         await context.SaveChangesAsync();
         var handler = new AcceptWorkspaceInvitationCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             AuthenticatedUser(invitee));
 
@@ -257,6 +261,7 @@ public sealed class WorkspaceCollaborationTests
         context.WorkspaceInvitations.Add(invitation);
         await context.SaveChangesAsync();
         var handler = new AcceptWorkspaceInvitationCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             AuthenticatedUser(invitee));
 
@@ -283,6 +288,7 @@ public sealed class WorkspaceCollaborationTests
         context.WorkspaceInvitations.Add(invitation);
         await context.SaveChangesAsync();
         var handler = new AcceptWorkspaceInvitationCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             AuthenticatedUser(wrongUser));
 
@@ -301,6 +307,7 @@ public sealed class WorkspaceCollaborationTests
         await using var context = await SeedWorkspaceAsync();
         var seeded = GetSeededWorkspace(context);
         var handler = new RemoveWorkspaceMemberCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             AuthenticatedUser(seeded.Member),
             Authorization(context, seeded.Member.Id));
@@ -377,6 +384,7 @@ public sealed class WorkspaceCollaborationTests
         var seeded = GetSeededWorkspace(context);
         var admin = context.Users.Single(user => user.Email == "admin@example.com");
         var handler = new RemoveWorkspaceMemberCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             AuthenticatedUser(admin),
             Authorization(context, admin.Id));
@@ -405,6 +413,7 @@ public sealed class WorkspaceCollaborationTests
             ? seeded.Owner
             : context.Users.Single(user => user.Email == "other.admin@example.com");
         var handler = new RemoveWorkspaceMemberCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             AuthenticatedUser(admin),
             Authorization(context, admin.Id));
@@ -427,6 +436,7 @@ public sealed class WorkspaceCollaborationTests
         var seeded = GetSeededWorkspace(context);
         var admin = context.Users.Single(user => user.Email == "admin@example.com");
         var handler = new UpdateMemberRoleCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             Authorization(context, admin.Id));
 
@@ -450,6 +460,7 @@ public sealed class WorkspaceCollaborationTests
         await using var context = await SeedWorkspaceAsync();
         var seeded = GetSeededWorkspace(context);
         var handler = new UpdateMemberRoleCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             Authorization(context, seeded.Owner.Id));
 
@@ -471,6 +482,7 @@ public sealed class WorkspaceCollaborationTests
         var seeded = GetSeededWorkspace(context);
         var admin = context.Users.Single(user => user.Email == "admin@example.com");
         var handler = new UpdateMemberRoleCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             Authorization(context, seeded.Owner.Id));
 
@@ -492,6 +504,7 @@ public sealed class WorkspaceCollaborationTests
         var seeded = GetSeededWorkspace(context);
         var admin = context.Users.Single(user => user.Email == "admin@example.com");
         var handler = new RemoveWorkspaceMemberCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             AuthenticatedUser(admin),
             Authorization(context, admin.Id));
@@ -535,6 +548,7 @@ public sealed class WorkspaceCollaborationTests
         await using var context = await SeedWorkspaceAsync(includeSecondOwner: true);
         var seeded = GetSeededWorkspace(context);
         var handler = new UpdateMemberRoleCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             Authorization(context, seeded.Owner.Id));
 
@@ -558,6 +572,7 @@ public sealed class WorkspaceCollaborationTests
         var otherOwner = context.Users.Single(
             user => user.Email == "other.owner@example.com");
         var handler = new UpdateMemberRoleCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             Authorization(context, seeded.Owner.Id));
 
@@ -606,6 +621,7 @@ public sealed class WorkspaceCollaborationTests
         INotificationRealtimePublisher? publisher = null)
     {
         return new InviteWorkspaceMemberCommandHandler(
+            Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(),
             context,
             new StubCurrentUserService
             {
@@ -623,7 +639,7 @@ public sealed class WorkspaceCollaborationTests
     private static WorkspaceAuthorizationService Authorization(
         TestApplicationDbContext context,
         Guid userId) =>
-        new(context, new StubCurrentUserService
+        new(Moq.Mock.Of<OmniDoc.Application.Common.Interfaces.IShowcasePolicy>(), context, new StubCurrentUserService
         {
             UserId = userId,
             Email = context.Users.Single(user => user.Id == userId).Email,

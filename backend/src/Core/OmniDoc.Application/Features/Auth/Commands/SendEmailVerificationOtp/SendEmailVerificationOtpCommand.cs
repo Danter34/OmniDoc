@@ -12,6 +12,7 @@ public sealed record SendEmailVerificationOtpCommand
 public sealed class SendEmailVerificationOtpCommandHandler
     : IRequestHandler<SendEmailVerificationOtpCommand, Result<EmailVerificationOtpDto>>
 {
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
     private readonly IEmailVerificationOtpService _otpService;
@@ -20,6 +21,7 @@ public sealed class SendEmailVerificationOtpCommandHandler
     private readonly TimeProvider _timeProvider;
 
     public SendEmailVerificationOtpCommandHandler(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         ICurrentUserService currentUser,
         IEmailVerificationOtpService otpService,
@@ -27,6 +29,7 @@ public sealed class SendEmailVerificationOtpCommandHandler
         IEmailOutboxScheduler emailScheduler,
         TimeProvider timeProvider)
     {
+        _showcase = showcase;
         _context = context;
         _currentUser = currentUser;
         _otpService = otpService;
@@ -45,6 +48,8 @@ public sealed class SendEmailVerificationOtpCommandHandler
                 "Authentication is required.",
                 401);
         }
+
+        _showcase.EnsureCanModifyAccount(userId);
 
         var user = await _context.Users
             .FirstOrDefaultAsync(item => item.Id == userId, cancellationToken);

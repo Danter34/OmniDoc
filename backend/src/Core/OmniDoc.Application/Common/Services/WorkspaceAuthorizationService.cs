@@ -8,13 +8,16 @@ namespace OmniDoc.Application.Common.Services;
 
 public sealed class WorkspaceAuthorizationService : IWorkspaceAuthorizationService
 {
+    private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
 
     public WorkspaceAuthorizationService(
+        IShowcasePolicy showcase,
         IApplicationDbContext context,
         ICurrentUserService currentUser)
     {
+        _showcase = showcase;
         _context = context;
         _currentUser = currentUser;
     }
@@ -44,6 +47,14 @@ public sealed class WorkspaceAuthorizationService : IWorkspaceAuthorizationServi
         WorkspacePermission permission,
         CancellationToken cancellationToken = default)
     {
+        if (_showcase.IsShowcaseUser(userId) && !_showcase.IsShowcaseWorkspace(workspaceId))
+            return Result<WorkspaceAuthorizationContext>.Failure("Showcase access is limited to its sample workspace.", 403);
+        if (permission != WorkspacePermission.ViewWorkspace)
+        {
+            _showcase.EnsureCanModifyAccount(userId);
+            _showcase.EnsureCanModifyWorkspace(workspaceId);
+        }
+
         var workspace = await _context.Workspaces
             .AsNoTracking()
             .Where(item => item.Id == workspaceId)
