@@ -45,7 +45,7 @@ console.log("PASS conversation delete guard");
 response = await call(`/workspaces/${workspace}/documents`, undefined, token, "GET");
 assert.equal(response.status, 200);
 const documents = await response.json();
-assert.equal(documents.length, 3);
+assert.equal(documents.length, 2);
 for (const document of documents) {
   response = await call(`/workspaces/${workspace}/documents/${document.id}/content`, undefined, token, "GET");
   assert.equal(response.status, 200);

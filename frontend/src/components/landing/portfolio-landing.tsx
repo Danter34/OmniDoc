@@ -158,7 +158,7 @@ export function PortfolioLanding() {
             </h2>
             <p className="mt-4 leading-7 text-slate-300">
               Chọn một badge citation để chuyển đến trang và đoạn trích tương ứng. Minh họa tương
-              tác dưới đây dùng dữ liệu mẫu, không gọi AI.
+              tác dưới đây dùng số liệu từ báo cáo AMRO 2024, không gọi AI.
             </p>
           </div>
           <CitationPreview />

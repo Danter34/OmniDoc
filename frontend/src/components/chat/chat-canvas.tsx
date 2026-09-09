@@ -44,7 +44,7 @@ import { useDocumentProgress } from "@/hooks/use-document-progress";
 import { useDocuments } from "@/hooks/use-documents";
 import { useSmartAutoScroll } from "@/hooks/use-smart-auto-scroll";
 import { useShowcase } from "@/hooks/use-showcase";
-import { SHOWCASE_PROMPTS } from "@/lib/showcase";
+import { SHOWCASE_DEFAULT_DOCUMENT, SHOWCASE_PROMPTS } from "@/lib/showcase";
 import { cn } from "@/lib/utils";
 import { getErrorMessage } from "@/services/api-client";
 import { conversationService } from "@/services/conversation.service";
@@ -189,7 +189,8 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     () =>
       documents.find((document) => document.id === selectedDocumentId) ??
       (isShowcase && selectedDocumentId === null
-        ? indexedDocuments.find((document) => document.detectedFormat === "Pdf") ?? indexedDocuments[0] ?? null
+        ? indexedDocuments.find((document) => document.fileName === SHOWCASE_DEFAULT_DOCUMENT) ??
+          indexedDocuments.find((document) => document.detectedFormat === "Pdf") ?? indexedDocuments[0] ?? null
         : null),
     [documents, indexedDocuments, isShowcase, selectedDocumentId],
   );

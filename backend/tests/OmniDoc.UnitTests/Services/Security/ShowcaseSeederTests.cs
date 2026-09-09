@@ -39,9 +39,16 @@ public sealed class ShowcaseSeederTests
         Assert.Equal(settings.UserId, user.Id);
         Assert.Equal(settings.WorkspaceId, Assert.Single(db.Workspaces).Id);
         Assert.Equal(WorkspaceRole.Owner, Assert.Single(db.WorkspaceMembers).Role);
-        Assert.Equal(3, await db.Documents.CountAsync());
-        Assert.Equal(7, await db.DocumentChunks.CountAsync());
-        Assert.Equal(6, files.Data.Count);
+        Assert.Equal(2, await db.Documents.CountAsync());
+        Assert.Equal(32, await db.DocumentChunks.CountAsync());
+        Assert.Equal(4, files.Data.Count);
+        Assert.Equal(new[] { 1, 2 }, await db.DocumentChunks
+            .Where(c => c.DocumentId == Guid.Parse("b4987f7e-48cc-4ba5-a117-10ac4cbced21"))
+            .Select(c => c.PageNumber).Distinct().Order().ToArrayAsync());
+        Assert.Equal(new[] { 1, 2, 3, 4 }, await db.DocumentChunks
+            .Where(c => c.DocumentId == Guid.Parse("b4987f7e-48cc-4ba5-a117-10ac4cbced22"))
+            .Select(c => c.PageNumber).Distinct().Order().ToArrayAsync());
+        Assert.Contains(db.DocumentChunks, c => c.PageNumber == 2 && c.Content.Contains("Việt Nam 5.1 6.0 6.5 3.3 3.6 2.7"));
         Assert.All(db.Documents, d =>
         {
             Assert.Equal(DocumentStatus.Indexed, d.Status);
@@ -55,7 +62,7 @@ public sealed class ShowcaseSeederTests
         var listing = await new OmniDoc.Application.Features.Documents.Queries.GetDocumentsByWorkspace.GetDocumentsByWorkspaceQueryHandler(db, authorization)
             .Handle(new(settings.WorkspaceId), default);
         Assert.True(listing.IsSuccess);
-        Assert.Equal(3, listing.Data!.Count);
+        Assert.Equal(2, listing.Data!.Count);
         foreach (var document in listing.Data)
         {
             var content = await new OmniDoc.Application.Features.Documents.Queries.GetDocumentContent.GetDocumentContentQueryHandler(db, files, authorization)
@@ -71,9 +78,9 @@ public sealed class ShowcaseSeederTests
         Assert.Equal(originalHash, user.PasswordHash);
         Assert.Equal(1, user.TokenVersion);
         Assert.Single(db.Users);
-        Assert.Equal(3, await db.Documents.CountAsync());
-        Assert.Equal(7, await db.DocumentChunks.CountAsync());
-        Assert.Equal(6, files.Data.Count);
+        Assert.Equal(2, await db.Documents.CountAsync());
+        Assert.Equal(32, await db.DocumentChunks.CountAsync());
+        Assert.Equal(4, files.Data.Count);
     }
 
     [Fact]
@@ -138,7 +145,7 @@ public sealed class ShowcaseSeederTests
         files.Data[path] = [0, 1, 2];
         await Assert.ThrowsAsync<InvalidDataException>(() => Seeder(db, Settings(), files).SeedAsync());
         Assert.Equal(new byte[] { 0, 1, 2 }, files.Data[path]);
-        Assert.Equal(6, files.Data.Count);
+        Assert.Equal(4, files.Data.Count);
     }
 
     [Fact]
@@ -149,6 +156,76 @@ public sealed class ShowcaseSeederTests
         corpus.Documents[0].Chunks[0].Embedding[0] = float.NaN;
         await Assert.ThrowsAsync<InvalidDataException>(() => corpus.Documents[0].ValidateAsync(
             Path.GetDirectoryName(settings.CorpusPath)!, new DocumentFormatDetector(), new PdfPigParserService(), new RecursiveTextChunkerService(), default));
+    }
+
+    [Fact]
+    public async Task Upgrade_RetiresOnlyKnownLegacySeeds_AndPreservesOtherDocuments()
+    {
+        await using var db = new TestApplicationDbContext();
+        var settings = Settings();
+        var files = new MemoryFiles();
+        var legacy = await AddLegacyAsync(db, settings, files);
+        var legacyPaths = legacy.Artifacts.Select(a => a.StoragePath).ToArray();
+        var personal = new Document { WorkspaceId = settings.WorkspaceId, CreatedBy = "personal" };
+        var otherWorkspace = new Document
+        {
+            Id = Guid.Parse("b4987f7e-48cc-4ba5-a117-10ac4cbced12"),
+            WorkspaceId = Guid.NewGuid(), CreatedBy = "ShowcaseSeeder:northstar-v1"
+        };
+        db.Documents.AddRange(personal, otherWorkspace);
+        await db.SaveChangesAsync();
+
+        await Seeder(db, settings, files).SeedAsync();
+        await Seeder(db, settings, files).SeedAsync();
+
+        Assert.False(await db.Documents.AnyAsync(d => d.Id == legacy.Id));
+        Assert.False(await db.DocumentChunks.AnyAsync(c => c.DocumentId == legacy.Id));
+        Assert.False(await db.DocumentArtifacts.AnyAsync(a => a.DocumentId == legacy.Id));
+        Assert.All(legacyPaths, path => Assert.False(files.Data.ContainsKey(path)));
+        Assert.True(await db.Documents.AnyAsync(d => d.Id == personal.Id));
+        Assert.True(await db.Documents.AnyAsync(d => d.Id == otherWorkspace.Id));
+        Assert.Equal(2, await db.Documents.CountAsync(d => d.CreatedBy == "ShowcaseSeeder:amro-2024-v1"));
+        Assert.Equal(4, files.Data.Count);
+    }
+
+    [Fact]
+    public async Task Upgrade_StorageFailurePreservesLegacyEvidence()
+    {
+        await using var db = new TestApplicationDbContext();
+        var settings = Settings();
+        var files = new MemoryFiles { FailOnSave = 4 };
+        var legacy = await AddLegacyAsync(db, settings, files);
+        var legacyPaths = legacy.Artifacts.Select(a => a.StoragePath).ToArray();
+
+        await Assert.ThrowsAsync<IOException>(() => Seeder(db, settings, files).SeedAsync());
+
+        db.ChangeTracker.Clear();
+        Assert.Equal(legacy.Id, Assert.Single(db.Documents).Id);
+        Assert.Single(db.DocumentChunks);
+        Assert.Equal(2, await db.DocumentArtifacts.CountAsync());
+        Assert.All(legacyPaths, path => Assert.True(files.Data.ContainsKey(path)));
+        Assert.Equal(2, files.Data.Count);
+    }
+
+    private static async Task<Document> AddLegacyAsync(TestApplicationDbContext db, ShowcaseSettings settings, MemoryFiles files)
+    {
+        var document = new Document
+        {
+            Id = Guid.Parse("b4987f7e-48cc-4ba5-a117-10ac4cbced11"),
+            WorkspaceId = settings.WorkspaceId, CreatedBy = "ShowcaseSeeder:northstar-v1",
+            FileName = "northstar-report.pdf", Status = DocumentStatus.Indexed
+        };
+        var storage = new DocumentArtifactStorage(files);
+        foreach (var kind in new[] { ArtifactKind.Source, ArtifactKind.CanonicalPdf })
+        {
+            using var content = new MemoryStream([1, 2, 3]);
+            document.AddArtifact(await storage.SaveAsync(content, settings.WorkspaceId, document.Id,
+                kind, document.FileName, "application/pdf", "ShowcaseCorpus", default));
+        }
+        document.Chunks.Add(new DocumentChunk { DocumentId = document.Id, PageNumber = 1, Content = "Legacy evidence" });
+        db.Documents.Add(document);
+        await db.SaveChangesAsync();
+        return document;
     }
 
     private sealed class MemoryFiles : IFileStorageService

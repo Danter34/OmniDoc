@@ -16,7 +16,9 @@ export function getShowcaseWorkspaceId(workspaces: { id: string; role: string }[
 }
 
 export const SHOWCASE_PROMPTS = [
-  "Doanh thu quý III đạt bao nhiêu tỷ đồng?",
-  "Ai phê duyệt đề nghị mua sắm trước khi chuyển đến phòng tài chính?",
-  "Lộ trình triển khai tháng 10, 11, 12 gồm những bước nào?",
+  "Dự báo tăng trưởng GDP và tỷ lệ lạm phát của Việt Nam trong giai đoạn 2024–2025 là bao nhiêu?",
+  "Sự phụ thuộc vào đồng Đô la Mỹ (USD) đặt ra những rủi ro trọng yếu nào cho hệ thống tài chính ASEAN+3?",
+  "Thách thức từ già hóa dân số đối với khu vực ASEAN+3 là gì và công nghệ hỗ trợ ra sao?",
 ];
+
+export const SHOWCASE_DEFAULT_DOCUMENT = "Highlights-Booklet_Vietnamese.pdf";

@@ -22,7 +22,7 @@ var settings = new ShowcaseSettings
 };
 var ai = new AiSettings { Provider = "Gemini", Gemini = new()
 {
-    ApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? "",
+    ApiKey = Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? throw new InvalidOperationException("Missing GEMINI_API_KEY"),
     EmbeddingModel = Environment.GetEnvironmentVariable("GEMINI_EMBEDDING_MODEL") ?? "gemini-embedding-2"
 } };
 var storagePath = Path.Combine(AppContext.BaseDirectory, "smoke-artifacts");
@@ -35,20 +35,20 @@ await Seeder(db).SeedAsync();
 var originalHash = await db.Users.Where(u => u.Id == settings.UserId).Select(u => u.PasswordHash).SingleAsync();
 await using var second = new ApplicationDbContext(dbOptions);
 await Seeder(second).SeedAsync();
-if (await second.Users.CountAsync(u => u.Id == settings.UserId) != 1 || await second.Documents.CountAsync() != 3 || await second.DocumentChunks.CountAsync() != 7 ||
-    await second.DocumentArtifacts.CountAsync() != 6 || (await second.Users.SingleAsync(u => u.Id == settings.UserId)).PasswordHash != originalHash ||
+if (await second.Users.CountAsync(u => u.Id == settings.UserId) != 1 || await second.Documents.CountAsync() != 2 || await second.DocumentChunks.CountAsync() != 32 ||
+    await second.DocumentArtifacts.CountAsync() != 4 || (await second.Users.SingleAsync(u => u.Id == settings.UserId)).PasswordHash != originalHash ||
     await second.Users.CountAsync(u => u.Id != settings.UserId) != ordinaryUsers)
     throw new InvalidOperationException($"PostgreSQL idempotency verification failed: users={await second.Users.CountAsync()}, documents={await second.Documents.CountAsync()}, chunks={await second.DocumentChunks.CountAsync()}, artifacts={await second.DocumentArtifacts.CountAsync()}.");
-Console.WriteLine("PASS PostgreSQL: two independent imports, 1 showcase user, 3 documents, 6 artifacts, 7 vectors; existing users and password unchanged.");
+Console.WriteLine("PASS PostgreSQL: two independent imports, 1 showcase user, 2 documents, 4 artifacts, 32 vectors; existing users and password unchanged.");
 
 using var client = new HttpClient { BaseAddress = new Uri("https://generativelanguage.googleapis.com/"), Timeout = TimeSpan.FromMinutes(2) };
 var embedding = new GeminiEmbeddingService(new ClientFactory(client), Options.Create(ai));
 var retrieval = new VectorRetrievalService(second, embedding, NullLogger<VectorRetrievalService>.Instance);
 var questions = new[]
 {
-    (Text: "Doanh thu quý III đạt bao nhiêu tỷ đồng?", Document: "b4987f7e-48cc-4ba5-a117-10ac4cbced11", Page: 1),
-    (Text: "Ai phê duyệt đề nghị mua sắm trước khi chuyển đến phòng tài chính?", Document: "b4987f7e-48cc-4ba5-a117-10ac4cbced12", Page: 1),
-    (Text: "Lộ trình triển khai tháng 10, 11, 12 gồm những bước nào?", Document: "b4987f7e-48cc-4ba5-a117-10ac4cbced13", Page: 2)
+    (Text: "Dự báo tăng trưởng GDP và tỷ lệ lạm phát của Việt Nam trong giai đoạn 2024–2025 là bao nhiêu?", Document: "b4987f7e-48cc-4ba5-a117-10ac4cbced22", Page: 2),
+    (Text: "Sự phụ thuộc vào đồng Đô la Mỹ (USD) đặt ra những rủi ro trọng yếu nào cho hệ thống tài chính ASEAN+3?", Document: "b4987f7e-48cc-4ba5-a117-10ac4cbced21", Page: 2),
+    (Text: "Thách thức từ già hóa dân số đối với khu vực ASEAN+3 là gì và công nghệ hỗ trợ ra sao?", Document: "b4987f7e-48cc-4ba5-a117-10ac4cbced22", Page: 3)
 };
 foreach (var question in questions)
 {

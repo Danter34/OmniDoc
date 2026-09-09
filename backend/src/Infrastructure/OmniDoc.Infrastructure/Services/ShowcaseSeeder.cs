@@ -63,6 +63,19 @@ public sealed class ShowcaseSeeder(IApplicationDbContext context, IOptions<Showc
             prepared.Add((entry, bytes.Source, bytes.Canonical));
         }
 
+        // Retire only the known, seeder-owned legacy bundle in this showcase workspace.
+        // Personal documents and other workspaces are never selected for removal.
+        var legacyIds = new[]
+        {
+            Guid.Parse("b4987f7e-48cc-4ba5-a117-10ac4cbced11"),
+            Guid.Parse("b4987f7e-48cc-4ba5-a117-10ac4cbced12"),
+            Guid.Parse("b4987f7e-48cc-4ba5-a117-10ac4cbced13")
+        };
+        var retired = corpus.Version == "amro-2024-v1"
+            ? await context.Documents.AsSplitQuery().Include(d => d.Artifacts).Include(d => d.Chunks)
+                .Where(d => d.WorkspaceId == settings.WorkspaceId && legacyIds.Contains(d.Id) &&
+                    d.CreatedBy == "ShowcaseSeeder:northstar-v1").ToListAsync(ct)
+            : [];
         var written = new List<string>();
         try
         {
@@ -104,7 +117,11 @@ public sealed class ShowcaseSeeder(IApplicationDbContext context, IOptions<Showc
                         PageNumber = chunk.Page, Content = chunk.Content, Embedding = chunk.Embedding });
                 context.Documents.Add(document);
             }
-            // One atomic EF save for the entire graph. Unique IDs/email reject concurrent seed conflicts.
+            context.DocumentChunks.RemoveRange(retired.SelectMany(d => d.Chunks));
+            context.DocumentArtifacts.RemoveRange(retired.SelectMany(d => d.Artifacts));
+            context.Documents.RemoveRange(retired);
+            // Replace the legacy corpus and insert the new graph in one atomic EF save.
+            // Unique IDs/email reject concurrent seed conflicts.
             await context.SaveChangesAsync(ct);
         }
         catch
@@ -116,6 +133,12 @@ public sealed class ShowcaseSeeder(IApplicationDbContext context, IOptions<Showc
             }
             throw;
         }
-        logger.LogInformation("Showcase corpus {Version} ready; imported {Count} documents.", corpus.Version, prepared.Count);
+        // Remove legacy files only after the database replacement has committed.
+        foreach (var artifact in retired.SelectMany(d => d.Artifacts))
+        {
+            try { await files.DeleteFileAsync(artifact.StoragePath, CancellationToken.None); }
+            catch (Exception ex) { logger.LogWarning(ex, "Could not remove retired showcase artifact {Path}", artifact.StoragePath); }
+        }
+        logger.LogInformation("Showcase corpus {Version} ready; imported {Count} documents, retired {RetiredCount}.", corpus.Version, prepared.Count, retired.Count);
     }
 }
