@@ -34,12 +34,15 @@ const highlights = [
 const focus =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-4 focus-visible:ring-offset-[#0B0F17]";
 
-/** Fixed dark-mode brand mark — always white "Omni" + Cyan→Blue "Doc" gradient */
+/** Fixed dark-mode brand mark — always white "Omni" + brand-gradient "Doc" (cyan→blue→violet, matches --gradient-brand-text) */
 function BrandMark() {
   return (
     <span className="inline-flex items-baseline gap-0 whitespace-nowrap">
       <span className="font-bold text-white">Omni</span>
-      <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text font-bold text-transparent">
+      <span
+        className="bg-clip-text font-bold text-transparent"
+        style={{ backgroundImage: "linear-gradient(90deg,#00f0ff 0%,#3b82f6 45%,#a855f7 100%)" }}
+      >
         Doc
       </span>
     </span>
@@ -105,10 +108,10 @@ export function PortfolioLanding() {
               id="hero-title"
               className="max-w-5xl text-4xl font-semibold leading-[1.12] tracking-tight sm:text-6xl lg:text-7xl"
             >
-              OmniDoc — Enterprise RAG &amp;{" "}
+              OmniDoc{" "}
               {/* Matches --gradient-brand-text: cyan → blue-500 → violet-neon */}
               <span className="bg-[linear-gradient(90deg,#00f0ff_0%,#3b82f6_45%,#a855f7_100%)] bg-clip-text text-transparent">
-                Document Intelligence
+                Enterprise RAG &amp; Document Intelligence
               </span>
             </h1>
             <p className="mt-7 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
@@ -201,64 +204,32 @@ export function PortfolioLanding() {
         </section>
       </main>
 
-      <footer className="border-t border-slate-800 px-5 py-10 sm:px-8">
-        <div className="mx-auto max-w-7xl space-y-6">
-          {/* Row 1: brand + status indicator */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="inline-flex items-baseline gap-1 text-slate-200">
-                <BrandMark /> · Portfolio Engineering Showcase
-              </p>
-              <p className="mt-2 text-sm text-slate-400">
-                © 2026 OmniDoc. Designed &amp; Engineered with .NET &amp; Next.js.
-              </p>
-            </div>
-            {/* System status badge */}
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/5 px-4 py-2 text-xs font-medium text-emerald-300 self-start sm:self-auto">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-              </span>
-              API &amp; Pipeline: Active
-            </span>
+      <footer className="border-t border-slate-800 px-5 py-8 sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            {/* Footer brand: same fixed colours */}
+            <p className="inline-flex items-baseline gap-1 text-slate-200">
+              <BrandMark /> · Portfolio Engineering Showcase
+            </p>
+            <p className="mt-2">© 2026 OmniDoc. Designed &amp; Engineered with .NET &amp; Next.js.</p>
           </div>
-
-          {/* Row 2: nav links + version + github */}
-          <div className="flex flex-col gap-4 border-t border-slate-800/60 pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <nav aria-label="Footer navigation" className="flex items-center gap-6 text-sm">
-              <a
-                href="#architecture"
-                className={`text-slate-400 hover:text-slate-200 transition-colors ${focus}`}
-              >
-                Kiến trúc hệ thống
-              </a>
-              <a
-                href="https://github.com/Danter34/OmniDoc"
-                className={`text-slate-400 hover:text-slate-200 transition-colors ${focus}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Mã nguồn
-              </a>
-            </nav>
-            <div className="flex items-center gap-4">
-              <a
-                href="https://github.com/Danter34/OmniDoc/releases/tag/v1.2.0"
-                className={`rounded-full border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-slate-500 hover:text-white transition-colors ${focus}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                v1.2.0
-              </a>
-              <a
-                href="https://github.com/Danter34/OmniDoc"
-                className={`inline-flex min-h-9 items-center gap-2 rounded text-sm text-slate-200 hover:text-cyan-200 transition-colors ${focus}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Code2 aria-hidden="true" className="size-4" /> GitHub
-              </a>
-            </div>
+          <div className="flex items-center gap-5">
+            <a
+              href="https://github.com/Danter34/OmniDoc/releases/tag/v1.2.0"
+              className={`rounded-full border border-slate-700 px-3 py-2 text-slate-300 hover:text-white ${focus}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              v1.2.0
+            </a>
+            <a
+              href="https://github.com/Danter34/OmniDoc"
+              className={`inline-flex min-h-11 items-center gap-2 rounded text-slate-200 hover:text-cyan-200 ${focus}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Code2 aria-hidden="true" className="size-4" /> GitHub
+            </a>
           </div>
         </div>
       </footer>

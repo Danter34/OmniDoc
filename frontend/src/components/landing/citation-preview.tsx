@@ -41,7 +41,7 @@ export function CitationPreview() {
           <h3 className="flex items-center gap-2 text-sm font-medium text-slate-300"><MessageSquareText aria-hidden="true" className="size-4 text-cyan-300" /> Hỏi đáp tài liệu</h3>
           <p className="mt-7 rounded-2xl rounded-tr-sm border border-slate-600 bg-slate-800 p-4 text-sm leading-7">Dự báo tăng trưởng GDP của Việt Nam năm 2024 và 2025 theo báo cáo AMRO là bao nhiêu?</p>
           <div className="mt-6 text-sm leading-7 text-slate-200">
-            <p className="mb-3 font-semibold"><span className="text-white">Omni</span><span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Doc</span></p>
+            <p className="mb-3 font-semibold"><span className="text-white">Omni</span><span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(90deg,#00f0ff 0%,#3b82f6 45%,#a855f7 100%)" }}>Doc</span></p>
             <p>Theo Báo cáo Triển vọng Kinh tế Khu vực ASEAN+3 2024 (AMRO), tăng trưởng GDP của Việt Nam được dự báo đạt <strong>6,0% trong năm 2024</strong> và tăng lên <strong>6,5% trong năm 2025</strong>.</p>
             <button type="button" aria-pressed={citationSelected} aria-controls="citation-preview-viewer" onClick={selectCitation} className={`mt-2 inline-flex min-h-11 items-center rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${citationSelected ? "border-cyan-300 bg-cyan-300 text-slate-950" : "border-cyan-700 bg-cyan-950 text-cyan-100 hover:bg-cyan-900"}`}>[Trang 2]</button>
           </div>
