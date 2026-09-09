@@ -45,7 +45,7 @@ export function DashboardHeader() {
                 aria-expanded={profileOpen}
                 aria-haspopup="menu"
                 aria-label={`Mở menu tài khoản của ${user?.fullName ?? "OmniDoc"}`}
-                className="flex size-11 items-center justify-center rounded-full bg-info-subtle text-sm font-semibold text-accent ring-2 ring-surface transition-colors hover:bg-surface-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+                className="flex size-11 items-center justify-center rounded-lg bg-info-subtle text-sm font-semibold text-accent ring-2 ring-surface transition-colors hover:bg-surface-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 onClick={() => setProfileOpen((current) => !current)}
                 type="button"
               >

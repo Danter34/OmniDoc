@@ -104,7 +104,7 @@ function DocumentItemComponent({
               role="progressbar"
             >
               <div
-                className="progress-shimmer relative h-full origin-left rounded-full transition-transform duration-500 ease-out [background-image:var(--gradient-progress)]"
+                className="progress-shimmer relative h-full origin-left rounded-full transition-transform duration-500 ease-out bg-blue-600"
                 style={{ transform: `scaleX(${document.progress / 100})` }}
               />
             </div>

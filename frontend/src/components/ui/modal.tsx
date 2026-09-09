@@ -126,7 +126,7 @@ export function Modal({
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
-        className="glass-panel w-full max-w-lg rounded-xl bg-elevated p-6 text-content shadow-2xl"
+        className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-6 text-content"
         role="dialog"
         tabIndex={-1}
       >

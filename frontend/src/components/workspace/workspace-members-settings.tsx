@@ -588,7 +588,7 @@ export function WorkspaceMembersSettings({ workspace, isShowcase = false }: { wo
             <label className="block">
               <span className="mb-1.5 block text-sm font-medium text-content-secondary">Vai trò khởi tạo</span>
               <select
-                className="h-11 w-full rounded-xl border border-line-subtle bg-surface px-3.5 text-sm text-content outline-none transition focus:border-focus-ring focus:ring-4 focus:ring-focus-glow"
+                className="h-10 w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-sm text-content outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
                 disabled={isAdmin}
                 onChange={(event) => setInviteRole(event.target.value as WorkspaceRole)}
                 value={inviteRole}

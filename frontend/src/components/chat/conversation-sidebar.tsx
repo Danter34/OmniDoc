@@ -249,7 +249,7 @@ function SidebarContent({
                       className={cn(
                         "mt-0.5 size-4 shrink-0",
                         active
-                          ? "text-sidebar-active-content drop-shadow-[0_0_5px_var(--sidebar-icon-glow)]"
+                          ? "text-blue-700 dark:text-blue-400"
                           : "text-muted",
                       )}
                     />

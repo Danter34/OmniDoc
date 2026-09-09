@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Square, WandSparkles } from "lucide-react";
+import { Send, Square, CornerDownLeft } from "lucide-react";
 import {
   memo,
   useEffect,
@@ -66,7 +66,7 @@ function ChatInputComponent({
     >
       <div
         className={cn(
-          "glass-panel mx-auto max-w-4xl rounded-[1.4rem] p-2 transition-[background-color,border-color,box-shadow] focus-within:border-focus-ring focus-within:shadow-[var(--accent-glow)]",
+          "glass-panel mx-auto max-w-4xl rounded-xl p-2 transition-[background-color,border-color,box-shadow] focus-within:border-focus-ring focus-within:shadow-xs",
           disabled && "bg-surface-subtle opacity-80",
         )}
       >
@@ -88,7 +88,7 @@ function ChatInputComponent({
         />
         <div className="flex items-center justify-between gap-3 px-1 pt-1">
           <p className="flex min-w-0 items-center gap-1.5 truncate text-[11px] text-muted">
-            <WandSparkles className="size-3.5 shrink-0" />
+            <CornerDownLeft className="size-3.5 shrink-0" />
             {disabledReason || "Enter để gửi · Shift+Enter để xuống dòng"}
           </p>
           {isStreaming ? (
@@ -103,7 +103,7 @@ function ChatInputComponent({
           ) : (
             <Button
               aria-label="Gửi câu hỏi"
-              className="group size-11 shrink-0 rounded-full px-0 shadow-[var(--accent-glow)]"
+              className="group flex size-11 shrink-0 items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-0 shadow-xs"
               disabled={disabled || !value.trim()}
               type="submit"
             >

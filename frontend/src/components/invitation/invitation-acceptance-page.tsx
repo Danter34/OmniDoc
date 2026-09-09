@@ -78,7 +78,7 @@ export function InvitationAcceptancePage({ token }: { token: string }) {
 
   return (
     <main className="ambient-bg relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      <section className="glass-panel relative w-full max-w-lg rounded-3xl p-7 sm:p-9">
+      <section className="glass-panel relative w-full max-w-lg rounded-xl p-7 sm:p-9">
         <Logo className="justify-center" />
 
         {isLoading ? (
@@ -180,7 +180,7 @@ export function InvitationAcceptancePage({ token }: { token: string }) {
               ) : (
                 <div className="space-y-3">
                   <Link
-                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-base font-medium text-on-accent shadow-sm transition-[filter,box-shadow] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 [background-image:var(--gradient-action)]"
+                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-base font-medium text-on-accent shadow-sm transition-[filter,box-shadow] hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 bg-blue-600"
                     href={loginHref}
                   >
                     Đăng nhập để tham gia

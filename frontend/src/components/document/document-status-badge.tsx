@@ -4,7 +4,7 @@ import {
   FileSearch,
   LoaderCircle,
   Scissors,
-  Sparkles,
+  Layers,
   XCircle,
 } from "lucide-react";
 
@@ -54,7 +54,7 @@ const statusConfig: Record<string, StatusConfig> = {
   Embedding: {
     label: "Embedding",
     badgeClass: "bg-role-owner-subtle text-role-owner ring-role-owner-line",
-    icon: Sparkles,
+    icon: Layers,
   },
   Completed: {
     label: "Đã lập chỉ mục",

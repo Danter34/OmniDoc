@@ -48,21 +48,15 @@ export function WorkspaceNavigation() {
           <Link
             aria-current={item.active ? "page" : undefined}
             className={cn(
-              "inline-flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset",
+              "inline-flex h-11 items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset",
               item.active
                 ? "active-gradient-item"
-                : "text-muted hover:bg-surface-subtle hover:text-content",
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white",
             )}
             href={item.href}
             key={item.href}
           >
-            <Icon
-              aria-hidden="true"
-              className={cn(
-                "size-4",
-                item.active && "drop-shadow-[0_0_5px_var(--sidebar-icon-glow)]",
-              )}
-            />
+            <Icon aria-hidden="true" className="size-4" />
             {item.label}
           </Link>
         );

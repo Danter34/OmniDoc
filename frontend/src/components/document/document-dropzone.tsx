@@ -121,7 +121,7 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
         className={cn(
           "relative flex min-h-48 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed px-6 py-8 text-center outline-none transition",
           isDragging
-            ? "border-focus-ring bg-info-subtle shadow-[var(--accent-glow)]"
+            ? "border-focus-ring bg-info-subtle shadow-xs"
             : "border-line bg-surface-subtle/70 hover:border-line-strong hover:bg-info-subtle/60 focus-visible:border-focus-ring focus-visible:ring-4 focus-visible:ring-focus-glow",
           isUploading && "pointer-events-none",
         )}
@@ -177,7 +177,7 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
               role="progressbar"
             >
               <div
-                className="progress-shimmer relative h-full origin-left rounded-full transition-transform duration-300 [background-image:var(--gradient-progress)]"
+                className="progress-shimmer relative h-full origin-left rounded-full transition-transform duration-300 bg-blue-600"
                 style={{ transform: `scaleX(${uploadPercent / 100})` }}
               />
             </div>
@@ -188,7 +188,7 @@ export function DocumentDropzone({ onUpload }: DocumentDropzoneProps) {
               className={cn(
                 "flex size-12 items-center justify-center rounded-2xl transition",
                 isDragging
-                  ? "text-brand-icon shadow-[var(--accent-glow)] [background-image:var(--gradient-action)]"
+                  ? "text-brand-icon shadow-xs bg-blue-600"
                   : "bg-info-subtle text-accent",
               )}
             >

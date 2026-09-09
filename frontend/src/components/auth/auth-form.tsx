@@ -149,11 +149,6 @@ export function AuthForm({
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      {/* Subtle dark ambient glow matching landing page palette */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_30%_20%,rgb(0_240_255/8%),transparent_45%),radial-gradient(ellipse_at_75%_70%,rgb(37_99_235/10%),transparent_45%)]"
-      />
       <section className="glass-panel relative w-full max-w-md rounded-2xl p-7 sm:p-9">
         <Logo priority />
         <div className="mt-8">

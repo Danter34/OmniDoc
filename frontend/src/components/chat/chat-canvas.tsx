@@ -8,7 +8,7 @@ import {
   MessageSquareText,
   PanelLeftOpen,
   Radio,
-  Sparkles,
+  HelpCircle,
 } from "lucide-react";
 import Image from "next/image";
 import {
@@ -535,7 +535,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
 
   return (
     <>
-      <section className={cn("glass-panel flex h-[calc(100vh-11.5rem)] min-h-[640px] overflow-hidden rounded-2xl", isShowcase && pdfViewerOpen && "min-h-[960px] lg:min-h-[640px]")}>
+      <section className={cn("glass-panel flex h-[calc(100vh-11.5rem)] min-h-[640px] overflow-hidden rounded-xl", isShowcase && pdfViewerOpen && "min-h-[960px] lg:min-h-[640px]")}>
         <ConversationSidebar
           activeConversationId={activeConversationId}
           conversations={conversations}
@@ -598,9 +598,9 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
             >
               <span
                 className={cn(
-                  "h-12 w-0.5 rounded-full bg-splitter transition-[background-color,box-shadow] group-hover:bg-splitter-active group-hover:shadow-[0_0_12px_var(--splitter-track-active)]",
+                  "h-12 w-0.5 rounded-full bg-splitter transition-[background-color,box-shadow] group-hover:bg-splitter-active shadow-xs",
                   isResizingPdf &&
-                    "bg-splitter-active shadow-[0_0_12px_var(--splitter-track-active)]",
+                    "bg-splitter-active shadow-xs",
                 )}
               />
             </div>
@@ -626,7 +626,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
             >
               <Menu className="size-5" />
             </Button>
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-info-subtle text-accent shadow-[0_0_16px_var(--sidebar-icon-glow)]">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-info-subtle text-accent shadow-xs">
               <MessageSquareText className="size-4.5" />
             </span>
             <div className="min-w-0 flex-1">
@@ -643,7 +643,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
                 Chọn tài liệu
               </label>
               <select
-                className="h-11 max-w-44 rounded-lg border border-line-subtle bg-surface px-3 text-xs text-content-secondary outline-none transition focus:border-focus-ring focus:ring-2 focus:ring-focus-glow xl:max-w-56"
+                className="h-10 max-w-44 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-sm text-content-secondary outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500 xl:max-w-56"
                 disabled={documentsLoading || documents.length === 0}
                 id="chat-document-selector"
                 onChange={(event) => {
@@ -759,7 +759,7 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
 
             {!isPinnedToBottom ? (
               <Button
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full shadow-lg"
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-lg shadow-lg"
                 icon={<ArrowDown className="size-4" />}
                 onClick={() => scrollToBottom()}
                 size="sm"
@@ -808,20 +808,20 @@ function EmptyChatState({
   return (
     <div className="flex min-h-full items-center justify-center px-5 py-10">
       <div className="w-full max-w-2xl text-center">
-        <span className="glow-border mx-auto flex size-20 items-center justify-center rounded-full p-1 shadow-[0_0_32px_var(--brand-icon-shadow)]">
+        <span className="mx-auto flex size-12 items-center justify-center rounded-xl border border-line-subtle">
           <Image
             alt="Biểu tượng OmniDoc"
-            className="size-[72px] rounded-full"
-            height={72}
+            className="size-10 rounded-lg"
+            height={40}
             src="/images/logo-icon.png"
-            width={72}
+            width={40}
           />
         </span>
         <h2 className="mt-6 text-2xl font-semibold tracking-tight text-content">
           <BrandName /> RAG Assistant
         </h2>
         <p className="mt-1.5 text-sm font-medium text-accent">
-          Intelligence in every document
+          Hệ thống sẵn sàng truy vấn trên các tài liệu đã lập chỉ mục trong workspace này.
         </p>
         <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-muted">
           Khám phá tri thức trong {workspaceName}.{" "}
@@ -832,8 +832,8 @@ function EmptyChatState({
         {showOnboarding ? (
           <div className="mt-7 grid gap-2.5 text-left sm:grid-cols-2">
             {ONBOARDING_HINTS.map((hint) => (
-              <p className="glass-panel rounded-2xl p-3.5 text-xs leading-5 text-content-secondary" key={hint}>
-                <Sparkles className="mb-2 size-4 text-accent" />
+              <p className="glass-panel rounded-xl p-3.5 text-xs leading-5 text-content-secondary" key={hint}>
+                <HelpCircle className="mb-2 size-4 text-accent" />
                 {hint}
               </p>
             ))}
@@ -842,13 +842,13 @@ function EmptyChatState({
         <div className="mt-7 grid gap-2.5 text-left sm:grid-cols-3">
           {prompts.map((prompt) => (
             <button
-              className="glass-panel rounded-2xl p-3.5 text-xs leading-5 text-content-secondary transition-[background-color,border-color,color,box-shadow,transform] hover:-translate-y-0.5 hover:border-focus-ring hover:bg-info-subtle hover:text-accent hover:shadow-[var(--accent-glow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50"
+              className="glass-panel rounded-xl p-3.5 text-xs leading-5 text-content-secondary transition-[background-color,border-color,color,box-shadow,transform] hover:-translate-y-0.5 hover:border-blue-500/50 hover:bg-info-subtle hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:cursor-not-allowed disabled:opacity-50"
               disabled={disabled}
               key={prompt}
               onClick={() => onSuggestion(prompt)}
               type="button"
             >
-              <Sparkles className="mb-2 size-4 text-accent" />
+              <HelpCircle className="mb-2 size-4 text-accent" />
               {prompt}
             </button>
           ))}

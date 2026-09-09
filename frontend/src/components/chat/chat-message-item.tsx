@@ -37,7 +37,7 @@ function ChatMessageItemComponent({
       {!isUser ? (
         <Image
           alt="OmniDoc AI"
-          className="mt-1 size-7 shrink-0 rounded-full border border-line-subtle shadow-[0_0_20px_var(--brand-icon-shadow)]"
+          className="mt-1 size-7 shrink-0 rounded-full border border-line-subtle shadow-xs"
           height={28}
           src="/images/logo-icon.png"
           width={28}
@@ -53,7 +53,6 @@ function ChatMessageItemComponent({
         <div
           className={cn(
             "rounded-2xl px-4 py-3.5 sm:px-5",
-            !isUser && message.status === "streaming" && "streaming-aura",
             isUser
               ? "rounded-tr-md border border-chat-user-line bg-chat-user text-content"
               : "rounded-tl-md border border-line-subtle bg-chat-assistant shadow-sm",

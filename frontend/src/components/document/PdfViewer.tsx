@@ -171,7 +171,7 @@ function PdfViewerComponent({
             Tài liệu đang xem
           </label>
           <select
-            className="block h-9 w-full truncate rounded-md border-0 bg-transparent px-2 text-sm font-semibold text-content outline-none hover:bg-surface-subtle focus:ring-2 focus:ring-focus-glow"
+            className="block h-10 w-full truncate rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 text-sm font-semibold text-content outline-none hover:bg-surface-subtle focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             id="pdf-viewer-document-selector"
             onChange={(event) => onDocumentSelect(event.target.value)}
             title={document.fileName}
@@ -191,7 +191,7 @@ function PdfViewerComponent({
         <div className="flex items-center rounded-lg border border-line-subtle bg-surface-subtle p-0.5">
           <button
             aria-label="Trang trước"
-            className="flex size-9 items-center justify-center rounded-md text-content-secondary transition-colors hover:bg-surface disabled:opacity-40"
+            className="flex size-9 items-center justify-center rounded-md text-content-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-40"
             disabled={pageNumber <= 1 || isLoading || Boolean(error)}
             onClick={() => changePage(pageNumber - 1)}
             type="button"
@@ -202,7 +202,7 @@ function PdfViewerComponent({
             <span className="sr-only">Trang hiện tại</span>
             <input
               aria-label="Trang hiện tại"
-              className="h-9 w-12 rounded border border-line-subtle bg-surface px-1 text-center font-medium tabular-nums text-content outline-none focus:border-focus-ring focus:ring-2 focus:ring-focus-glow"
+              className="h-10 w-12 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-1 text-sm text-center font-medium tabular-nums text-content outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
               disabled={isLoading || Boolean(error)}
               max={pageCount ?? undefined}
               min={1}
@@ -216,7 +216,7 @@ function PdfViewerComponent({
           </label>
           <button
             aria-label="Trang tiếp theo"
-            className="flex size-9 items-center justify-center rounded-md text-content-secondary transition-colors hover:bg-surface disabled:opacity-40"
+            className="flex size-9 items-center justify-center rounded-md text-content-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-40"
             disabled={
               isLoading ||
               Boolean(error) ||
@@ -232,7 +232,7 @@ function PdfViewerComponent({
         <div className="flex items-center rounded-lg border border-line-subtle bg-surface-subtle p-0.5">
           <button
             aria-label="Thu nhỏ"
-            className="flex size-9 items-center justify-center rounded-md text-content-secondary transition-colors hover:bg-surface disabled:opacity-40"
+            className="flex size-9 items-center justify-center rounded-md text-content-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-40"
             disabled={isLoading || numericZoom <= MIN_ZOOM || Boolean(error)}
             onClick={() => changeZoom(Math.max(MIN_ZOOM, numericZoom - ZOOM_STEP))}
             type="button"
@@ -244,7 +244,7 @@ function PdfViewerComponent({
           </span>
           <button
             aria-label="Phóng to"
-            className="flex size-9 items-center justify-center rounded-md text-content-secondary transition-colors hover:bg-surface disabled:opacity-40"
+            className="flex size-9 items-center justify-center rounded-md text-content-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-40"
             disabled={isLoading || numericZoom >= MAX_ZOOM || Boolean(error)}
             onClick={() => changeZoom(Math.min(MAX_ZOOM, numericZoom + ZOOM_STEP))}
             type="button"
@@ -254,7 +254,7 @@ function PdfViewerComponent({
           <button
             aria-label="Vừa chiều rộng"
             className={cn(
-              "flex size-9 items-center justify-center rounded-md text-content-secondary transition-colors hover:bg-surface disabled:opacity-40",
+              "flex size-9 items-center justify-center rounded-md text-content-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-40",
               zoom === "page-width" && "bg-surface text-accent shadow-sm",
             )}
             disabled={isLoading || Boolean(error)}
@@ -339,7 +339,7 @@ function PdfViewerComponent({
         {target?.fromCitation && !error ? (
           <div
             aria-live="polite"
-            className="pdf-citation-notice pointer-events-none absolute bottom-4 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-citation-active-line bg-citation-active-subtle px-3.5 py-2 text-xs font-semibold text-citation-active shadow-[0_0_22px_var(--citation-active-glow)]"
+            className="pdf-citation-notice pointer-events-none absolute bottom-4 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-citation-active-line bg-citation-active-subtle px-3.5 py-2 text-xs font-semibold text-citation-active shadow-xs"
             key={target.requestId}
           >
             Đang xem trang trích dẫn {target.pageNumber}

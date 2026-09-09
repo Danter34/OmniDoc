@@ -12,7 +12,7 @@ export function BrandName({ className }: { className?: string }) {
       )}
     >
       <span className="text-content">Omni</span>
-      <span className="text-brand-gradient">Doc</span>
+      <span className="text-brand">Doc</span>
     </span>
   );
 }
@@ -34,7 +34,7 @@ export function Logo({
     <>
       <Image
         alt="Biểu tượng OmniDoc"
-        className="shrink-0 rounded-full border border-line-subtle shadow-[0_0_18px_var(--brand-icon-shadow)]"
+        className="shrink-0 rounded-full border border-line-subtle shadow-xs"
         height={imageSize}
         priority={priority}
         src="/images/logo-icon.png"

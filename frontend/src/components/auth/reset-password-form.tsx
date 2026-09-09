@@ -68,10 +68,6 @@ export function ResetPasswordForm({
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_30%_20%,rgb(0_240_255/8%),transparent_45%),radial-gradient(ellipse_at_75%_70%,rgb(37_99_235/10%),transparent_45%)]"
-      />
       <section className="glass-panel relative w-full max-w-md rounded-2xl p-7 sm:p-9">
         <Logo priority />
 
@@ -88,7 +84,7 @@ export function ResetPasswordForm({
               mật khẩu mới của bạn.
             </p>
             <Link
-              className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-base font-medium text-on-accent shadow-sm transition-[filter,box-shadow] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 [background-image:var(--gradient-action)]"
+              className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-5 text-base font-medium text-on-accent shadow-sm transition-[filter,box-shadow] hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 bg-blue-600"
               href="/login"
             >
               Đi tới đăng nhập
@@ -210,7 +206,7 @@ export function ResetPasswordForm({
               </form>
             ) : (
               <Link
-                className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-medium text-on-accent transition-[filter,box-shadow] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring [background-image:var(--gradient-action)]"
+                className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-xl px-4 text-sm font-medium text-on-accent transition-[filter,box-shadow] hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-blue-600"
                 href="/forgot-password"
               >
                 Yêu cầu liên kết mới

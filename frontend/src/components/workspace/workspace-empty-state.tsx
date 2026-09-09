@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, FilePlus2, FolderPlus, Sparkles } from "lucide-react";
+import { ArrowRight, FilePlus2, FolderPlus, Layers } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -12,21 +12,15 @@ export function WorkspaceEmptyState() {
   const { isShowcaseUser } = useShowcase();
 
   if (isShowcaseUser) {
-    return <p role="status" className="glass-panel rounded-2xl p-6 text-sm leading-6 text-muted">Không gian trải nghiệm chưa sẵn sàng. Vui lòng quay lại sau.</p>;
+    return <p role="status" className="glass-panel rounded-xl p-6 text-sm leading-6 text-muted">Không gian trải nghiệm chưa sẵn sàng. Vui lòng quay lại sau.</p>;
   }
 
   return (
     <>
       <div className="mx-auto flex min-h-[calc(100vh-12rem)] max-w-3xl items-center justify-center px-4 py-12">
-        <section className="glass-panel w-full overflow-hidden rounded-3xl">
+        <section className="glass-panel w-full overflow-hidden rounded-xl">
           <div className="ambient-bg relative border-b border-line-subtle px-6 py-12 text-center sm:px-12">
-            <div className="absolute left-10 top-8 text-accent opacity-40">
-              <Sparkles className="size-6" />
-            </div>
-            <div className="absolute bottom-8 right-10 text-citation opacity-60">
-              <Sparkles className="size-5" />
-            </div>
-            <span className="mx-auto flex size-16 items-center justify-center rounded-2xl text-brand-icon shadow-[var(--accent-glow)] [background-image:var(--gradient-brand)]">
+            <span className="mx-auto flex size-16 items-center justify-center rounded-xl text-brand-icon shadow-xs bg-blue-600">
               <FolderPlus className="size-8" />
             </span>
             <h1 className="mt-6 text-2xl font-semibold tracking-tight text-content">
@@ -59,7 +53,7 @@ export function WorkspaceEmptyState() {
             </div>
             <div className="bg-surface p-6">
               <span className="flex size-10 items-center justify-center rounded-xl bg-warning-subtle text-warning">
-                <Sparkles className="size-5" />
+                <Layers className="size-5" />
               </span>
               <h2 className="mt-4 text-sm font-semibold text-content">
                 Sẵn sàng cho RAG

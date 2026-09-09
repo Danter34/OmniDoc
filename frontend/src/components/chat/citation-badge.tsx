@@ -25,7 +25,7 @@ export function CitationBadge({
       className={cn(
         "inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-[background-color,border-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
         active
-          ? "border-citation-active-line bg-citation-active-subtle text-citation-active shadow-[0_0_18px_var(--citation-active-glow)]"
+          ? "border-citation-active-line bg-citation-active-subtle text-citation-active shadow-xs"
           : "border-citation-line bg-citation-subtle text-citation hover:bg-citation-hover",
       )}
       onClick={() => onSelect(citation, index)}

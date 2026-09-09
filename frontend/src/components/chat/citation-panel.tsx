@@ -5,7 +5,7 @@ import {
   ExternalLink,
   FileText,
   Quote,
-  Sparkles,
+  Target,
   X,
 } from "lucide-react";
 import { useEffect } from "react";
@@ -66,7 +66,7 @@ export function CitationPanel({
       <aside
         aria-label={`Chi tiết nguồn ${index}`}
         aria-modal="true"
-        className="glass-panel absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-3xl lg:inset-y-4 lg:left-auto lg:right-4 lg:w-[27rem] lg:rounded-3xl"
+        className="border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 shadow-lg absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-xl lg:inset-y-4 lg:left-auto lg:right-4 lg:w-[27rem] lg:rounded-xl"
         role="dialog"
       >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line-subtle bg-elevated/95 px-5 py-4 backdrop-blur">
@@ -136,7 +136,7 @@ export function CitationPanel({
           <section className="rounded-2xl border border-line-subtle bg-surface/60 p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Sparkles className="size-4 text-citation-active" />
+                <Target className="size-4 text-citation-active" />
                 <span className="text-sm font-medium text-content-secondary">
                   Độ tương đồng ngữ nghĩa
                 </span>
@@ -147,7 +147,7 @@ export function CitationPanel({
             </div>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-tertiary">
               <div
-                className="h-full rounded-full [background-image:var(--gradient-brand)]"
+                className="h-full rounded-sm bg-blue-600 dark:bg-blue-500"
                 style={{ width: `${score}%` }}
               />
             </div>

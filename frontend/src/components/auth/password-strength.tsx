@@ -30,9 +30,9 @@ export function PasswordStrength({ password }: { password: string }) {
         {Array.from({ length: 5 }, (_, index) => (
           <span
             className={cn(
-              "h-1.5 rounded-full transition-colors",
+              "h-1.5 rounded-sm transition-colors",
               index >= strength
-                ? "bg-surface-tertiary"
+                ? "bg-slate-200 dark:bg-slate-800"
                 : strength <= 2
                   ? "bg-danger"
                   : strength === 3

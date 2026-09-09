@@ -239,10 +239,10 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
               autoComplete={index === 0 ? "one-time-code" : "off"}
               autoFocus={index === 0}
               className={cn(
-                "h-14 w-11 rounded-xl border bg-surface text-center text-xl font-semibold text-content outline-none transition sm:h-16 sm:w-13 sm:text-2xl",
+                "h-10 w-11 rounded-lg border bg-white dark:bg-slate-950 px-3 text-center text-sm font-semibold text-content outline-none transition focus:ring-2 sm:w-13",
                 error
-                  ? "border-danger focus:border-danger focus:ring-4 focus:ring-danger-glow"
-                  : "border-line-subtle focus:border-focus-ring focus:ring-4 focus:ring-focus-glow",
+                  ? "border-danger focus:border-danger focus:ring-danger-glow"
+                  : "border-slate-300 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500",
               )}
               inputMode="numeric"
               key={index}
@@ -291,11 +291,7 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
 function VerificationShell({ children }: { children: React.ReactNode }) {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_30%_20%,rgb(0_240_255/8%),transparent_45%),radial-gradient(ellipse_at_75%_70%,rgb(37_99_235/10%),transparent_45%)]"
-      />
-      <section className="glass-panel relative w-full max-w-lg rounded-3xl p-7 sm:p-9">
+      <section className="glass-panel relative w-full max-w-lg rounded-xl p-7 sm:p-9">
         <Logo className="mb-8 justify-center" />
         {children}
       </section>

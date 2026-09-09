@@ -242,10 +242,10 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
                   autoComplete={index === 0 ? "one-time-code" : "off"}
                   autoFocus={index === 0}
                   className={cn(
-                    "h-14 w-11 rounded-xl border bg-surface text-center text-xl font-semibold text-content outline-none transition sm:h-16 sm:w-13 sm:text-2xl",
+                    "h-10 w-11 rounded-lg border bg-white dark:bg-slate-950 px-3 text-center text-sm font-semibold text-content outline-none transition focus:ring-2 sm:w-13",
                     error
-                      ? "border-danger focus:border-danger focus:ring-4 focus:ring-danger-glow"
-                      : "border-line-subtle focus:border-focus-ring focus:ring-4 focus:ring-focus-glow",
+                      ? "border-danger focus:border-danger focus:ring-danger-glow"
+                      : "border-slate-300 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500",
                   )}
                   disabled={isVerifying || isLoadingOtp}
                   inputMode="numeric"
