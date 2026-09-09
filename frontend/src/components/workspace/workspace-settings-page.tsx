@@ -1,13 +1,12 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useEffect } from "react";
 
 import { Spinner } from "@/components/ui/spinner";
 import { WorkspaceMembersSettings } from "@/components/workspace/workspace-members-settings";
-import { useWorkspace } from "@/hooks/use-workspace";
 import { useShowcase } from "@/hooks/use-showcase";
+import { useWorkspace } from "@/hooks/use-workspace";
 
 export function WorkspaceSettingsPage({ workspaceId }: { workspaceId: string }) {
   const { isShowcaseWorkspace, isShowcaseUser } = useShowcase(workspaceId);
@@ -56,13 +55,10 @@ export function WorkspaceSettingsPage({ workspaceId }: { workspaceId: string }) 
     );
   }
 
-  if (isShowcaseWorkspace || isShowcaseUser) {
-    return (
-      <div className="glass-panel rounded-2xl p-6">
-        <p className="text-sm text-content">Cài đặt bị khóa trên không gian trải nghiệm công khai.</p>
-        <Link className="mt-3 inline-flex min-h-11 items-center rounded-lg text-sm text-accent underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring" href={`/workspaces/${workspace.id}/chat`}>Quay lại trò chuyện</Link>
-      </div>
-    );
-  }
-  return <WorkspaceMembersSettings workspace={workspace} />;
+  return (
+    <WorkspaceMembersSettings
+      isShowcase={isShowcaseWorkspace || isShowcaseUser}
+      workspace={workspace}
+    />
+  );
 }

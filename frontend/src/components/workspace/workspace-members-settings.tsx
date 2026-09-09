@@ -21,8 +21,10 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { ShowcaseGuardToast } from "@/components/ui/showcase-guard-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/hooks/use-auth";
+import { useShowcaseGuard } from "@/hooks/use-showcase-guard";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { cn, getInitials } from "@/lib/utils";
 import { ApiError, getErrorMessage } from "@/services/api-client";
@@ -45,10 +47,11 @@ const joinedDateFormatter = new Intl.DateTimeFormat("vi-VN", {
   year: "numeric",
 });
 
-export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }) {
+export function WorkspaceMembersSettings({ workspace, isShowcase = false }: { workspace: Workspace; isShowcase?: boolean }) {
   const router = useRouter();
   const { user, openVerificationModal } = useAuth();
   const { refreshWorkspaces } = useWorkspace();
+  const { guardMessage, fireGuard, clearGuard } = useShowcaseGuard();
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -198,6 +201,11 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
     member: WorkspaceMember,
     newRole: WorkspaceRole,
   ) {
+    if (isShowcase) {
+      fireGuard();
+      setOpenMenuUserId(null);
+      return;
+    }
     setOpenMenuUserId(null);
     setProcessingUserId(member.userId);
     setError(null);
@@ -222,6 +230,12 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
 
   async function handleRemoveMember() {
     if (!removalTarget) {
+      return;
+    }
+
+    if (isShowcase) {
+      fireGuard();
+      setRemovalTarget(null);
       return;
     }
 
@@ -253,6 +267,13 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
 
   async function handleInvite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isShowcase) {
+      fireGuard();
+      closeInviteModal();
+      return;
+    }
+
     setIsInviting(true);
     setInviteError(null);
 
@@ -280,6 +301,11 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
 
   function handleOpenInvite() {
     if (!canInviteMembers) return;
+
+    if (isShowcase) {
+      fireGuard();
+      return;
+    }
 
     if (!user?.emailConfirmed) {
       setShowInviteVerificationGate(true);
@@ -691,6 +717,9 @@ export function WorkspaceMembersSettings({ workspace }: { workspace: Workspace }
             <X className="size-4" />
           </button>
         </div>
+      ) : null}
+      {guardMessage ? (
+        <ShowcaseGuardToast message={guardMessage} onDismiss={clearGuard} />
       ) : null}
     </section>
   );

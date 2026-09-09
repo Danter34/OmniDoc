@@ -86,7 +86,7 @@ export function AuthForm({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showcaseFilled, setShowcaseFilled] = useState(false);
+  const [isShowcaseLogging, setIsShowcaseLogging] = useState(false);
 
   useEffect(() => {
     if (isLoading || !user) return;
@@ -174,29 +174,27 @@ export function AuthForm({
             aria-label="Tài khoản trải nghiệm"
             className={`mt-6 rounded-xl border border-line bg-surface-subtle p-4 ${highlightShowcase ? "ring-2 ring-focus-ring ring-offset-2 ring-offset-surface" : ""}`}
           >
-            <p className="text-xs font-semibold text-accent">
-              Dành cho kiểm thử demo
-            </p>
-            <p className="mt-2 text-sm leading-6 text-content-secondary">
-              Điền tài khoản mẫu, sau đó nhấn Đăng nhập để trải nghiệm.
-            </p>
             <Button
-              className="mt-3 h-auto min-h-11 w-full py-2"
-              disabled={isSubmitting}
+              className="h-auto min-h-11 w-full py-2"
+              disabled={isSubmitting || isShowcaseLogging}
               type="button"
-              onClick={() => {
-                setValues((current) => ({ ...current, email: showcase.email, password: showcase.password }));
-                setErrors({});
+              onClick={async () => {
                 setRequestError(null);
-                setShowcaseFilled(true);
+                setIsShowcaseLogging(true);
+                try {
+                  await login({ email: showcase.email, password: showcase.password });
+                } catch (error) {
+                  setRequestError(getErrorMessage(error));
+                } finally {
+                  setIsShowcaseLogging(false);
+                }
               }}
             >
-              Sử dụng tài khoản Trải nghiệm
+              {isShowcaseLogging ? <Spinner /> : null}
+              {isShowcaseLogging ? "Đang đăng nhập..." : "Sử dụng tài khoản Trải nghiệm"}
             </Button>
             <p className="mt-2 text-xs leading-5 text-muted" role="status">
-              {showcaseFilled
-                ? "Đã điền thông tin. Nhấn Đăng nhập để tiếp tục."
-                : "Không gian dùng chung. Vui lòng không nhập thông tin cá nhân hoặc nội dung bí mật."}
+              Không gian dùng chung. Vui lòng không nhập thông tin cá nhân hoặc nội dung bí mật.
             </p>
           </aside>
         ) : null}

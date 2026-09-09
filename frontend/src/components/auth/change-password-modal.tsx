@@ -14,12 +14,15 @@ import { PasswordStrength } from "@/components/auth/password-strength";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { ShowcaseGuardToast } from "@/components/ui/showcase-guard-toast";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/hooks/use-auth";
+import { useShowcaseGuard } from "@/hooks/use-showcase-guard";
 import { getErrorMessage } from "@/services/api-client";
 
-export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
+export function ChangePasswordModal({ onClose, isShowcase = false }: { onClose: () => void; isShowcase?: boolean }) {
   const { changePassword } = useAuth();
+  const { guardMessage, fireGuard, clearGuard } = useShowcaseGuard();
   const closeTimerRef = useRef<number | null>(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -40,6 +43,12 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (isShowcase) {
+      fireGuard();
+      onClose();
+      return;
+    }
 
     if (newPassword.length < 8) {
       setError("Mật khẩu mới cần có ít nhất 8 ký tự.");
@@ -70,6 +79,7 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
+    <>
     <Modal
       description={
         isComplete
@@ -167,6 +177,10 @@ export function ChangePasswordModal({ onClose }: { onClose: () => void }) {
         </>
       )}
     </Modal>
+    {guardMessage ? (
+      <ShowcaseGuardToast message={guardMessage} onDismiss={clearGuard} />
+    ) : null}
+  </>
   );
 }
 

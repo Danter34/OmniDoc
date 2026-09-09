@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { KeyRound, LogOut } from "lucide-react";
 import { useState } from "react";
@@ -62,7 +62,7 @@ export function DashboardHeader() {
                       {user?.email}
                     </p>
                   </div>
-                  {!isShowcaseUser(user) ? <button
+                  <button
                     className="mt-1 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-content-secondary transition-colors hover:bg-surface-subtle hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset"
                     onClick={() => {
                       setProfileOpen(false);
@@ -73,7 +73,7 @@ export function DashboardHeader() {
                   >
                     <KeyRound aria-hidden="true" className="size-4" />
                     Đổi mật khẩu
-                  </button> : null}
+                  </button>
                   <button
                     className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-content-secondary transition-colors hover:bg-surface-subtle hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset"
                     onClick={logout}
@@ -89,8 +89,11 @@ export function DashboardHeader() {
           </div>
         </div>
       </header>
-      {changePasswordOpen && !isShowcaseUser(user) ? (
-        <ChangePasswordModal onClose={() => setChangePasswordOpen(false)} />
+      {changePasswordOpen ? (
+        <ChangePasswordModal
+          isShowcase={isShowcaseUser(user)}
+          onClose={() => setChangePasswordOpen(false)}
+        />
       ) : null}
     </>
   );

@@ -13,6 +13,8 @@ import { useEffect, useRef, useState } from "react";
 import { CreateWorkspaceModal } from "@/components/workspace/create-workspace-modal";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useShowcase } from "@/hooks/use-showcase";
+import { useShowcaseGuard } from "@/hooks/use-showcase-guard";
+import { ShowcaseGuardToast } from "@/components/ui/showcase-guard-toast";
 import { cn } from "@/lib/utils";
 import type { WorkspaceRole } from "@/types/workspace.types";
 
@@ -30,6 +32,7 @@ function roleClasses(role: WorkspaceRole) {
 
 export function WorkspaceSelector() {
   const { isShowcaseUser } = useShowcase();
+  const { guardMessage, fireGuard, clearGuard } = useShowcaseGuard();
   const router = useRouter();
   const {
     workspaces,
@@ -162,11 +165,15 @@ export function WorkspaceSelector() {
                 </p>
               )}
             </div>
-            {!isShowcaseUser ? (
-              <div className="border-t border-line-subtle p-1.5">
+            <div className="border-t border-line-subtle p-1.5">
                 <button
                   className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-accent transition-colors hover:bg-info-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-inset"
                   onClick={() => {
+                    if (isShowcaseUser) {
+                      setOpen(false);
+                      fireGuard();
+                      return;
+                    }
                     setOpen(false);
                     setCreateOpen(true);
                   }}
@@ -178,15 +185,17 @@ export function WorkspaceSelector() {
                   Tạo Workspace
                 </button>
               </div>
-            ) : null}
           </div>
         ) : null}
       </div>
 
       <CreateWorkspaceModal
         onClose={() => setCreateOpen(false)}
-        open={createOpen && !isShowcaseUser}
+        open={createOpen}
       />
+      {guardMessage ? (
+        <ShowcaseGuardToast message={guardMessage} onDismiss={clearGuard} />
+      ) : null}
     </>
   );
 }
