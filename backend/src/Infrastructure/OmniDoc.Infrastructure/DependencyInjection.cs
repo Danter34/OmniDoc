@@ -52,6 +52,8 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddScoped<IEmailSender, SmtpEmailSender>();
+        services.AddSingleton<Func<MailKit.Net.Smtp.ISmtpClient>>(
+            _ => () => new MailKit.Net.Smtp.SmtpClient());
         services.AddSingleton<IEmailTemplateBuilder, OmniDocEmailTemplateBuilder>();
         services.AddSingleton<IEmailVerificationOtpService, EmailVerificationOtpService>();
         services.AddSingleton<IEmailVerificationFeatureOptions, EmailVerificationFeatureOptions>();
@@ -62,13 +64,29 @@ public static class DependencyInjection
         services.AddScoped<IEmailOutboxDispatcher, EmailOutboxDispatcher>();
 
         services.AddOptions<EmailSettings>()
-            .Bind(configuration.GetSection(EmailSettings.SectionName))
+            .Bind(configuration.GetSection(EmailSettings.SectionName));
+
+        services.AddOptions<SmtpOptions>()
+            .Configure(settings =>
+            {
+                // Preserve existing deployments; the Smtp section takes precedence.
+                var legacy = configuration.GetSection(EmailSettings.SectionName).Get<EmailSettings>()
+                    ?? new EmailSettings();
+                settings.Host = legacy.Host;
+                settings.Port = legacy.Port;
+                settings.UserName = legacy.Username;
+                settings.Password = legacy.Password;
+                settings.SenderEmail = legacy.FromEmail;
+                settings.SenderName = legacy.FromName;
+                settings.EnableSsl = legacy.EnableSsl;
+            })
+            .Bind(configuration.GetSection(SmtpOptions.SectionName))
             .Validate(settings => !string.IsNullOrWhiteSpace(settings.Host),
-                "EmailSettings:Host is required.")
+                "Smtp:Host is required.")
             .Validate(settings => settings.Port is > 0 and <= 65535,
-                "EmailSettings:Port must be between 1 and 65535.")
-            .Validate(settings => !string.IsNullOrWhiteSpace(settings.FromEmail),
-                "EmailSettings:FromEmail is required.")
+                "Smtp:Port must be between 1 and 65535.")
+            .Validate(settings => System.Net.Mail.MailAddress.TryCreate(settings.SenderEmail, out _),
+                "Smtp:SenderEmail must be a valid email address.")
             .ValidateOnStart();
 
         services.AddOptions<JwtSettings>()

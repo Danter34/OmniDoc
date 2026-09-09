@@ -4,8 +4,6 @@ import {
   AlertCircle,
   ArrowDownCircle,
   ArrowUpCircle,
-  Check,
-  Copy,
   LogOut,
   MailWarning,
   MoreHorizontal,
@@ -16,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,8 +61,6 @@ export function WorkspaceMembersSettings({ workspace, isShowcase = false }: { wo
   const [inviteRole, setInviteRole] = useState<WorkspaceRole>("Member");
   const [invitation, setInvitation] = useState<WorkspaceInvitation | null>(null);
   const [isInviting, setIsInviting] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const copyTimerRef = useRef<number | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [showInviteVerificationGate, setShowInviteVerificationGate] =
     useState(false);
@@ -178,15 +174,6 @@ export function WorkspaceMembersSettings({ workspace, isShowcase = false }: { wo
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [openMenuUserId]);
-
-  useEffect(
-    () => () => {
-      if (copyTimerRef.current !== null) {
-        window.clearTimeout(copyTimerRef.current);
-      }
-    },
-    [],
-  );
 
   function showForbiddenError(requestError: unknown) {
     if (requestError instanceof ApiError && requestError.status === 403) {
@@ -318,37 +305,11 @@ export function WorkspaceMembersSettings({ workspace, isShowcase = false }: { wo
   }
 
   function closeInviteModal() {
-    if (copyTimerRef.current !== null) {
-      window.clearTimeout(copyTimerRef.current);
-      copyTimerRef.current = null;
-    }
     setInviteOpen(false);
     setInviteEmail("");
     setInviteRole("Member");
     setInvitation(null);
-    setCopied(false);
     setInviteError(null);
-  }
-
-  async function copyInviteLink() {
-    if (!invitation) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(invitation.inviteLink);
-      setCopied(true);
-      setInviteError(null);
-      if (copyTimerRef.current !== null) {
-        window.clearTimeout(copyTimerRef.current);
-      }
-      copyTimerRef.current = window.setTimeout(() => {
-        copyTimerRef.current = null;
-        setCopied(false);
-      }, 2000);
-    } catch {
-      setInviteError("Không thể sao chép tự động. Vui lòng chọn và sao chép liên kết.");
-    }
   }
 
   return (
@@ -586,7 +547,7 @@ export function WorkspaceMembersSettings({ workspace, isShowcase = false }: { wo
       </Modal>
 
       <Modal
-        description="Chọn email và vai trò khởi tạo. Liên kết sẽ hết hạn sau 7 ngày."
+        description="Lời mời sẽ được gửi qua email và có hiệu lực trong 7 ngày."
         onClose={closeInviteModal}
         open={inviteOpen}
         title="Mời thành viên mới"
@@ -600,28 +561,13 @@ export function WorkspaceMembersSettings({ workspace, isShowcase = false }: { wo
         {invitation ? (
           <div>
             <div className="rounded-xl border border-success bg-success-subtle px-4 py-3 text-sm text-success">
-              Đã tạo lời mời cho <strong>{invitation.inviteeEmail}</strong> với vai trò {invitation.role}.
+              Lời mời tới <strong>{invitation.inviteeEmail}</strong> với vai trò {invitation.role} đang được gửi qua email.
             </div>
-            <label className="mt-5 block">
-              <span className="mb-1.5 block text-sm font-medium text-content-secondary">Liên kết mời</span>
-              <div className="flex gap-2">
-                <Input readOnly value={invitation.inviteLink} />
-                <Button
-                  className="shrink-0"
-                  icon={copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-                  onClick={() => void copyInviteLink()}
-                  variant="secondary"
-                >
-                  {copied ? "Đã chép" : "Copy Link"}
-                </Button>
-              </div>
-            </label>
             <div className="mt-5 flex justify-end gap-2">
               <Button onClick={closeInviteModal} variant="secondary">Đóng</Button>
               <Button onClick={() => {
                 setInvitation(null);
                 setInviteEmail("");
-                setCopied(false);
                 setInviteError(null);
               }}>Tạo lời mời khác</Button>
             </div>

@@ -13,5 +13,5 @@ public sealed class InvitationLinkService : IInvitationLinkService
     }
 
     public string BuildInvitationLink(string token) =>
-        $"{_frontendBaseUrl}/invitations/{Uri.EscapeDataString(token)}";
+        $"{_frontendBaseUrl}/invitations/accept?token={Uri.EscapeDataString(token)}";
 }

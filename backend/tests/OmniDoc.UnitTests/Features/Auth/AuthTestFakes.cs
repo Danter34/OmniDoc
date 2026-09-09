@@ -85,7 +85,7 @@ internal sealed class FakePasswordResetLinkService
 internal sealed class FakeInvitationLinkService : IInvitationLinkService
 {
     public string BuildInvitationLink(string token) =>
-        $"https://app.example.test/invitations/{token}";
+        $"https://app.example.test/invitations/accept?token={Uri.EscapeDataString(token)}";
 }
 
 internal sealed class FakeEmailOutboxScheduler : IEmailOutboxScheduler

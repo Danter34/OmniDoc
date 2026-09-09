@@ -6,6 +6,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MailKit" Version="4.17.0" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.25" />
     <PackageReference Include="Markdig" Version="0.41.3" />
     <PackageReference Include="Hangfire.PostgreSql" Version="1.21.1" />

@@ -1,49 +1,62 @@
-using System.Net;
-using System.Net.Mail;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MimeKit;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Infrastructure.Common.Settings;
 
 namespace OmniDoc.Infrastructure.Services.Email;
 
-public sealed class SmtpEmailSender : IEmailSender
+public sealed class SmtpEmailSender(
+    IOptions<SmtpOptions> options,
+    Func<ISmtpClient> clientFactory,
+    ILogger<SmtpEmailSender> logger) : IEmailSender
 {
-    private readonly EmailSettings _settings;
-
-    public SmtpEmailSender(IOptions<EmailSettings> settings)
-    {
-        _settings = settings.Value;
-    }
-
     public async Task SendEmailAsync(
         string toEmail,
         string subject,
         string htmlBody,
         CancellationToken cancellationToken = default)
     {
-        using var message = new MailMessage
+        var settings = options.Value;
+        try
         {
-            From = new MailAddress(_settings.FromEmail, _settings.FromName),
-            Subject = subject,
-            Body = htmlBody,
-            IsBodyHtml = true
-        };
-        message.To.Add(new MailAddress(toEmail));
+            using var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(settings.SenderName, settings.SenderEmail));
+            message.To.Add(MailboxAddress.Parse(toEmail));
+            message.Subject = subject;
+            message.Body = new TextPart("html") { Text = htmlBody };
 
-        using var client = new SmtpClient(_settings.Host, _settings.Port)
-        {
-            EnableSsl = _settings.EnableSsl,
-            DeliveryMethod = SmtpDeliveryMethod.Network,
-            UseDefaultCredentials = string.IsNullOrWhiteSpace(_settings.Username)
-        };
+            using var client = clientFactory();
+            var security = settings.Port switch
+            {
+                587 => SecureSocketOptions.StartTls,
+                465 => SecureSocketOptions.SslOnConnect,
+                1025 => SecureSocketOptions.None,
+                _ => settings.EnableSsl ? SecureSocketOptions.StartTls : SecureSocketOptions.None
+            };
+            await client.ConnectAsync(settings.Host, settings.Port, security, cancellationToken);
 
-        if (!string.IsNullOrWhiteSpace(_settings.Username))
-        {
-            client.Credentials = new NetworkCredential(
-                _settings.Username,
-                _settings.Password);
+            if (!string.IsNullOrWhiteSpace(settings.UserName) &&
+                !string.IsNullOrWhiteSpace(settings.Password))
+            {
+                await client.AuthenticateAsync(settings.UserName, settings.Password, cancellationToken);
+            }
+
+            await client.SendAsync(message, cancellationToken);
+            await client.DisconnectAsync(true, cancellationToken);
         }
-
-        await client.SendMailAsync(message, cancellationToken);
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            // Server exception messages can contain credentials; log only the error type.
+            logger.LogError("SMTP delivery failed on {Host}:{Port} ({ErrorType}).",
+                settings.Host, settings.Port, exception.GetType().Name);
+            throw;
+        }
     }
 }

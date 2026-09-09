@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using OmniDoc.Application.Common.Interfaces;
 using OmniDoc.Application.Features.Workspaces;
@@ -11,6 +12,19 @@ namespace OmniDoc.UnitTests.Features.Workspaces;
 
 public sealed class WorkspaceInvitationDeliveryTests
 {
+    [Fact]
+    public void InvitationLinkUsesAcceptRouteAndEscapesToken()
+    {
+        var configuration = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Frontend:BaseUrl"] = "https://app.example.test/"
+            }).Build();
+        var links = new OmniDoc.API.Services.InvitationLinkService(configuration);
+
+        Assert.Equal("https://app.example.test/invitations/accept?token=a%2Bb%26c%3Dd", links.BuildInvitationLink("a+b&c=d"));
+    }
+
     [Fact]
     public async Task SendEmailJob_DeliversCurrentWorkspaceInvitation()
     {
@@ -32,7 +46,7 @@ public sealed class WorkspaceInvitationDeliveryTests
         Assert.Equal("Enterprise Workspace", templates.WorkspaceName);
         Assert.Equal("Workspace Owner", templates.InviterName);
         Assert.Contains(
-            $"/invitations/{invitation.Token}",
+            $"/invitations/accept?token={invitation.Token}",
             templates.InvitationUrl,
             StringComparison.Ordinal);
         Assert.NotNull(outbox.ProcessedAtUtc);

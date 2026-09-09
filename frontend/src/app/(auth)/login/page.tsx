@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AuthForm } from "@/components/auth/auth-form";
+import { safeReturnUrl } from "@/lib/return-url";
 
 export const metadata: Metadata = {
   title: "Đăng nhập",
@@ -9,13 +10,10 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirect?: string; mode?: string }>;
+  searchParams: Promise<{ returnUrl?: string; redirect?: string; mode?: string }>;
 }) {
-  const { redirect, mode } = await searchParams;
-  const redirectTo =
-    redirect?.startsWith("/") && !redirect.startsWith("//")
-      ? redirect
-      : "/workspaces";
+  const { returnUrl, redirect, mode } = await searchParams;
+  const redirectTo = safeReturnUrl(returnUrl ?? redirect);
 
   return <AuthForm mode="login" redirectTo={redirectTo} highlightShowcase={mode === "showcase"} />;
 }

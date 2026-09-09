@@ -34,7 +34,6 @@ export interface WorkspaceInvitation {
   role: WorkspaceRole;
   expiresAt: string;
   status: InvitationStatus;
-  inviteLink: string;
 }
 
 export type InvitationStatus =

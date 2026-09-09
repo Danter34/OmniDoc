@@ -40,7 +40,6 @@ public sealed class InviteWorkspaceMemberCommandHandler
     private readonly IShowcasePolicy _showcase;
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUser;
-    private readonly IInvitationLinkService _invitationLinks;
     private readonly IWorkspaceAuthorizationService _workspaceAuthorization;
     private readonly IEmailOutboxScheduler _emailScheduler;
     private readonly INotificationRealtimePublisher _notificationPublisher;
@@ -50,7 +49,6 @@ public sealed class InviteWorkspaceMemberCommandHandler
         IShowcasePolicy showcase,
         IApplicationDbContext context,
         ICurrentUserService currentUser,
-        IInvitationLinkService invitationLinks,
         IWorkspaceAuthorizationService workspaceAuthorization,
         IEmailOutboxScheduler emailScheduler,
         INotificationRealtimePublisher notificationPublisher,
@@ -59,7 +57,6 @@ public sealed class InviteWorkspaceMemberCommandHandler
         _showcase = showcase;
         _context = context;
         _currentUser = currentUser;
-        _invitationLinks = invitationLinks;
         _workspaceAuthorization = workspaceAuthorization;
         _emailScheduler = emailScheduler;
         _notificationPublisher = notificationPublisher;
@@ -197,7 +194,7 @@ public sealed class InviteWorkspaceMemberCommandHandler
                 UserId = invitee.Id,
                 Title = "Lời mời tham gia Workspace",
                 Message = $"{inviter.FullName} đã mời bạn tham gia {workspaceName} với vai trò {request.Role}.",
-                ActionUrl = $"/invitations/{invitation.Token}",
+                ActionUrl = $"/invitations/accept?token={Uri.EscapeDataString(invitation.Token)}",
                 Type = NotificationType.WorkspaceInvitation,
                 CreatedAt = now,
                 MetadataJson = JsonSerializer.Serialize(new
@@ -234,8 +231,7 @@ public sealed class InviteWorkspaceMemberCommandHandler
                 invitation.InviteeEmail,
                 invitation.Role.ToString(),
                 invitation.ExpiresAt,
-                invitation.Status.ToString(),
-                _invitationLinks.BuildInvitationLink(invitation.Token)),
+                invitation.Status.ToString()),
             201);
     }
 

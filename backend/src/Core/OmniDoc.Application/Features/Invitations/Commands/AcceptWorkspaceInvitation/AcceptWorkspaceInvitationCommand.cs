@@ -88,13 +88,6 @@ public sealed class AcceptWorkspaceInvitationCommandHandler
                 410);
         }
 
-        if (invitation.Status == InvitationStatus.Accepted)
-        {
-            return Result<AcceptedInvitationDto>.Failure(
-                "Invitation has already been accepted.",
-                409);
-        }
-
         var user = await _context.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(item => item.Id == userId, cancellationToken);
@@ -116,17 +109,31 @@ public sealed class AcceptWorkspaceInvitationCommandHandler
                 403);
         }
 
-        var isAlreadyMember = await _context.WorkspaceMembers
-            .AnyAsync(
+        var existingMember = await _context.WorkspaceMembers
+            .FirstOrDefaultAsync(
                 member => member.WorkspaceId == invitation.WorkspaceId &&
                           member.UserId == userId,
                 cancellationToken);
 
-        if (isAlreadyMember)
+        if (existingMember is not null)
+        {
+            if (invitation.Status != InvitationStatus.Accepted)
+            {
+                invitation.Status = InvitationStatus.Accepted;
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            return Result<AcceptedInvitationDto>.Success(new AcceptedInvitationDto(
+                invitation.WorkspaceId,
+                invitation.Workspace!.Name,
+                existingMember.Role.ToString()));
+        }
+
+        if (invitation.Status == InvitationStatus.Accepted)
         {
             return Result<AcceptedInvitationDto>.Failure(
-                "You are already a member of this workspace.",
-                409);
+                "Invitation has already been accepted. Request a new invitation to rejoin.",
+                410);
         }
 
         _context.WorkspaceMembers.Add(new WorkspaceMember

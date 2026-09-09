@@ -71,10 +71,10 @@ export function InvitationAcceptancePage({ token }: { token: string }) {
     }
   }
 
-  const returnPath = `/invitations/${encodeURIComponent(token)}`;
-  const loginHref = `/login?redirect=${encodeURIComponent(returnPath)}`;
-  const registerHref = `/register?redirect=${encodeURIComponent(returnPath)}`;
-  const canAccept = invitation?.status === "Pending";
+  const returnPath = `/invitations/accept?token=${encodeURIComponent(token)}`;
+  const loginHref = `/login?returnUrl=${encodeURIComponent(returnPath)}`;
+  const registerHref = `/register?returnUrl=${encodeURIComponent(returnPath)}`;
+  const canAccept = invitation?.status === "Pending" || invitation?.status === "Accepted";
 
   return (
     <main className="ambient-bg relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
@@ -142,14 +142,12 @@ export function InvitationAcceptancePage({ token }: { token: string }) {
               </div>
             </div>
 
-            {invitation.status !== "Pending" ? (
+            {!canAccept ? (
               <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-warning bg-warning-subtle px-4 py-3 text-sm text-warning">
                 <AlertCircle className="size-4" />
-                {invitation.status === "Accepted"
-                  ? "Lời mời này đã được sử dụng."
-                  : invitation.status === "Expired"
-                    ? "Lời mời này đã hết hạn."
-                    : "Lời mời này đã bị thu hồi."}
+                {invitation.status === "Expired"
+                  ? "Lời mời này đã hết hạn."
+                  : "Lời mời này đã bị thu hồi."}
               </div>
             ) : null}
 
@@ -177,7 +175,7 @@ export function InvitationAcceptancePage({ token }: { token: string }) {
                   size="lg"
                 >
                   {isAccepting ? <Spinner /> : <CheckCircle2 className="size-5" />}
-                  {isAccepting ? "Đang tham gia..." : "Tham gia Workspace"}
+                  {isAccepting ? "Đang tham gia..." : invitation.status === "Accepted" ? "Mở Workspace" : "Tham gia Workspace"}
                 </Button>
               ) : (
                 <div className="space-y-3">

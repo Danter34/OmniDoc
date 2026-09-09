@@ -13,7 +13,8 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !user) {
-      const redirect = pathname ? `?redirect=${encodeURIComponent(pathname)}` : "";
+      const returnPath = `${pathname}${window.location.search}`;
+      const redirect = pathname ? `?returnUrl=${encodeURIComponent(returnPath)}` : "";
       router.replace(`/login${redirect}`);
     }
   }, [isLoading, pathname, router, user]);

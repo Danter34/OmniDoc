@@ -400,7 +400,7 @@ export function AuthForm({
           {isRegister ? "Đã có tài khoản?" : "Chưa có tài khoản?"}{" "}
           <Link
             className="font-medium text-accent transition-colors hover:text-accent-primary"
-            href={`${isRegister ? "/login" : "/register"}?redirect=${encodeURIComponent(redirectTo)}`}
+            href={`${isRegister ? "/login" : "/register"}?returnUrl=${encodeURIComponent(redirectTo)}`}
           >
             {isRegister ? "Đăng nhập" : "Đăng ký ngay"}
           </Link>

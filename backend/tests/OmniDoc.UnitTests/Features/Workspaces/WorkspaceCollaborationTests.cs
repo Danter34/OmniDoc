@@ -149,7 +149,10 @@ public sealed class WorkspaceCollaborationTests
         Assert.Equal(201, result.StatusCode);
         Assert.Equal("new.member@example.com", result.Data!.InviteeEmail);
         Assert.Equal("Owner", result.Data.Role);
-        Assert.StartsWith("https://app.example.test/invitations/", result.Data.InviteLink);
+        var response = System.Text.Json.JsonSerializer.Serialize(result.Data);
+        Assert.DoesNotContain("InviteLink", response, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Token", response, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(context.WorkspaceInvitations.Single().Token, response);
         Assert.True(context.WorkspaceInvitations.Single().Token.Length >= 43);
     }
 
@@ -203,7 +206,7 @@ public sealed class WorkspaceCollaborationTests
         var notification = Assert.Single(context.Notifications);
         Assert.Equal(invitee.Id, notification.UserId);
         Assert.Equal(NotificationType.WorkspaceInvitation, notification.Type);
-        Assert.Equal($"/invitations/{context.WorkspaceInvitations.Single().Token}", notification.ActionUrl);
+        Assert.Equal($"/invitations/accept?token={context.WorkspaceInvitations.Single().Token}", notification.ActionUrl);
         var pushed = Assert.Single(publisher.Published);
         Assert.Equal(invitee.Id, pushed.UserId);
         Assert.Equal(notification.Id, pushed.Notification.Id);
@@ -299,6 +302,147 @@ public sealed class WorkspaceCollaborationTests
         Assert.False(result.IsSuccess);
         Assert.Equal(403, result.StatusCode);
         Assert.Equal(InvitationStatus.Pending, invitation.Status);
+    }
+
+    [Theory]
+    [InlineData(InvitationStatus.Pending)]
+    [InlineData(InvitationStatus.Accepted)]
+    public async Task ExistingMemberAcceptanceIsIdempotentAndPreservesRole(InvitationStatus status)
+    {
+        await using var context = await SeedWorkspaceAsync();
+        var seeded = GetSeededWorkspace(context);
+        var invitation = NewInvitation(seeded, $" {seeded.Owner.Email.ToUpperInvariant()} ");
+        invitation.Status = status;
+        context.WorkspaceInvitations.Add(invitation);
+        await context.SaveChangesAsync();
+        var handler = new AcceptWorkspaceInvitationCommandHandler(
+            Moq.Mock.Of<IShowcasePolicy>(), context, AuthenticatedUser(seeded.Owner));
+
+        var first = await handler.Handle(new(invitation.Token), default);
+        // Retrying a successfully accepted invitation remains valid after its original expiry.
+        invitation.ExpiresAt = DateTime.UtcNow.AddDays(-1);
+        await context.SaveChangesAsync();
+        var retry = await handler.Handle(new(invitation.Token), default);
+
+        Assert.True(first.IsSuccess);
+        Assert.True(retry.IsSuccess);
+        Assert.Equal(first.Data, retry.Data);
+        Assert.Equal(seeded.Workspace.Id, retry.Data!.WorkspaceId);
+        Assert.Equal("Owner", retry.Data.Role);
+        Assert.Equal(InvitationStatus.Accepted, invitation.Status);
+        Assert.Equal(WorkspaceRole.Owner, Assert.Single(context.WorkspaceMembers.Where(m => m.UserId == seeded.Owner.Id)).Role);
+    }
+
+    [Fact]
+    public async Task NewMemberCanRetryAcceptanceWithoutDuplicateMembership()
+    {
+        await using var context = await SeedWorkspaceAsync();
+        var seeded = GetSeededWorkspace(context);
+        var invitee = NewUser("retry@example.com", "Retry User");
+        var invitation = NewInvitation(seeded, invitee.Email);
+        invitation.Role = WorkspaceRole.Admin;
+        context.Users.Add(invitee);
+        context.WorkspaceInvitations.Add(invitation);
+        await context.SaveChangesAsync();
+        var handler = new AcceptWorkspaceInvitationCommandHandler(
+            Moq.Mock.Of<IShowcasePolicy>(), context, AuthenticatedUser(invitee));
+
+        var first = await handler.Handle(new(invitation.Token), default);
+        var retry = await handler.Handle(new(invitation.Token), default);
+
+        Assert.True(first.IsSuccess);
+        Assert.True(retry.IsSuccess);
+        Assert.Equal(first.Data, retry.Data);
+        Assert.Equal("Admin", retry.Data!.Role);
+        Assert.Single(context.WorkspaceMembers.Where(m => m.UserId == invitee.Id));
+    }
+
+    [Theory]
+    [InlineData(InvitationStatus.Revoked)]
+    [InlineData(InvitationStatus.Expired)]
+    public async Task InvalidInvitationCannotBeAcceptedEvenByExistingMember(InvitationStatus status)
+    {
+        await using var context = await SeedWorkspaceAsync();
+        var seeded = GetSeededWorkspace(context);
+        var invitation = NewInvitation(seeded, seeded.Member.Email);
+        invitation.Status = status;
+        context.WorkspaceInvitations.Add(invitation);
+        await context.SaveChangesAsync();
+        var handler = new AcceptWorkspaceInvitationCommandHandler(
+            Moq.Mock.Of<IShowcasePolicy>(), context, AuthenticatedUser(seeded.Member));
+
+        var result = await handler.Handle(new(invitation.Token), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(410, result.StatusCode);
+        Assert.Equal(status, invitation.Status);
+    }
+
+    [Fact]
+    public async Task AcceptedInvitationStillRequiresMatchingEmailForExistingMember()
+    {
+        await using var context = await SeedWorkspaceAsync();
+        var seeded = GetSeededWorkspace(context);
+        var invitation = NewInvitation(seeded, "someone.else@example.com");
+        invitation.Status = InvitationStatus.Accepted;
+        context.WorkspaceInvitations.Add(invitation);
+        await context.SaveChangesAsync();
+        var handler = new AcceptWorkspaceInvitationCommandHandler(
+            Moq.Mock.Of<IShowcasePolicy>(), context, AuthenticatedUser(seeded.Member));
+
+        var result = await handler.Handle(new(invitation.Token), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(403, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task UsedInvitationCannotRestoreRemovedMembership()
+    {
+        await using var context = await SeedWorkspaceAsync();
+        var seeded = GetSeededWorkspace(context);
+        var invitee = NewUser("removed@example.com", "Removed User");
+        var invitation = NewInvitation(seeded, invitee.Email);
+        invitation.Status = InvitationStatus.Accepted;
+        context.Users.Add(invitee);
+        context.WorkspaceInvitations.Add(invitation);
+        await context.SaveChangesAsync();
+        var handler = new AcceptWorkspaceInvitationCommandHandler(
+            Moq.Mock.Of<IShowcasePolicy>(), context, AuthenticatedUser(invitee));
+
+        var result = await handler.Handle(new(invitation.Token), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(410, result.StatusCode);
+        Assert.DoesNotContain(context.WorkspaceMembers, member => member.UserId == invitee.Id);
+    }
+
+    [Theory]
+    [InlineData("", 400)]
+    [InlineData("unknown-token", 404)]
+    public async Task InvalidTokenReturnsExpectedError(string token, int statusCode)
+    {
+        await using var context = await SeedWorkspaceAsync();
+        var handler = new AcceptWorkspaceInvitationCommandHandler(
+            Moq.Mock.Of<IShowcasePolicy>(), context, AuthenticatedUser(GetSeededWorkspace(context).Member));
+
+        var result = await handler.Handle(new(token), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(statusCode, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task AcceptanceRequiresAuthentication()
+    {
+        await using var context = await SeedWorkspaceAsync();
+        var handler = new AcceptWorkspaceInvitationCommandHandler(
+            Moq.Mock.Of<IShowcasePolicy>(), context, new StubCurrentUserService());
+
+        var result = await handler.Handle(new("token"), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(401, result.StatusCode);
     }
 
     [Fact]
@@ -629,7 +773,6 @@ public sealed class WorkspaceCollaborationTests
                 Email = context.Users.Single(user => user.Id == userId).Email,
                 IsAuthenticated = true
             },
-            new FakeInvitationLinkService(),
             Authorization(context, userId),
             scheduler ?? new FakeEmailOutboxScheduler(),
             publisher ?? new RecordingNotificationPublisher(),
@@ -783,11 +926,6 @@ public sealed class WorkspaceCollaborationTests
         User Owner,
         User Member);
 
-    private sealed class FakeInvitationLinkService : IInvitationLinkService
-    {
-        public string BuildInvitationLink(string token) =>
-            $"https://app.example.test/invitations/{token}";
-    }
 
     private sealed class RecordingNotificationPublisher
         : INotificationRealtimePublisher

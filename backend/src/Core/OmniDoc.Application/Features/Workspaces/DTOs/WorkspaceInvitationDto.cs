@@ -6,5 +6,4 @@ public sealed record WorkspaceInvitationDto(
     string InviteeEmail,
     string Role,
     DateTime ExpiresAt,
-    string Status,
-    string InviteLink);
+    string Status);
