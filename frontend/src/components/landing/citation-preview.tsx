@@ -31,28 +31,28 @@ export function CitationPreview() {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-surface text-content shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-4 text-xs text-content-secondary">
-        <span className="flex items-center gap-2"><span aria-hidden="true" className="size-2 rounded-full bg-blue-300" /> Workspace / Báo cáo ASEAN+3 — AMRO</span>
-        <span className="rounded-full border border-line px-2 py-1">Bản minh họa tương tác</span>
+    <div className="overflow-hidden rounded-2xl border border-slate-700 bg-[#0F172A] shadow-2xl shadow-cyan-950/20">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 px-5 py-4 text-xs text-slate-300">
+        <span className="flex items-center gap-2"><span aria-hidden="true" className="size-2 rounded-full bg-cyan-300" /> Workspace / Báo cáo ASEAN+3 — AMRO</span>
+        <span className="rounded-full border border-slate-600 px-2 py-1">Bản minh họa tương tác</span>
       </div>
       <div className="grid md:grid-cols-2">
-        <div className="border-b border-line p-5 sm:p-7 md:border-r md:border-b-0">
-          <h3 className="flex items-center gap-2 text-sm font-medium text-content-secondary"><MessageSquareText aria-hidden="true" className="size-4 text-accent" /> Hỏi đáp tài liệu</h3>
-          <p className="mt-7 rounded-xl rounded-tr-sm border border-line bg-surface-subtle p-4 text-sm leading-7">Dự báo tăng trưởng GDP của Việt Nam năm 2024 và 2025 theo báo cáo AMRO là bao nhiêu?</p>
-          <div className="mt-6 text-sm leading-7 text-content-secondary">
-            <p className="mb-3 font-semibold"><span className="text-content">Omni</span><span className="text-accent">Doc</span></p>
+        <div className="border-b border-slate-700 p-5 sm:p-7 md:border-r md:border-b-0">
+          <h3 className="flex items-center gap-2 text-sm font-medium text-slate-300"><MessageSquareText aria-hidden="true" className="size-4 text-cyan-300" /> Hỏi đáp tài liệu</h3>
+          <p className="mt-7 rounded-2xl rounded-tr-sm border border-slate-600 bg-slate-800 p-4 text-sm leading-7">Dự báo tăng trưởng GDP của Việt Nam năm 2024 và 2025 theo báo cáo AMRO là bao nhiêu?</p>
+          <div className="mt-6 text-sm leading-7 text-slate-200">
+            <p className="mb-3 font-semibold"><span className="text-white">Omni</span><span className="bg-clip-text text-transparent" style={{ backgroundImage: "linear-gradient(90deg,#00f0ff 0%,#3b82f6 45%,#a855f7 100%)" }}>Doc</span></p>
             <p>Theo Báo cáo Triển vọng Kinh tế Khu vực ASEAN+3 2024 (AMRO), tăng trưởng GDP của Việt Nam được dự báo đạt <strong>6,0% trong năm 2024</strong> và tăng lên <strong>6,5% trong năm 2025</strong>.</p>
-            <button type="button" aria-pressed={citationSelected} aria-controls="citation-preview-viewer" onClick={selectCitation} className={`mt-2 inline-flex min-h-11 items-center rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${citationSelected ? "border-blue-300 bg-blue-300 text-slate-950" : "border-blue-700 bg-blue-950 text-blue-100 hover:bg-blue-900"}`}>[Trang 2]</button>
+            <button type="button" aria-pressed={citationSelected} aria-controls="citation-preview-viewer" onClick={selectCitation} className={`mt-2 inline-flex min-h-11 items-center rounded-lg border px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${citationSelected ? "border-cyan-300 bg-cyan-300 text-slate-950" : "border-cyan-700 bg-cyan-950 text-cyan-100 hover:bg-cyan-900"}`}>[Trang 2]</button>
           </div>
-          <p className="mt-7 border-t border-line pt-4 text-xs leading-6 text-muted">Nhấn [Trang 2] để đối soát hàng số liệu Việt Nam. Đây là dự báo trong báo cáo AMRO 2024.</p>
+          <p className="mt-7 border-t border-slate-700 pt-4 text-xs leading-6 text-slate-400">Nhấn [Trang 2] để đối soát hàng số liệu Việt Nam. Đây là dự báo trong báo cáo AMRO 2024.</p>
         </div>
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-4 text-xs text-content-secondary">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-700 px-5 py-4 text-xs text-slate-300">
             <span className="flex min-w-0 items-center gap-2"><FileText aria-hidden="true" className="size-4 shrink-0" /><span className="break-all">{SHOWCASE_DEFAULT_DOCUMENT}</span></span>
             <span role="status">{citationSelected ? "Đã chọn Việt Nam · " : ""}Trang 2 / 4</span>
           </div>
-          <div ref={viewer} id="citation-preview-viewer" role="region" aria-label="Bản minh họa trang 2 báo cáo AMRO" tabIndex={0} className="relative h-[420px] overflow-auto overscroll-contain bg-surface-tertiary p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 sm:p-5">
+          <div ref={viewer} id="citation-preview-viewer" role="region" aria-label="Bản minh họa trang 2 báo cáo AMRO" tabIndex={0} className="relative h-[420px] overflow-auto overscroll-contain bg-slate-950/50 p-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300 sm:p-5">
             <article aria-label="Trang 2" className="min-h-[380px] rounded-sm bg-slate-50 p-4 text-slate-800 shadow-lg sm:p-6">
               <p className="border-b border-slate-300 pb-4 text-[10px] font-semibold tracking-widest text-slate-600">ASEAN+3 REGIONAL ECONOMIC OUTLOOK 2024</p>
               <h4 className="mt-5 text-lg font-semibold">Ước tính và Dự báo Tăng trưởng và Lạm phát của AMRO, 2024–2025</h4>
@@ -65,7 +65,7 @@ export function CitationPreview() {
                   </thead>
                   <tbody>
                     {forecasts.map(({ economy, gdp, inflation }) => (
-                      <tr key={economy} ref={economy === "Việt Nam" ? vietnamRow : undefined} className={economy === "Việt Nam" ? `border-y-2 border-blue-600 font-semibold text-slate-950 ${citationSelected ? "bg-blue-200" : "bg-blue-100"}` : "border-b border-slate-200"}>
+                      <tr key={economy} ref={economy === "Việt Nam" ? vietnamRow : undefined} className={economy === "Việt Nam" ? `border-y-2 border-cyan-600 font-semibold text-slate-950 ${citationSelected ? "bg-cyan-200" : "bg-cyan-100"}` : "border-b border-slate-200"}>
                         <th scope="row" className="p-2">{economy}</th>
                         {[...gdp, ...inflation].map((value, index) => <td key={index} className="p-2 text-right tabular-nums">{value}</td>)}
                       </tr>
