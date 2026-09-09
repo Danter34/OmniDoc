@@ -44,7 +44,6 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
     secondsUntil(user?.otpResendAvailableAt),
   );
   const [error, setError] = useState<string | null>(null);
-  const [debugOtp, setDebugOtp] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [isVerified, setIsVerified] = useState(Boolean(user?.emailConfirmed));
@@ -56,7 +55,6 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
     let active = true;
     authService.sendVerificationOtp().then((response) => {
       if (!active) return;
-      setDebugOtp(response.debugOtp);
       setCountdown(secondsUntil(response.resendAvailableAt));
       setHasOtpBeenSent(true);
     }).catch((requestError: unknown) => {
@@ -183,7 +181,6 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
 
     try {
       const response = await authService.sendVerificationOtp();
-      setDebugOtp(response.debugOtp);
       setCountdown(secondsUntil(response.resendAvailableAt));
       setHasOtpBeenSent(true);
       setDigits(Array(OTP_LENGTH).fill(""));
@@ -268,13 +265,6 @@ export function EmailVerificationPage({ redirectTo }: { redirectTo: string }) {
           {isVerifying ? "Đang xác minh..." : "Xác minh Email"}
         </Button>
       </form>
-
-      {debugOtp ? (
-        <Button className="mt-5 w-full" disabled={isVerifying || isResending}
-          onClick={() => applyPastedOtp(debugOtp)} variant="secondary">
-          Điền mã OTP Demo
-        </Button>
-      ) : null}
 
       <div className="mt-5 text-center text-sm text-muted">
         {hasOtpBeenSent ? "Không nhận được mã?" : "Bạn chưa có mã?"}{" "}

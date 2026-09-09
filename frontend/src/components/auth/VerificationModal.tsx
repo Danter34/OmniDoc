@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   MailCheck,
   RotateCcw,
-  Zap,
 } from "lucide-react";
 import {
   useEffect,
@@ -45,7 +44,6 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
   const [countdown, setCountdown] = useState(() =>
     secondsUntil(user?.otpResendAvailableAt),
   );
-  const [debugOtp, setDebugOtp] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoadingOtp, setIsLoadingOtp] = useState(true);
   const [isResending, setIsResending] = useState(false);
@@ -60,7 +58,6 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
         const response = await authService.sendVerificationOtp();
         if (!active) return;
 
-        setDebugOtp(response.debugOtp);
         setCountdown(
           response.resendCooldownSeconds ||
             secondsUntil(response.resendAvailableAt),
@@ -190,7 +187,6 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
 
     try {
       const response = await authService.sendVerificationOtp();
-      setDebugOtp(response.debugOtp);
       setCountdown(
         response.resendCooldownSeconds || secondsUntil(response.resendAvailableAt),
       );
@@ -201,12 +197,6 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
     } finally {
       setIsResending(false);
     }
-  }
-
-  function handleDemoOtp() {
-    if (!debugOtp) return;
-
-    applyOtp(debugOtp);
   }
 
   return (
@@ -314,23 +304,6 @@ export function VerificationModal({ onClose }: { onClose: () => void }) {
                   : "Gửi lại mã"}
             </button>
           </div>
-
-          {debugOtp ? (
-            <div className="mt-5 border-t border-dashed border-line-subtle pt-5 text-center">
-              <button
-                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-warning bg-warning-subtle px-3 py-2 text-sm font-medium text-warning transition-[filter,box-shadow] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring disabled:opacity-50"
-                disabled={isVerifying || isResending}
-                onClick={() => void handleDemoOtp()}
-                type="button"
-              >
-                <Zap className="size-4" />
-                Điền mã OTP Demo
-              </button>
-              <p className="mt-1 text-xs text-muted">
-                Mã kiểm thử được máy chủ cung cấp cho môi trường demo.
-              </p>
-            </div>
-          ) : null}
         </>
       )}
     </Modal>

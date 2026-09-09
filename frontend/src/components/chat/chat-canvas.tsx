@@ -51,10 +51,9 @@ import { conversationService } from "@/services/conversation.service";
 import type { Citation } from "@/types/chat.types";
 import type { Workspace } from "@/types/workspace.types";
 
-const SUGGESTED_PROMPTS = [
-  "Tóm tắt những điểm chính trong các tài liệu.",
-  "So sánh các nội dung quan trọng và chỉ ra điểm khác biệt.",
-  "Liệt kê các kết luận có trích dẫn nguồn.",
+const ONBOARDING_HINTS = [
+  "Tải lên tài liệu đầu tiên (PDF, Word) để bắt đầu đối soát tri thức.",
+  "OmniDoc bảo đảm trích dẫn chính xác kèm trang tham chiếu nguồn.",
 ];
 
 export function ChatCanvas({ workspace }: { workspace: Workspace }) {
@@ -77,6 +76,25 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
     error: documentsError,
     applyProgressUpdates,
   } = useDocuments(workspace.id);
+  const suggestedPrompts = useMemo(() => {
+    if (isShowcase) return SHOWCASE_PROMPTS;
+
+    const latestDoc = documents.reduce<(typeof documents)[number] | undefined>(
+      (latest, document) =>
+        !latest || Date.parse(document.createdAtUtc) > Date.parse(latest.createdAtUtc)
+          ? document
+          : latest,
+      undefined,
+    );
+
+    if (!latestDoc) return [];
+
+    return [
+      `Tóm tắt 3 luận điểm trọng tâm trong tài liệu '${latestDoc.fileName}'.`,
+      `Các rủi ro hoặc khuyến nghị chính được nêu trong '${latestDoc.fileName}' là gì?`,
+      `Trích xuất các mốc thời gian và số liệu quan trọng trong '${latestDoc.fileName}'.`,
+    ];
+  }, [documents, isShowcase]);
   const realtimeStatus = useDocumentProgress(
     workspace.id,
     applyProgressUpdates,
@@ -716,7 +734,8 @@ export function ChatCanvas({ workspace }: { workspace: Workspace }) {
                 <EmptyChatState
                   disabled={inputDisabled || (isShowcase && indexedDocuments.length === 0)}
                   onSuggestion={isShowcase ? submitMessage : setInput}
-                  prompts={isShowcase ? SHOWCASE_PROMPTS : SUGGESTED_PROMPTS}
+                  prompts={isShowcase || (!documentsLoading && !documentsError) ? suggestedPrompts : []}
+                  showOnboarding={!isShowcase && !documentsLoading && !documentsError && documents.length === 0}
                   workspaceName={workspace.name}
                 />
               ) : (
@@ -778,11 +797,13 @@ function EmptyChatState({
   disabled,
   onSuggestion,
   prompts,
+  showOnboarding,
 }: {
   workspaceName: string;
   disabled: boolean;
   onSuggestion: (prompt: string) => void;
   prompts: string[];
+  showOnboarding: boolean;
 }) {
   return (
     <div className="flex min-h-full items-center justify-center px-5 py-10">
@@ -808,6 +829,16 @@ function EmptyChatState({
           liệu và số trang.
         </p>
 
+        {showOnboarding ? (
+          <div className="mt-7 grid gap-2.5 text-left sm:grid-cols-2">
+            {ONBOARDING_HINTS.map((hint) => (
+              <p className="glass-panel rounded-2xl p-3.5 text-xs leading-5 text-content-secondary" key={hint}>
+                <Sparkles className="mb-2 size-4 text-accent" />
+                {hint}
+              </p>
+            ))}
+          </div>
+        ) : null}
         <div className="mt-7 grid gap-2.5 text-left sm:grid-cols-3">
           {prompts.map((prompt) => (
             <button

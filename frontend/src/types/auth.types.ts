@@ -23,7 +23,6 @@ export interface RegisterRequest extends LoginRequest {
 export interface EmailVerificationOtpResponse {
   success: boolean;
   resendCooldownSeconds: number;
-  debugOtp: string | null;
   expiresAt: string;
   resendAvailableAt: string;
 }
