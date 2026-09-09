@@ -1,5 +1,7 @@
 "use client";
 
+import { isValidPassword, PASSWORD_REQUIREMENTS } from "@/lib/password-policy";
+
 import {
   AlertCircle,
   CheckCircle2,
@@ -40,8 +42,8 @@ export function ResetPasswordForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (newPassword.length < 8) {
-      setError("Mật khẩu mới cần có ít nhất 8 ký tự.");
+    if (!isValidPassword(newPassword)) {
+      setError(PASSWORD_REQUIREMENTS);
       return;
     }
 

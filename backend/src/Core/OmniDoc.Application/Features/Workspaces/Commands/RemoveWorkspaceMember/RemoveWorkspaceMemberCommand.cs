@@ -36,7 +36,7 @@ public sealed class RemoveWorkspaceMemberCommandHandler
     {
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } actorUserId)
         {
-            return Result<bool>.Failure("Authentication is required.", 401);
+            return Result<bool>.Failure("Bạn không có quyền thực hiện thao tác này.", 401);
         }
 
         _showcase.EnsureCanModifyAccount(actorUserId);
@@ -49,7 +49,7 @@ public sealed class RemoveWorkspaceMemberCommandHandler
         if (workspace is null)
         {
             return Result<bool>.Failure(
-                $"Workspace '{request.WorkspaceId}' was not found.",
+                $"Không tìm thấy không gian làm việc '{request.WorkspaceId}'.",
                 404);
         }
 
@@ -57,7 +57,7 @@ public sealed class RemoveWorkspaceMemberCommandHandler
         if (actor is null)
         {
             return Result<bool>.Failure(
-                "You do not have access to this workspace.",
+                "Bạn không có quyền thực hiện thao tác này.",
                 403);
         }
 
@@ -66,7 +66,7 @@ public sealed class RemoveWorkspaceMemberCommandHandler
 
         if (targetMember is null)
         {
-            return Result<bool>.Failure("Workspace member was not found.", 404);
+            return Result<bool>.Failure("Không tìm thấy thành viên trong không gian làm việc.", 404);
         }
 
         var isSelfRemoval = actorUserId == request.MemberUserId;
@@ -86,7 +86,7 @@ public sealed class RemoveWorkspaceMemberCommandHandler
                 targetMember.Role != WorkspaceRole.Member)
             {
                 return Result<bool>.Failure(
-                    "Workspace admins can only remove members.",
+                    "Quản trị viên chỉ có thể xóa người dùng có vai trò thành viên.",
                     403);
             }
         }
@@ -100,7 +100,7 @@ public sealed class RemoveWorkspaceMemberCommandHandler
             if (otherOwner is null)
             {
                 return Result<bool>.Failure(
-                    "A workspace must always have at least one owner.",
+                    "Không gian làm việc phải luôn có ít nhất một chủ sở hữu.",
                     409);
             }
 

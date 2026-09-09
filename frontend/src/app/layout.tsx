@@ -3,8 +3,27 @@ import type { ReactNode } from "react";
 
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { SESSION_COOKIE, SESSION_COOKIE_MAX_AGE, TOKEN_STORAGE_KEY } from "@/lib/session";
 
 import "./globals.css";
+
+// Migrate sessions created before server-readable cookies existed, before painting
+// the landing page. The subsequent server request still validates the token.
+const sessionMigrationScript = `(() => {
+  if (window.location.pathname !== "/") return;
+  try {
+    const cookieName = ${JSON.stringify(SESSION_COOKIE)};
+    if (document.cookie.split(";").some(part => part.trim().startsWith(cookieName + "="))) return;
+    const token = window.localStorage.getItem(${JSON.stringify(TOKEN_STORAGE_KEY)});
+    if (!token) return;
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = cookieName + "=" + encodeURIComponent(token) + "; Path=/; Max-Age=${SESSION_COOKIE_MAX_AGE}; SameSite=Lax" + secure;
+    if (document.cookie.split(";").some(part => part.trim().startsWith(cookieName + "="))) {
+      document.documentElement.style.visibility = "hidden";
+      window.location.reload();
+    }
+  } catch {}
+})();`;
 
 const themeBootstrapScript = `(() => {
   const storageKey = "omnidoc.theme";
@@ -69,6 +88,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="vi" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: sessionMigrationScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body className="ambient-bg">

@@ -1,5 +1,7 @@
 "use client";
 
+import { isValidPassword, PASSWORD_REQUIREMENTS } from "@/lib/password-policy";
+
 import {
   AlertCircle,
   Eye,
@@ -48,8 +50,8 @@ function validate(
 
   if (!values.password) {
     errors.password = "Vui lòng nhập mật khẩu.";
-  } else if (mode === "register" && values.password.length < 8) {
-    errors.password = "Mật khẩu cần có ít nhất 8 ký tự.";
+  } else if (mode === "register" && !isValidPassword(values.password)) {
+    errors.password = PASSWORD_REQUIREMENTS;
   }
 
   if (mode === "register") {

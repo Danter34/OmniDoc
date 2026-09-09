@@ -4,6 +4,7 @@ const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
 export const API_BASE_URL = configuredApiUrl?.replace(/\/$/, "") ?? "";
 export const UNAUTHORIZED_EVENT = "omnidoc:unauthorized";
 export const RATE_LIMIT_MESSAGE = "Bạn đang thao tác quá nhanh, vui lòng thử lại sau giây lát.";
+export const UNEXPECTED_ERROR_MESSAGE = "Đã có lỗi xảy ra. Vui lòng thử lại sau.";
 
 export class ApiError extends Error {
   constructor(
@@ -65,9 +66,11 @@ function createApiError(response: Response, body: unknown) {
         )
       : [];
   const fallbackMessage =
-    typeof body === "string" && body.trim()
-      ? body
-      : `Yêu cầu thất bại (${response.status}).`;
+    response.status === 401 || response.status === 403
+      ? "Bạn không có quyền thực hiện thao tác này."
+      : response.status === 400
+        ? "Dữ liệu yêu cầu không hợp lệ. Vui lòng kiểm tra và thử lại."
+        : UNEXPECTED_ERROR_MESSAGE;
   const errorCode =
     body &&
     typeof body === "object" &&
@@ -141,9 +144,12 @@ export async function apiBlobRequest(
 }
 
 export function getErrorMessage(error: unknown) {
+  if (error instanceof TypeError || (error instanceof Error && error.name === "AbortError")) {
+    return "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối và thử lại.";
+  }
   if (error instanceof ApiError || error instanceof Error) {
     return error.message;
   }
 
-  return "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.";
+  return UNEXPECTED_ERROR_MESSAGE;
 }

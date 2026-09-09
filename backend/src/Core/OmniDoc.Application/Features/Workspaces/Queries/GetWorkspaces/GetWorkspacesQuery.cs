@@ -26,7 +26,7 @@ public class GetWorkspacesQueryHandler : IRequestHandler<GetWorkspacesQuery, Res
     {
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
         {
-            return Result<List<WorkspaceDto>>.Failure("Authentication is required.", 401);
+            return Result<List<WorkspaceDto>>.Failure("Bạn không có quyền thực hiện thao tác này.", 401);
         }
 
         var workspaceRows = await _context.Workspaces

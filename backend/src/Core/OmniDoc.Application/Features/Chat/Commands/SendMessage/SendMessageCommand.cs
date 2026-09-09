@@ -20,9 +20,9 @@ public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
 {
     public SendMessageCommandValidator()
     {
-        RuleFor(x => x.WorkspaceId).NotEmpty();
-        RuleFor(x => x.Message).NotEmpty().MaximumLength(4000);
-        RuleFor(x => x.TopK).InclusiveBetween(1, 20);
+        RuleFor(x => x.WorkspaceId).NotEmpty().WithMessage("{PropertyName} không được để trống.").WithName("Mã không gian làm việc");
+        RuleFor(x => x.Message).NotEmpty().WithMessage("{PropertyName} không được để trống.").MaximumLength(4000).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Tin nhắn");
+        RuleFor(x => x.TopK).InclusiveBetween(1, 20).WithMessage("{PropertyName} phải nằm trong khoảng {From} đến {To}.").WithName("Số kết quả");
     }
 }
 
@@ -69,13 +69,13 @@ public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Res
 
             if (existing is null)
             {
-                return Result<ChatResponseDto>.Failure($"Conversation '{conversationId}' was not found.", 404);
+                return Result<ChatResponseDto>.Failure($"Không tìm thấy cuộc trò chuyện '{conversationId}'.", 404);
             }
 
             if (existing.WorkspaceId != request.WorkspaceId)
             {
                 return Result<ChatResponseDto>.Failure(
-                    $"Conversation '{conversationId}' does not belong to workspace '{request.WorkspaceId}'.", 403);
+                    $"Cuộc trò chuyện '{conversationId}' không thuộc không gian làm việc '{request.WorkspaceId}'.", 403);
             }
 
             conversation = existing;

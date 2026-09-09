@@ -27,7 +27,7 @@ public sealed class GetInvitationDetailsQueryHandler
         if (string.IsNullOrWhiteSpace(request.Token))
         {
             return Result<InvitationDetailsDto>.Failure(
-                "Invitation token is required.",
+                "Vui lòng cung cấp mã lời mời.",
                 400);
         }
 
@@ -48,7 +48,7 @@ public sealed class GetInvitationDetailsQueryHandler
         if (invitation is null)
         {
             return Result<InvitationDetailsDto>.Failure(
-                "Invitation was not found.",
+                "Không tìm thấy lời mời.",
                 404);
         }
 

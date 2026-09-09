@@ -40,7 +40,7 @@ export function CreateWorkspaceModal({
     const normalizedName = name.trim();
 
     if (!normalizedName) {
-      setError("Vui lòng nhập tên workspace.");
+      setError("Vui lòng nhập tên không gian làm việc.");
       return;
     }
 

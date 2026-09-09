@@ -32,13 +32,13 @@ public sealed class GotenbergLibreOfficeNormalizer(HttpClient client, IDocumentF
         {
             using var response = await client.PostAsync("forms/libreoffice/convert", form, ct);
             if (response.StatusCode is HttpStatusCode.RequestTimeout or HttpStatusCode.GatewayTimeout)
-                throw new DocumentProcessingException(DocumentFailureCode.ConversionTimeout, "Office conversion timed out.");
+                throw new DocumentProcessingException(DocumentFailureCode.ConversionTimeout, "Quá thời gian chuyển đổi tài liệu Office. Vui lòng thử lại.");
             if ((int)response.StatusCode >= 500 || response.StatusCode == HttpStatusCode.TooManyRequests)
-                throw new DocumentProcessingException(DocumentFailureCode.ConverterUnavailable, "Office converter is unavailable. Please retry later.");
+                throw new DocumentProcessingException(DocumentFailureCode.ConverterUnavailable, "Dịch vụ chuyển đổi Office hiện không khả dụng. Vui lòng thử lại sau.");
             if (!response.IsSuccessStatusCode)
-                throw new DocumentProcessingException(DocumentFailureCode.ConversionFailed, "LibreOffice could not convert this Office document.");
+                throw new DocumentProcessingException(DocumentFailureCode.ConversionFailed, "Không thể chuyển đổi tài liệu Office này.");
             if (response.Content.Headers.ContentType?.MediaType != "application/pdf")
-                throw new DocumentProcessingException(DocumentFailureCode.ConversionFailed, "Office converter returned an invalid PDF response.");
+                throw new DocumentProcessingException(DocumentFailureCode.ConversionFailed, "Dịch vụ chuyển đổi Office trả về dữ liệu PDF không hợp lệ.");
             var pdf = new MemoryStream(await response.Content.ReadAsByteArrayAsync(ct));
             try
             {
@@ -48,10 +48,10 @@ public sealed class GotenbergLibreOfficeNormalizer(HttpClient client, IDocumentF
             catch { await pdf.DisposeAsync(); throw; }
         }
         catch (OperationCanceledException ex) when (!ct.IsCancellationRequested)
-        { throw new DocumentProcessingException(DocumentFailureCode.ConversionTimeout, "Office conversion timed out.", ex); }
+        { throw new DocumentProcessingException(DocumentFailureCode.ConversionTimeout, "Quá thời gian chuyển đổi tài liệu Office. Vui lòng thử lại.", ex); }
         catch (HttpRequestException ex)
-        { throw new DocumentProcessingException(DocumentFailureCode.ConverterUnavailable, "Office converter is unavailable. Please retry later.", ex); }
+        { throw new DocumentProcessingException(DocumentFailureCode.ConverterUnavailable, "Dịch vụ chuyển đổi Office hiện không khả dụng. Vui lòng thử lại sau.", ex); }
         catch (InvalidDataException ex)
-        { throw new DocumentProcessingException(DocumentFailureCode.ConversionFailed, "Office converter returned an invalid PDF.", ex); }
+        { throw new DocumentProcessingException(DocumentFailureCode.ConversionFailed, "Dịch vụ chuyển đổi Office trả về tệp PDF không hợp lệ.", ex); }
     }
 }

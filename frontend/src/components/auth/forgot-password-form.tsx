@@ -3,11 +3,9 @@
 import {
   AlertCircle,
   ArrowLeft,
-  ExternalLink,
   Mail,
   MailCheck,
   Send,
-  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
@@ -58,32 +56,8 @@ export function ForgotPasswordForm() {
               Kiểm tra hộp thư của bạn
             </h1>
             <p className="mt-3 text-sm leading-6 text-muted">
-              {result.message}
+              Nếu email tồn tại, hướng dẫn đặt lại mật khẩu đã được gửi.
             </p>
-
-            {result.debugResetUrl ? (
-              <div className="mt-6 rounded-xl border border-warning bg-warning-subtle p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-warning">
-                  Recruiter Demo Mode
-                </p>
-                <Link
-                  className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-warning px-4 text-sm font-semibold text-warning transition-[filter,box-shadow] hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                  href={result.debugResetUrl}
-                >
-                  <Zap className="size-4" />
-                  Demo: Mở trang đặt lại mật khẩu ngay
-                </Link>
-                <a
-                  className="mt-3 inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-warning underline decoration-current underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                  href="http://localhost:8025"
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Mở hộp thư Mailpit
-                  <ExternalLink className="size-3" />
-                </a>
-              </div>
-            ) : null}
 
             <Button
               className="mt-6 w-full"

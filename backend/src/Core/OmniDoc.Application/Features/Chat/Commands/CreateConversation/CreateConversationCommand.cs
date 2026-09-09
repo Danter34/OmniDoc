@@ -17,8 +17,8 @@ public sealed class CreateConversationCommandValidator
 {
     public CreateConversationCommandValidator()
     {
-        RuleFor(command => command.WorkspaceId).NotEmpty();
-        RuleFor(command => command.Title).NotEmpty().MaximumLength(512);
+        RuleFor(command => command.WorkspaceId).NotEmpty().WithMessage("{PropertyName} không được để trống.").WithName("Mã không gian làm việc");
+        RuleFor(command => command.Title).NotEmpty().WithMessage("{PropertyName} không được để trống.").MaximumLength(512).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Tiêu đề");
     }
 }
 

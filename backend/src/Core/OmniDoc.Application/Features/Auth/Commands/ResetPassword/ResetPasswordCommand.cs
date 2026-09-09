@@ -19,16 +19,19 @@ public sealed class ResetPasswordCommandValidator
     public ResetPasswordCommandValidator()
     {
         RuleFor(command => command.Email)
-            .NotEmpty()
-            .EmailAddress()
-            .MaximumLength(320);
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
+            .EmailAddress().WithMessage("Địa chỉ email không hợp lệ.")
+            .MaximumLength(320).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Email");
         RuleFor(command => command.Token)
-            .NotEmpty()
-            .MaximumLength(512);
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
+            .MaximumLength(512).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Mã xác thực");
         RuleFor(command => command.NewPassword)
-            .NotEmpty()
-            .MinimumLength(8)
-            .MaximumLength(128);
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
+            .MinimumLength(8).WithMessage("Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.")
+            .Matches("[A-Z]").WithMessage("Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.")
+            .Matches("[a-z]").WithMessage("Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.")
+            .Matches("[0-9]").WithMessage("Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.")
+            .MaximumLength(128).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Mật khẩu mới");
     }
 }
 
@@ -91,6 +94,12 @@ public sealed class ResetPasswordCommandHandler
                 user.PasswordResetTokenHash))
         {
             return InvalidToken();
+        }
+
+        if (_passwordHasher.VerifyPassword(request.NewPassword, user.PasswordHash))
+        {
+            return Result<PasswordResetResultDto>.Failure(
+                "Mật khẩu mới không được trùng với mật khẩu cũ gần nhất.", 400);
         }
 
         user.ResetPassword(_passwordHasher.HashPassword(request.NewPassword));

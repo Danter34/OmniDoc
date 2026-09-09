@@ -18,18 +18,21 @@ public sealed class RegisterUserCommandValidator : AbstractValidator<RegisterUse
     public RegisterUserCommandValidator()
     {
         RuleFor(command => command.Email)
-            .NotEmpty()
-            .EmailAddress()
-            .MaximumLength(320);
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
+            .EmailAddress().WithMessage("Địa chỉ email không hợp lệ.")
+            .MaximumLength(320).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Email");
 
         RuleFor(command => command.Password)
-            .NotEmpty()
-            .MinimumLength(8)
-            .MaximumLength(128);
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
+            .MinimumLength(8).WithMessage("Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.")
+            .Matches("[A-Z]").WithMessage("Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.")
+            .Matches("[a-z]").WithMessage("Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.")
+            .Matches("[0-9]").WithMessage("Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.")
+            .MaximumLength(128).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Mật khẩu");
 
         RuleFor(command => command.FullName)
-            .NotEmpty()
-            .MaximumLength(200);
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
+            .MaximumLength(200).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Họ và tên");
     }
 }
 
@@ -68,7 +71,7 @@ public sealed class RegisterUserCommandHandler
         if (await _context.Users.AnyAsync(user => user.Email == normalizedEmail, cancellationToken))
         {
             return Result<AuthResponseDto>.Failure(
-                "An account with this email already exists.",
+                "Địa chỉ email này đã được đăng ký trong hệ thống.",
                 409);
         }
 

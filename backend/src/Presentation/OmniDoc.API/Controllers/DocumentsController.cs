@@ -23,7 +23,7 @@ public class DocumentsController : BaseApiController
     {
         if (file is null || file.Length == 0)
         {
-            return BadRequest("No file uploaded.");
+            return BadRequest("Vui lòng chọn tệp để tải lên.");
         }
 
         await using var stream = file.OpenReadStream();

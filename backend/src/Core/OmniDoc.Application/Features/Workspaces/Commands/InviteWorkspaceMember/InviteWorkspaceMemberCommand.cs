@@ -23,12 +23,12 @@ public sealed class InviteWorkspaceMemberCommandValidator
 {
     public InviteWorkspaceMemberCommandValidator()
     {
-        RuleFor(command => command.WorkspaceId).NotEmpty();
+        RuleFor(command => command.WorkspaceId).NotEmpty().WithMessage("{PropertyName} không được để trống.").WithName("Mã không gian làm việc");
         RuleFor(command => command.Email)
-            .NotEmpty()
-            .EmailAddress()
-            .MaximumLength(320);
-        RuleFor(command => command.Role).IsInEnum();
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
+            .EmailAddress().WithMessage("Địa chỉ email không hợp lệ.")
+            .MaximumLength(320).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Email");
+        RuleFor(command => command.Role).IsInEnum().WithMessage("{PropertyName} không hợp lệ.").WithName("Vai trò");
     }
 }
 
@@ -84,7 +84,7 @@ public sealed class InviteWorkspaceMemberCommandHandler
         if (_currentUser.UserId is not { } inviterId)
         {
             return Result<WorkspaceInvitationDto>.Failure(
-                "Authentication is required.",
+                "Bạn không có quyền thực hiện thao tác này.",
                 401);
         }
 
@@ -97,7 +97,7 @@ public sealed class InviteWorkspaceMemberCommandHandler
         if (inviter is null)
         {
             return Result<WorkspaceInvitationDto>.Failure(
-                "The authenticated user was not found.",
+                "Không tìm thấy tài khoản người dùng.",
                 404);
         }
 
@@ -112,7 +112,7 @@ public sealed class InviteWorkspaceMemberCommandHandler
         if (!Enum.IsDefined(request.Role))
         {
             return Result<WorkspaceInvitationDto>.Failure(
-                "Invitation role is invalid.",
+                "Vai trò trong lời mời không hợp lệ.",
                 400);
         }
 
@@ -120,7 +120,7 @@ public sealed class InviteWorkspaceMemberCommandHandler
             request.Role != WorkspaceRole.Member)
         {
             return Result<WorkspaceInvitationDto>.Failure(
-                "Workspace admins can only invite members.",
+                "Quản trị viên chỉ có thể mời người dùng với vai trò thành viên.",
                 403);
         }
 
@@ -135,7 +135,7 @@ public sealed class InviteWorkspaceMemberCommandHandler
         if (isAlreadyMember)
         {
             return Result<WorkspaceInvitationDto>.Failure(
-                "This email is already a member of the workspace.",
+                "Email này đã là thành viên của không gian làm việc.",
                 409);
         }
 
@@ -168,7 +168,7 @@ public sealed class InviteWorkspaceMemberCommandHandler
         if (existingInvitations.Any(invitation => invitation.ExpiresAt > now))
         {
             return Result<WorkspaceInvitationDto>.Failure(
-                "A pending invitation already exists for this email.",
+                "Email này đã có lời mời đang chờ phản hồi.",
                 409);
         }
 
@@ -189,11 +189,17 @@ public sealed class InviteWorkspaceMemberCommandHandler
 
         if (invitee is not null)
         {
+            var roleName = request.Role switch
+            {
+                WorkspaceRole.Owner => "chủ sở hữu",
+                WorkspaceRole.Admin => "quản trị viên",
+                _ => "thành viên"
+            };
             notification = new Notification
             {
                 UserId = invitee.Id,
-                Title = "Lời mời tham gia Workspace",
-                Message = $"{inviter.FullName} đã mời bạn tham gia {workspaceName} với vai trò {request.Role}.",
+                Title = "Lời mời tham gia không gian làm việc",
+                Message = $"{inviter.FullName} đã mời bạn tham gia {workspaceName} với vai trò {roleName}.",
                 ActionUrl = $"/invitations/accept?token={Uri.EscapeDataString(invitation.Token)}",
                 Type = NotificationType.WorkspaceInvitation,
                 CreatedAt = now,

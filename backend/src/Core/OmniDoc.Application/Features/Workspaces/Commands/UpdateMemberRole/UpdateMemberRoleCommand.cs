@@ -50,7 +50,7 @@ public sealed class UpdateMemberRoleCommandHandler
         if (!Enum.IsDefined(request.NewRole))
         {
             return Result<WorkspaceMemberDto>.Failure(
-                "Workspace role is invalid.",
+                "Vai trò trong không gian làm việc không hợp lệ.",
                 400);
         }
 
@@ -62,7 +62,7 @@ public sealed class UpdateMemberRoleCommandHandler
         if (workspace is null)
         {
             return Result<WorkspaceMemberDto>.Failure(
-                $"Workspace '{request.WorkspaceId}' was not found.",
+                $"Không tìm thấy không gian làm việc '{request.WorkspaceId}'.",
                 404);
         }
 
@@ -72,7 +72,7 @@ public sealed class UpdateMemberRoleCommandHandler
         if (targetMember is null)
         {
             return Result<WorkspaceMemberDto>.Failure(
-                "Workspace member was not found.",
+                "Không tìm thấy thành viên trong không gian làm việc.",
                 404);
         }
 
@@ -116,7 +116,7 @@ public sealed class UpdateMemberRoleCommandHandler
             if (otherOwner is null)
             {
                 return Result<WorkspaceMemberDto>.Failure(
-                    "A workspace must always have at least one owner.",
+                    "Không gian làm việc phải luôn có ít nhất một chủ sở hữu.",
                     409);
             }
 

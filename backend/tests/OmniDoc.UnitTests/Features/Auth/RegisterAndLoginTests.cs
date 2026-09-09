@@ -124,6 +124,6 @@ public sealed class RegisterAndLoginTests
 
         Assert.False(result.IsSuccess);
         Assert.Equal(401, result.StatusCode);
-        Assert.Equal("Invalid email or password.", result.Error);
+        Assert.Equal("Email hoặc mật khẩu không chính xác.", result.Error);
     }
 }

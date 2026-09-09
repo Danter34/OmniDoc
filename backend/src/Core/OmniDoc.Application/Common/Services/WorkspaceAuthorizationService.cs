@@ -30,7 +30,7 @@ public sealed class WorkspaceAuthorizationService : IWorkspaceAuthorizationServi
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
         {
             return Result<WorkspaceAuthorizationContext>.Failure(
-                "Authentication is required.",
+                "Bạn không có quyền thực hiện thao tác này.",
                 401);
         }
 
@@ -48,7 +48,7 @@ public sealed class WorkspaceAuthorizationService : IWorkspaceAuthorizationServi
         CancellationToken cancellationToken = default)
     {
         if (_showcase.IsShowcaseUser(userId) && !_showcase.IsShowcaseWorkspace(workspaceId))
-            return Result<WorkspaceAuthorizationContext>.Failure("Showcase access is limited to its sample workspace.", 403);
+            return Result<WorkspaceAuthorizationContext>.Failure("Tài khoản trải nghiệm chỉ có thể truy cập không gian làm việc mẫu.", 403);
         if (permission != WorkspacePermission.ViewWorkspace)
         {
             _showcase.EnsureCanModifyAccount(userId);
@@ -71,7 +71,7 @@ public sealed class WorkspaceAuthorizationService : IWorkspaceAuthorizationServi
         if (workspace is null)
         {
             return Result<WorkspaceAuthorizationContext>.Failure(
-                $"Workspace '{workspaceId}' was not found.",
+                $"Không tìm thấy không gian làm việc '{workspaceId}'.",
                 404);
         }
 
@@ -82,14 +82,14 @@ public sealed class WorkspaceAuthorizationService : IWorkspaceAuthorizationServi
         if (role is null)
         {
             return Result<WorkspaceAuthorizationContext>.Failure(
-                "You do not have access to this workspace.",
+                "Bạn không có quyền thực hiện thao tác này.",
                 403);
         }
 
         if (!WorkspacePermissionMatrix.HasPermission(role.Value, permission))
         {
             return Result<WorkspaceAuthorizationContext>.Failure(
-                $"Workspace permission '{permission}' is required.",
+                "Bạn không có quyền thực hiện thao tác này.",
                 403);
         }
 

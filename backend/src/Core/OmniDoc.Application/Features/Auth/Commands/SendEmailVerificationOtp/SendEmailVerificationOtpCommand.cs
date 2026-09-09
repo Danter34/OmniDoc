@@ -45,7 +45,7 @@ public sealed class SendEmailVerificationOtpCommandHandler
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
         {
             return Result<EmailVerificationOtpDto>.Failure(
-                "Authentication is required.",
+                "Bạn không có quyền thực hiện thao tác này.",
                 401);
         }
 
@@ -57,14 +57,14 @@ public sealed class SendEmailVerificationOtpCommandHandler
         if (user is null)
         {
             return Result<EmailVerificationOtpDto>.Failure(
-                "The authenticated user was not found.",
+                "Không tìm thấy tài khoản người dùng.",
                 404);
         }
 
         if (user.EmailConfirmed)
         {
             return Result<EmailVerificationOtpDto>.Failure(
-                "Email is already verified.",
+                "Email đã được xác thực.",
                 409);
         }
 
@@ -89,7 +89,7 @@ public sealed class SendEmailVerificationOtpCommandHandler
             }
 
             return Result<EmailVerificationOtpDto>.Failure(
-                "Please wait 60 seconds before requesting another verification code.",
+                "Vui lòng đợi 60 giây trước khi yêu cầu mã xác thực mới.",
                 429);
         }
 

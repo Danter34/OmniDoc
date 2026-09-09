@@ -14,9 +14,9 @@ public sealed class VerifyEmailCommandValidator : AbstractValidator<VerifyEmailC
     public VerifyEmailCommandValidator()
     {
         RuleFor(command => command.Otp)
-            .NotEmpty()
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
             .Matches("^[0-9]{6}$")
-            .WithMessage("OTP must contain exactly 6 digits.");
+            .WithMessage("Mã xác thực phải gồm đúng 6 chữ số.").WithName("Mã xác thực");
     }
 }
 
@@ -49,7 +49,7 @@ public sealed class VerifyEmailCommandHandler
     {
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
         {
-            return Result<UserDto>.Failure("Authentication is required.", 401);
+            return Result<UserDto>.Failure("Bạn không có quyền thực hiện thao tác này.", 401);
         }
 
         _showcase.EnsureCanModifyAccount(userId);
@@ -60,7 +60,7 @@ public sealed class VerifyEmailCommandHandler
         if (user is null)
         {
             return Result<UserDto>.Failure(
-                "The authenticated user was not found.",
+                "Không tìm thấy tài khoản người dùng.",
                 404);
         }
 
@@ -76,14 +76,14 @@ public sealed class VerifyEmailCommandHandler
             await _context.SaveChangesAsync(cancellationToken);
 
             return Result<UserDto>.Failure(
-                "Too many invalid attempts. Request a new verification code.",
+                "Bạn đã nhập sai quá nhiều lần. Vui lòng yêu cầu mã xác thực mới.",
                 429);
         }
 
         if (user.EmailVerificationOtpHash is null || user.OtpExpiresAt is null)
         {
             return Result<UserDto>.Failure(
-                "No active verification code. Request a new code.",
+                "Không có mã xác thực còn hiệu lực. Vui lòng yêu cầu mã mới.",
                 400);
         }
 
@@ -94,7 +94,7 @@ public sealed class VerifyEmailCommandHandler
             await _context.SaveChangesAsync(cancellationToken);
 
             return Result<UserDto>.Failure(
-                "Verification code has expired. Request a new code.",
+                "Phiên xác thực đã hết hạn. Vui lòng thử lại.",
                 410);
         }
 
@@ -111,8 +111,8 @@ public sealed class VerifyEmailCommandHandler
 
             return Result<UserDto>.Failure(
                 failedAttempts >= EmailVerificationPolicy.MaxFailedAttempts
-                    ? "Too many invalid attempts. Request a new verification code."
-                    : "Verification code is invalid.",
+                    ? "Bạn đã nhập sai quá nhiều lần. Vui lòng yêu cầu mã xác thực mới."
+                    : "Mã xác thực không hợp lệ hoặc đã hết hạn.",
                 failedAttempts >= EmailVerificationPolicy.MaxFailedAttempts ? 429 : 400);
         }
 

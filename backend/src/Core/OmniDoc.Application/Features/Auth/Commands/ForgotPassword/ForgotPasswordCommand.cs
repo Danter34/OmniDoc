@@ -17,9 +17,9 @@ public sealed class ForgotPasswordCommandValidator
     public ForgotPasswordCommandValidator()
     {
         RuleFor(command => command.Email)
-            .NotEmpty()
-            .EmailAddress()
-            .MaximumLength(320);
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
+            .EmailAddress().WithMessage("Địa chỉ email không hợp lệ.")
+            .MaximumLength(320).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Email");
     }
 }
 

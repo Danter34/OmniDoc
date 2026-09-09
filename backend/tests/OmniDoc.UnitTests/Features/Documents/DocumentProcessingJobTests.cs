@@ -136,14 +136,14 @@ public class DocumentProcessingJobTests
         await CreateJob(context, parser, notifier).ProcessDocumentAsync(document.Id);
 
         Assert.Equal(DocumentStatus.Failed, document.Status);
-        Assert.Equal("PDF header is corrupt.", document.ErrorMessage);
+        Assert.Equal("Không thể trích xuất văn bản từ tài liệu. Vui lòng kiểm tra tệp và thử lại.", document.ErrorMessage);
         Assert.Equal(0, document.ChunkCount);
         Assert.Empty(context.DocumentChunks);
 
         var failure = notifier.Notifications[^1];
         Assert.Equal(DocumentProcessingStage.Failed, failure.Stage);
         Assert.Equal(-1, failure.ProgressPercentage);
-        Assert.Equal("PDF header is corrupt.", failure.ErrorMessage);
+        Assert.Equal(document.ErrorMessage, failure.ErrorMessage);
     }
 
     [Fact]
@@ -157,7 +157,8 @@ public class DocumentProcessingJobTests
         await CreateJob(context, ParserWithPages(1), notifier, fileStorage: storage).ProcessDocumentAsync(document.Id);
 
         Assert.Equal(DocumentStatus.Failed, document.Status);
-        Assert.Contains(document.StoragePath, document.ErrorMessage);
+        Assert.Equal("Không thể trích xuất văn bản từ tài liệu. Vui lòng kiểm tra tệp và thử lại.", document.ErrorMessage);
+        Assert.DoesNotContain(document.StoragePath, document.ErrorMessage);
         Assert.Equal(DocumentProcessingStage.Failed, notifier.Notifications[^1].Stage);
     }
 
@@ -172,7 +173,7 @@ public class DocumentProcessingJobTests
         await CreateJob(context, parser, notifier).ProcessDocumentAsync(document.Id);
 
         Assert.Equal(DocumentStatus.Failed, document.Status);
-        Assert.Equal("No extractable text was found in the document.", document.ErrorMessage);
+        Assert.Equal("Không thể trích xuất văn bản từ tài liệu. Vui lòng kiểm tra tệp và thử lại.", document.ErrorMessage);
         Assert.DoesNotContain(notifier.Notifications, n => n.Stage == DocumentProcessingStage.Chunking);
     }
 

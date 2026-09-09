@@ -29,7 +29,7 @@ public sealed class GetUnreadNotificationCountQueryHandler
     {
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
         {
-            return Result<NotificationCountDto>.Failure("Authentication is required.", 401);
+            return Result<NotificationCountDto>.Failure("Bạn không có quyền thực hiện thao tác này.", 401);
         }
 
         var count = await _context.Notifications

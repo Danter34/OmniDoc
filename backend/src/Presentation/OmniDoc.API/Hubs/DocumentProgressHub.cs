@@ -27,7 +27,7 @@ public class DocumentProgressHub : Hub
         if (!Guid.TryParse(workspaceId, out var parsedWorkspaceId) ||
             !Guid.TryParse(Context.UserIdentifier, out var userId))
         {
-            throw new HubException("The workspace or authenticated user identifier is invalid.");
+            throw new HubException("Mã không gian làm việc hoặc tài khoản người dùng không hợp lệ.");
         }
 
         var access = await _workspaceAuthorization.AuthorizeAsync(
@@ -38,7 +38,7 @@ public class DocumentProgressHub : Hub
 
         if (!access.IsSuccess)
         {
-            throw new HubException(access.Error ?? "Workspace access was denied.");
+            throw new HubException(access.Error ?? "Bạn không có quyền thực hiện thao tác này.");
         }
 
         await Groups.AddToGroupAsync(

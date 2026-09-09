@@ -19,6 +19,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/hooks/use-auth";
 import { useShowcaseGuard } from "@/hooks/use-showcase-guard";
 import { getErrorMessage } from "@/services/api-client";
+import { isValidPassword, PASSWORD_REQUIREMENTS } from "@/lib/password-policy";
 
 export function ChangePasswordModal({ onClose, isShowcase = false }: { onClose: () => void; isShowcase?: boolean }) {
   const { changePassword } = useAuth();
@@ -31,6 +32,7 @@ export function ChangePasswordModal({ onClose, isShowcase = false }: { onClose: 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const isPasswordReused = newPassword.length > 0 && newPassword === currentPassword;
 
   useEffect(
     () => () => {
@@ -50,8 +52,10 @@ export function ChangePasswordModal({ onClose, isShowcase = false }: { onClose: 
       return;
     }
 
-    if (newPassword.length < 8) {
-      setError("Mật khẩu mới cần có ít nhất 8 ký tự.");
+    if (isPasswordReused) return;
+
+    if (!isValidPassword(newPassword)) {
+      setError(PASSWORD_REQUIREMENTS);
       return;
     }
 
@@ -83,7 +87,7 @@ export function ChangePasswordModal({ onClose, isShowcase = false }: { onClose: 
     <Modal
       description={
         isComplete
-          ? "Phiên hiện tại đã nhận JWT mới; các phiên cũ đã bị thu hồi."
+          ? "Phiên đăng nhập hiện tại đã được cập nhật; các phiên cũ đã bị thu hồi."
           : "Sau khi đổi, OmniDoc sẽ thu hồi các phiên đăng nhập cũ và giữ phiên hiện tại hoạt động an toàn."
       }
       onClose={onClose}
@@ -131,6 +135,8 @@ export function ChangePasswordModal({ onClose, isShowcase = false }: { onClose: 
                 autoComplete="new-password"
                 icon={<KeyRound className="size-4" />}
                 label="Mật khẩu mới"
+                error={isPasswordReused}
+                describedBy={isPasswordReused ? "password-reuse-error" : undefined}
                 onChange={(value) => {
                   setNewPassword(value);
                   setError(null);
@@ -139,6 +145,11 @@ export function ChangePasswordModal({ onClose, isShowcase = false }: { onClose: 
                 show={visible.next}
                 value={newPassword}
               />
+              {isPasswordReused ? (
+                <p id="password-reuse-error" className="mt-2 text-xs text-danger" role="alert">
+                  Mật khẩu mới không được trùng với mật khẩu hiện tại.
+                </p>
+              ) : null}
               <PasswordStrength password={newPassword} />
             </div>
 
@@ -163,6 +174,7 @@ export function ChangePasswordModal({ onClose, isShowcase = false }: { onClose: 
               <Button
                 disabled={
                   isSubmitting ||
+                  isPasswordReused ||
                   !currentPassword ||
                   !newPassword ||
                   !confirmPassword
@@ -188,6 +200,7 @@ function PasswordField({
   autoComplete,
   autoFocus = false,
   error = false,
+  describedBy,
   icon,
   label,
   onChange,
@@ -198,6 +211,7 @@ function PasswordField({
   autoComplete: string;
   autoFocus?: boolean;
   error?: boolean;
+  describedBy?: string;
   icon: React.ReactNode;
   label: string;
   onChange: (value: string) => void;
@@ -215,6 +229,8 @@ function PasswordField({
           {icon}
         </span>
         <Input
+          aria-describedby={describedBy}
+          aria-invalid={error}
           autoComplete={autoComplete}
           autoFocus={autoFocus}
           className="pl-10 pr-12"

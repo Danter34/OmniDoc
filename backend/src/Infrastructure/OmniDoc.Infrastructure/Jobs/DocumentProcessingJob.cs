@@ -74,7 +74,7 @@ public class DocumentProcessingJob : IDocumentProcessingJob
             {
                 await NotifyAsync(document, 5, DocumentProcessingStage.Validating, cancellationToken);
                 var source = document.Artifacts.SingleOrDefault(a => a.Id == document.SourceArtifactId && a.Kind == ArtifactKind.Source)
-                    ?? throw new InvalidDataException("Source artifact is missing.");
+                    ?? throw new InvalidDataException("Không tìm thấy tệp tài liệu gốc.");
                 await using var sourceStream = await _artifacts.OpenAsync(source, cancellationToken)
                     ?? throw new FileNotFoundException($"Stored file '{source.StoragePath}' is missing.");
                 await NotifyAsync(document, 30, DocumentProcessingStage.Normalizing, cancellationToken);
@@ -174,12 +174,20 @@ public class DocumentProcessingJob : IDocumentProcessingJob
                 ProcessingStage.Extracting => "EXTRACTION_FAILED",
                 _ => "INDEXING_FAILED"
             };
-            document.ErrorMessage = ex.Message;
+            document.ErrorMessage = ex is DocumentProcessingException processingFailure
+                ? processingFailure.Message
+                : document.ProcessingStage switch
+                {
+                    ProcessingStage.Normalizing => "Không thể chuyển đổi tài liệu. Vui lòng kiểm tra tệp và thử lại.",
+                    ProcessingStage.Validating => "Tài liệu không hợp lệ. Vui lòng kiểm tra tệp và thử lại.",
+                    ProcessingStage.Extracting => "Không thể trích xuất văn bản từ tài liệu. Vui lòng kiểm tra tệp và thử lại.",
+                    _ => "Không thể lập chỉ mục tài liệu. Vui lòng thử lại sau."
+                };
             document.ChunkCount = 0;
             document.UpdatedAtUtc = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync(CancellationToken.None);
-            await NotifyAsync(document, -1, DocumentProcessingStage.Failed, CancellationToken.None, ex.Message);
+            await NotifyAsync(document, -1, DocumentProcessingStage.Failed, CancellationToken.None, document.ErrorMessage);
         }
     }
 

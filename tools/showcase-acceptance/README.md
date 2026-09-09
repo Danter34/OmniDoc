@@ -1,5 +1,13 @@
 # Local showcase acceptance
 
+`node tools/showcase-acceptance/system-auth.mjs` tests root HTTP redirects, migration
+of existing browser sessions, login/logout, password reuse rejection, and Vietnamese
+errors against the real localhost stack. It creates a test account and verifies the
+forgot-password page has no demo controls. Reset links come from the API's local debug
+response or Mailpit. Set `PLAYWRIGHT_MODULE` to an installed Playwright package; the
+default is the ignored `bin/browser-deps/node_modules/playwright` directory. No tokens
+or passwords are printed. Set `SHOWCASE_TEST_URL` to change the localhost origin.
+
 These checks use the real Docker API, PostgreSQL, seeded Gemini corpus and browser SSE.
 Run only on a disposable localhost stack: they create conversations/test accounts, consume a small
 number of Gemini calls and intentionally exhaust the login/chat IP windows. No credentials/tokens

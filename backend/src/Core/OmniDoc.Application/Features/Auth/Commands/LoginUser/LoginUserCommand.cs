@@ -16,13 +16,13 @@ public sealed class LoginUserCommandValidator : AbstractValidator<LoginUserComma
     public LoginUserCommandValidator()
     {
         RuleFor(command => command.Email)
-            .NotEmpty()
-            .EmailAddress()
-            .MaximumLength(320);
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
+            .EmailAddress().WithMessage("Địa chỉ email không hợp lệ.")
+            .MaximumLength(320).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Email");
 
         RuleFor(command => command.Password)
-            .NotEmpty()
-            .MaximumLength(128);
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
+            .MaximumLength(128).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Mật khẩu");
     }
 }
 
@@ -55,7 +55,7 @@ public sealed class LoginUserCommandHandler
         if (user is null ||
             !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
         {
-            return Result<AuthResponseDto>.Failure("Invalid email or password.", 401);
+            return Result<AuthResponseDto>.Failure("Email hoặc mật khẩu không chính xác.", 401);
         }
 
         return Result<AuthResponseDto>.Success(

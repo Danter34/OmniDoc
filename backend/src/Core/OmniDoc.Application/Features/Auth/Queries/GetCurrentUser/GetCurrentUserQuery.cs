@@ -28,7 +28,7 @@ public sealed class GetCurrentUserQueryHandler
     {
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
         {
-            return Result<UserDto>.Failure("Authentication is required.", 401);
+            return Result<UserDto>.Failure("Bạn không có quyền thực hiện thao tác này.", 401);
         }
 
         var user = await _context.Users
@@ -48,7 +48,7 @@ public sealed class GetCurrentUserQueryHandler
             .FirstOrDefaultAsync(cancellationToken);
 
         return user is null
-            ? Result<UserDto>.Failure("The authenticated user was not found.", 404)
+            ? Result<UserDto>.Failure("Không tìm thấy tài khoản người dùng.", 404)
             : Result<UserDto>.Success(user);
     }
 }

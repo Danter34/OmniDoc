@@ -17,9 +17,9 @@ public class SearchWorkspaceChunksQueryValidator : AbstractValidator<SearchWorks
 {
     public SearchWorkspaceChunksQueryValidator()
     {
-        RuleFor(x => x.WorkspaceId).NotEmpty();
-        RuleFor(x => x.Query).NotEmpty().MaximumLength(1000);
-        RuleFor(x => x.TopK).InclusiveBetween(1, 20);
+        RuleFor(x => x.WorkspaceId).NotEmpty().WithMessage("{PropertyName} không được để trống.").WithName("Mã không gian làm việc");
+        RuleFor(x => x.Query).NotEmpty().WithMessage("{PropertyName} không được để trống.").MaximumLength(1000).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Nội dung tìm kiếm");
+        RuleFor(x => x.TopK).InclusiveBetween(1, 20).WithMessage("{PropertyName} phải nằm trong khoảng {From} đến {To}.").WithName("Số kết quả");
     }
 }
 

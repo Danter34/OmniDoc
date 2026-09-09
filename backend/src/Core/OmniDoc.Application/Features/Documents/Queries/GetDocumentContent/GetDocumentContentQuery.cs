@@ -58,7 +58,7 @@ public sealed class GetDocumentContentQueryHandler
         if (document is null)
         {
             return Result<DocumentFileStreamDto>.Failure(
-                $"Document '{request.DocumentId}' was not found in workspace '{request.WorkspaceId}'.",
+                $"Không tìm thấy tài liệu '{request.DocumentId}' trong không gian làm việc '{request.WorkspaceId}'.",
                 404);
         }
 
@@ -67,7 +67,7 @@ public sealed class GetDocumentContentQueryHandler
         var artifact = document.Artifacts.SingleOrDefault(a => a.Id == artifactId && a.Kind == kind);
         // Legacy fallback is exclusively for PDF rows without artifact pointers.
         if (artifact is null && (artifactId is not null || document.DetectedFormat != DocumentFormat.Pdf))
-            return Result<DocumentFileStreamDto>.Failure(request.Source ? "Source artifact is missing." : "Canonical PDF is not available yet.", request.Source ? 404 : 409);
+            return Result<DocumentFileStreamDto>.Failure(request.Source ? "Không tìm thấy tệp tài liệu gốc." : "Bản PDF của tài liệu chưa sẵn sàng.", request.Source ? 404 : 409);
 
         var stream = await _fileStorage.GetFileAsync(
             artifact?.StoragePath ?? document.StoragePath,
@@ -76,7 +76,7 @@ public sealed class GetDocumentContentQueryHandler
         if (stream is null)
         {
             return Result<DocumentFileStreamDto>.Failure(
-                $"The content for document '{request.DocumentId}' was not found.",
+                $"Không tìm thấy nội dung tài liệu '{request.DocumentId}'.",
                 404);
         }
 

@@ -18,11 +18,18 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddControllers()
+            .ConfigureApiBehaviorOptions(options =>
+                options.InvalidModelStateResponseFactory = _ =>
+                    new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new
+                    {
+                        errors = new[] { "Dữ liệu yêu cầu không hợp lệ. Vui lòng kiểm tra các trường đã nhập." }
+                    }))
             .AddJsonOptions(options =>
                 options.JsonSerializerOptions.Converters.Add(
                     new JsonStringEnumConverter()));
         services.AddOpenApi();
         services.AddExceptionHandler<ForbiddenExceptionHandler>();
+        services.AddExceptionHandler<SystemExceptionHandler>();
         services.AddProblemDetails();
         services.AddApiRateLimits();
         services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(options =>
@@ -64,6 +71,24 @@ public static class DependencyInjection
 
                 options.Events = new JwtBearerEvents
                 {
+                    OnChallenge = async context =>
+                    {
+                        context.HandleResponse();
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        context.Response.Headers.WWWAuthenticate = "Bearer";
+                        var message = context.AuthenticateFailure is SecurityTokenExpiredException
+                            ? "Phiên xác thực đã hết hạn. Vui lòng thử lại."
+                            : "Bạn không có quyền thực hiện thao tác này.";
+                        await context.Response.WriteAsJsonAsync(new { errors = new[] { message } });
+                    },
+                    OnForbidden = async context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        await context.Response.WriteAsJsonAsync(new
+                        {
+                            errors = new[] { "Bạn không có quyền thực hiện thao tác này." }
+                        });
+                    },
                     OnMessageReceived = context =>
                     {
                         var accessToken = context.Request.Query["access_token"];
@@ -90,7 +115,7 @@ public static class DependencyInjection
                         if (!Guid.TryParse(userIdValue, out var userId) ||
                             !int.TryParse(tokenVersionValue, out var tokenVersion))
                         {
-                            context.Fail("Token session version is invalid.");
+                            context.Fail("Mã xác thực không hợp lệ hoặc đã hết hạn.");
                             return;
                         }
 
@@ -103,7 +128,7 @@ public static class DependencyInjection
 
                         if (!isCurrent)
                         {
-                            context.Fail("This session has been revoked.");
+                            context.Fail("Phiên đăng nhập đã bị thu hồi. Vui lòng đăng nhập lại.");
                         }
                     }
                 };

@@ -126,7 +126,13 @@ public sealed class OmniDocEmailTemplateBuilder : IEmailTemplateBuilder
         var safeName = WebUtility.HtmlEncode(recipientName);
         var safeWorkspaceName = WebUtility.HtmlEncode(workspaceName);
         var safeInviterName = WebUtility.HtmlEncode(inviterName);
-        var safeRole = WebUtility.HtmlEncode(role);
+        var safeRole = WebUtility.HtmlEncode(role switch
+        {
+            "Owner" => "Chủ sở hữu",
+            "Admin" => "Quản trị viên",
+            "Member" => "Thành viên",
+            _ => role
+        });
         var safeInvitationUrl = WebUtility.HtmlEncode(invitationUrl);
 
         var html = $$"""
@@ -135,7 +141,7 @@ public sealed class OmniDocEmailTemplateBuilder : IEmailTemplateBuilder
               <head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1">
-                <title>Lời mời tham gia Workspace OmniDoc</title>
+                <title>Lời mời tham gia không gian làm việc OmniDoc</title>
               </head>
               <body style="margin:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f8fafc;padding:32px 16px;">
@@ -146,9 +152,9 @@ public sealed class OmniDocEmailTemplateBuilder : IEmailTemplateBuilder
                         <tr>
                           <td style="padding:14px 32px 32px;text-align:center;">
                             <h1 style="margin:0;font-size:24px;line-height:1.3;">Bạn được mời cộng tác</h1>
-                            <p style="margin:14px 0 0;color:#64748b;font-size:15px;line-height:1.7;">Xin chào {{safeName}}, <strong>{{safeInviterName}}</strong> đã mời bạn tham gia Workspace <strong>{{safeWorkspaceName}}</strong>.</p>
+                            <p style="margin:14px 0 0;color:#64748b;font-size:15px;line-height:1.7;">Xin chào {{safeName}}, <strong>{{safeInviterName}}</strong> đã mời bạn tham gia không gian làm việc <strong>{{safeWorkspaceName}}</strong>.</p>
                             <div style="margin:22px auto 0;padding:12px 16px;max-width:260px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;color:#1d4ed8;font-size:14px;">Vai trò: <strong>{{safeRole}}</strong></div>
-                            <a href="{{safeInvitationUrl}}" style="display:inline-block;margin-top:26px;padding:13px 24px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:10px;font-size:15px;font-weight:700;">Tham gia Workspace</a>
+                            <a href="{{safeInvitationUrl}}" style="display:inline-block;margin-top:26px;padding:13px 24px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:10px;font-size:15px;font-weight:700;">Tham gia không gian làm việc</a>
                             <p style="margin:20px 0 0;color:#64748b;font-size:13px;line-height:1.6;">Lời mời có hiệu lực trong 7 ngày và hết hạn lúc {{expiresAtUtc:HH:mm}} UTC ngày {{expiresAtUtc:dd/MM/yyyy}}.</p>
                           </td>
                         </tr>

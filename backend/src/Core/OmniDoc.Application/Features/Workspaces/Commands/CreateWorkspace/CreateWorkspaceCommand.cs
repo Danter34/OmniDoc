@@ -16,7 +16,7 @@ public class CreateWorkspaceCommandValidator : AbstractValidator<CreateWorkspace
 {
     public CreateWorkspaceCommandValidator()
     {
-        RuleFor(x => x.Name).NotEmpty().MaximumLength(256);
+        RuleFor(x => x.Name).NotEmpty().WithMessage("{PropertyName} không được để trống.").MaximumLength(256).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Tên không gian làm việc");
     }
 }
 
@@ -40,7 +40,7 @@ public class CreateWorkspaceCommandHandler : IRequestHandler<CreateWorkspaceComm
     {
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
         {
-            return Result<WorkspaceDto>.Failure("Authentication is required.", 401);
+            return Result<WorkspaceDto>.Failure("Bạn không có quyền thực hiện thao tác này.", 401);
         }
 
         _showcase.EnsureCanModifyAccount(userId);

@@ -35,7 +35,7 @@ public sealed class AcceptWorkspaceInvitationCommandHandler
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
         {
             return Result<AcceptedInvitationDto>.Failure(
-                "Authentication is required.",
+                "Bạn không có quyền thực hiện thao tác này.",
                 401);
         }
 
@@ -44,7 +44,7 @@ public sealed class AcceptWorkspaceInvitationCommandHandler
         if (string.IsNullOrWhiteSpace(request.Token))
         {
             return Result<AcceptedInvitationDto>.Failure(
-                "Invitation token is required.",
+                "Vui lòng cung cấp mã lời mời.",
                 400);
         }
 
@@ -57,7 +57,7 @@ public sealed class AcceptWorkspaceInvitationCommandHandler
         if (invitation is null)
         {
             return Result<AcceptedInvitationDto>.Failure(
-                "Invitation was not found.",
+                "Không tìm thấy lời mời.",
                 404);
         }
 
@@ -70,21 +70,21 @@ public sealed class AcceptWorkspaceInvitationCommandHandler
             await _context.SaveChangesAsync(cancellationToken);
 
             return Result<AcceptedInvitationDto>.Failure(
-                "Invitation has expired.",
+                "Lời mời đã hết hạn.",
                 410);
         }
 
         if (invitation.Status == InvitationStatus.Expired)
         {
             return Result<AcceptedInvitationDto>.Failure(
-                "Invitation has expired.",
+                "Lời mời đã hết hạn.",
                 410);
         }
 
         if (invitation.Status == InvitationStatus.Revoked)
         {
             return Result<AcceptedInvitationDto>.Failure(
-                "Invitation has been revoked.",
+                "Lời mời đã bị thu hồi.",
                 410);
         }
 
@@ -95,7 +95,7 @@ public sealed class AcceptWorkspaceInvitationCommandHandler
         if (user is null)
         {
             return Result<AcceptedInvitationDto>.Failure(
-                "Authenticated user was not found.",
+                "Không tìm thấy tài khoản người dùng.",
                 401);
         }
 
@@ -105,7 +105,7 @@ public sealed class AcceptWorkspaceInvitationCommandHandler
                 StringComparison.OrdinalIgnoreCase))
         {
             return Result<AcceptedInvitationDto>.Failure(
-                "This invitation was issued to a different email address.",
+                "Lời mời này được gửi đến một địa chỉ email khác.",
                 403);
         }
 
@@ -132,7 +132,7 @@ public sealed class AcceptWorkspaceInvitationCommandHandler
         if (invitation.Status == InvitationStatus.Accepted)
         {
             return Result<AcceptedInvitationDto>.Failure(
-                "Invitation has already been accepted. Request a new invitation to rejoin.",
+                "Lời mời đã được chấp nhận. Vui lòng yêu cầu lời mời mới để tham gia lại.",
                 410);
         }
 

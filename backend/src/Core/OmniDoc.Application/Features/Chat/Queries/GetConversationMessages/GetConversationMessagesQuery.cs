@@ -37,14 +37,14 @@ public class GetConversationMessagesQueryHandler
 
         if (conversation is null)
         {
-            return Result<List<ChatMessageDto>>.Failure($"Conversation '{request.ConversationId}' was not found.", 404);
+            return Result<List<ChatMessageDto>>.Failure($"Không tìm thấy cuộc trò chuyện '{request.ConversationId}'.", 404);
         }
 
         if (request.WorkspaceId is { } workspaceId &&
             conversation.WorkspaceId != workspaceId)
         {
             return Result<List<ChatMessageDto>>.Failure(
-                $"Conversation '{request.ConversationId}' was not found in workspace '{workspaceId}'.",
+                $"Không tìm thấy cuộc trò chuyện '{request.ConversationId}' trong không gian làm việc '{workspaceId}'.",
                 404);
         }
 

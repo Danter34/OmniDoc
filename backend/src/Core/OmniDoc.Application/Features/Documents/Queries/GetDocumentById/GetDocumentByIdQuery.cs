@@ -31,7 +31,7 @@ public class GetDocumentByIdQueryHandler : IRequestHandler<GetDocumentByIdQuery,
         if (document is null)
         {
             return Result<DocumentDto>.Failure(
-                $"Document '{request.DocumentId}' was not found.",
+                $"Không tìm thấy tài liệu '{request.DocumentId}'.",
                 404);
         }
 

@@ -44,7 +44,7 @@ export function PasswordStrength({ password }: { password: string }) {
         ))}
       </div>
       <div className="mt-1.5 flex items-center justify-between text-xs">
-        <span className="text-muted">Tối thiểu 8 ký tự</span>
+        <span className="text-muted">Từ 8 ký tự, có chữ hoa, chữ thường và số</span>
         <span
           className={cn(
             "font-medium",

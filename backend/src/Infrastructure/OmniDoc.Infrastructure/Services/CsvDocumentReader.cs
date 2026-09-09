@@ -16,7 +16,7 @@ public sealed class CsvDocumentReader
     // rowIndex zero is the header; data records are numbered from one.
     public async Task<CsvDocumentInfo> ReadAsync(Stream source, Action<string[], int>? onRow, CancellationToken ct)
     {
-        if (!source.CanSeek) throw new InvalidDataException("CSV requires a seekable stream.");
+        if (!source.CanSeek) throw new InvalidDataException("Không thể đọc lại luồng dữ liệu CSV.");
         var start = source.Position;
         try
         {
@@ -34,23 +34,23 @@ public sealed class CsvDocumentReader
             while (!parser.EndOfData)
             {
                 ct.ThrowIfCancellationRequested();
-                if (index > MaxDataRows) throw new InvalidDataException("CSV is limited to 5,000 data rows; split the file before uploading.");
+                if (index > MaxDataRows) throw new InvalidDataException("Tệp CSV chỉ được chứa tối đa 5.000 dòng dữ liệu; vui lòng chia nhỏ tệp trước khi tải lên.");
                 var fields = parser.ReadFields() ?? [];
                 if (fields.Length is 0 or > MaxColumns || fields.Any(f => f.Length > MaxCellCharacters))
-                    throw new InvalidDataException("CSV exceeds the column or cell-size limit.");
+                    throw new InvalidDataException("Tệp CSV vượt quá giới hạn số cột hoặc kích thước ô.");
                 if (index == 0)
                 {
                     columns = fields.Length;
-                    if (fields.All(string.IsNullOrWhiteSpace)) throw new InvalidDataException("CSV must have a non-empty header.");
+                    if (fields.All(string.IsNullOrWhiteSpace)) throw new InvalidDataException("Tệp CSV phải có hàng tiêu đề không trống.");
                 }
-                else if (fields.Length != columns) throw new InvalidDataException($"CSV data row {index} does not match the header column count.");
+                else if (fields.Length != columns) throw new InvalidDataException($"Dòng dữ liệu CSV {index} có số cột không khớp với hàng tiêu đề.");
                 onRow?.Invoke(fields, index);
                 index++;
             }
-            if (index == 0) throw new InvalidDataException("CSV contains no header.");
+            if (index == 0) throw new InvalidDataException("Tệp CSV không có hàng tiêu đề.");
             return new(encoding.CodePage == Encoding.Latin1.CodePage ? "text/csv; charset=iso-8859-1" : "text/csv; charset=utf-8", delimiter, columns, index - 1);
         }
-        catch (MalformedLineException ex) { throw new InvalidDataException("CSV contains malformed quoted fields.", ex); }
+        catch (MalformedLineException ex) { throw new InvalidDataException("Tệp CSV có trường dùng dấu ngoặc kép không đúng định dạng.", ex); }
         finally { source.Position = start; }
     }
 
@@ -65,7 +65,7 @@ public sealed class CsvDocumentReader
             (count >= 4 && prefix.AsSpan(0, 4).SequenceEqual("PK\x03\x04"u8)) ||
             (count >= 5 && prefix.AsSpan(0, 5).SequenceEqual("%PDF-"u8)) ||
             (count >= 8 && prefix.AsSpan(0, 8).SequenceEqual(new byte[] { 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1 })))
-            throw new InvalidDataException("CSV must contain UTF-8, ASCII or Latin1 text, not a binary document.");
+            throw new InvalidDataException("Tệp CSV phải chứa văn bản UTF-8, ASCII hoặc Latin1; không chấp nhận dữ liệu nhị phân.");
         var utf8 = new UTF8Encoding(false, true);
         try
         {
@@ -78,7 +78,7 @@ public sealed class CsvDocumentReader
             await ValidateTextAsync(source, Encoding.Latin1, ct);
             return Encoding.Latin1;
         }
-        catch (DecoderFallbackException ex) { throw new InvalidDataException("CSV has a UTF-8 BOM but invalid UTF-8 content.", ex); }
+        catch (DecoderFallbackException ex) { throw new InvalidDataException("Tệp CSV có dấu nhận dạng UTF-8 nhưng nội dung UTF-8 không hợp lệ.", ex); }
     }
 
     private static async Task ValidateTextAsync(Stream source, Encoding encoding, CancellationToken ct)
@@ -90,10 +90,10 @@ public sealed class CsvDocumentReader
         while ((count = await reader.ReadAsync(buffer, ct)) > 0)
         {
             total += count;
-            if (total > MaxDecodedCharacters) throw new InvalidDataException("CSV exceeds the 8 Mi-character text limit.");
+            if (total > MaxDecodedCharacters) throw new InvalidDataException("Nội dung CSV vượt quá giới hạn 8 triệu ký tự.");
             foreach (var c in buffer.AsSpan(0, count))
                 if (char.IsControl(c) && c is not ('\t' or '\r' or '\n'))
-                    throw new InvalidDataException("CSV contains binary control characters.");
+                    throw new InvalidDataException("Tệp CSV chứa ký tự điều khiển nhị phân.");
         }
     }
 
@@ -119,7 +119,7 @@ public sealed class CsvDocumentReader
                 }
                 break;
             }
-            if (++length > 65536) throw new InvalidDataException("CSV header is too large.");
+            if (++length > 65536) throw new InvalidDataException("Hàng tiêu đề CSV quá lớn.");
             hasContent |= !char.IsWhiteSpace(c);
             if (c == '"') quoted = !quoted;
             else if (!quoted && counts.ContainsKey(c)) counts[c]++;
@@ -127,7 +127,7 @@ public sealed class CsvDocumentReader
         var maximum = counts.Values.Max();
         if (maximum == 0) return ','; // A single-column CSV is valid.
         var best = counts.Where(p => p.Value == maximum).ToList();
-        if (best.Count != 1) throw new InvalidDataException("CSV delimiter is ambiguous; use a consistent comma, semicolon or tab header.");
+        if (best.Count != 1) throw new InvalidDataException("Dấu phân cách CSV không rõ ràng; vui lòng dùng thống nhất dấu phẩy, chấm phẩy hoặc tab.");
         return best[0].Key;
     }
 }

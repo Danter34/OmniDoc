@@ -174,7 +174,7 @@ public class StreamMessageQueryHandler : IStreamRequestHandler<StreamMessageQuer
 
         if (!access.IsSuccess)
         {
-            return StreamSetup.Failed(access.Error ?? "Workspace access was denied.");
+            return StreamSetup.Failed(access.Error ?? "Bạn không có quyền thực hiện thao tác này.");
         }
 
         Conversation conversation;
@@ -187,13 +187,13 @@ public class StreamMessageQueryHandler : IStreamRequestHandler<StreamMessageQuer
 
             if (existing is null)
             {
-                return StreamSetup.Failed($"Conversation '{conversationId}' was not found.");
+                return StreamSetup.Failed($"Không tìm thấy cuộc trò chuyện '{conversationId}'.");
             }
 
             if (existing.WorkspaceId != request.WorkspaceId)
             {
                 return StreamSetup.Failed(
-                    $"Conversation '{conversationId}' does not belong to workspace '{request.WorkspaceId}'.");
+                    $"Cuộc trò chuyện '{conversationId}' không thuộc không gian làm việc '{request.WorkspaceId}'.");
             }
 
             conversation = existing;

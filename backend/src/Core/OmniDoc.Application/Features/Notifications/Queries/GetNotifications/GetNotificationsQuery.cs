@@ -14,8 +14,8 @@ public sealed class GetNotificationsQueryValidator : AbstractValidator<GetNotifi
 {
     public GetNotificationsQueryValidator()
     {
-        RuleFor(query => query.Page).GreaterThan(0);
-        RuleFor(query => query.PageSize).InclusiveBetween(1, 100);
+        RuleFor(query => query.Page).GreaterThan(0).WithMessage("{PropertyName} phải lớn hơn {ComparisonValue}.").WithName("Trang");
+        RuleFor(query => query.PageSize).InclusiveBetween(1, 100).WithMessage("{PropertyName} phải nằm trong khoảng {From} đến {To}.").WithName("Số mục trên trang");
     }
 }
 
@@ -39,7 +39,7 @@ public sealed class GetNotificationsQueryHandler
     {
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
         {
-            return Result<NotificationPageDto>.Failure("Authentication is required.", 401);
+            return Result<NotificationPageDto>.Failure("Bạn không có quyền thực hiện thao tác này.", 401);
         }
 
         var query = _context.Notifications

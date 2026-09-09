@@ -53,7 +53,7 @@ public sealed class DeleteConversationCommandHandler
         if (conversation is null)
         {
             return Result<bool>.Failure(
-                $"Conversation '{request.ConversationId}' was not found.",
+                $"Không tìm thấy cuộc trò chuyện '{request.ConversationId}'.",
                 404);
         }
 

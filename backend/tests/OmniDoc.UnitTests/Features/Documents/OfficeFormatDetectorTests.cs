@@ -71,7 +71,7 @@ public sealed class OfficeFormatDetectorTests
     {
         using var stream = new MemoryStream(OfficeFixture.Create(DocumentFormat.Docx, z => OfficeFixture.Add(z, "word/bomb.txt", new string('x', 2 * 1024 * 1024))));
         var error = await Assert.ThrowsAsync<InvalidDataException>(() => new DocumentFormatDetector().DetectAsync(stream, "bomb.docx", default));
-        Assert.Contains("expansion", error.Message);
+        Assert.Contains("giải nén", error.Message);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public sealed class OfficeFormatDetectorTests
         }
         using var stream = new MemoryStream(bytes);
         var ex = await Assert.ThrowsAsync<InvalidDataException>(() => new DocumentFormatDetector().DetectAsync(stream, "bomb.docx", default));
-        Assert.Contains("expansion limits", ex.Message);
+        Assert.Contains("giới hạn giải nén", ex.Message);
     }
 
     [Theory]

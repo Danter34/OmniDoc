@@ -18,6 +18,100 @@ namespace OmniDoc.UnitTests.Features.Auth;
 public sealed class PasswordLifecycleTests
 {
     [Fact]
+    public async Task ChangePassword_ReusingCurrentPassword_PreservesPasswordSessionAndResetToken()
+    {
+        var time = new StubTimeProvider();
+        await using var context = await SeedUserWithResetTokenAsync(time);
+        var user = Assert.Single(context.Users);
+        var hash = user.PasswordHash;
+        var resetHash = user.PasswordResetTokenHash;
+        var version = user.TokenVersion;
+
+        var result = await CreateChangeHandler(context, user).Handle(
+            new ChangePasswordCommand("CurrentPassword123!", "CurrentPassword123!"),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+        Assert.Equal("Mật khẩu mới không được trùng với mật khẩu hiện tại.", Assert.Single(result.Errors));
+        Assert.Equal(hash, user.PasswordHash);
+        Assert.Equal(resetHash, user.PasswordResetTokenHash);
+        Assert.Equal(version, user.TokenVersion);
+    }
+
+    [Fact]
+    public async Task ResetPassword_ReusingCurrentPassword_PreservesTokenForRetryWithDifferentPassword()
+    {
+        var time = new StubTimeProvider();
+        await using var context = await SeedUserWithResetTokenAsync(time);
+        var user = Assert.Single(context.Users);
+        var hash = user.PasswordHash;
+        var resetHash = user.PasswordResetTokenHash;
+        var expires = user.PasswordResetExpiresAt;
+        var version = user.TokenVersion;
+        var handler = CreateResetHandler(context, time);
+
+        var result = await handler.Handle(new ResetPasswordCommand(
+            user.Email, FakePasswordResetTokenService.Token, "CurrentPassword123!"), CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+        Assert.Equal("Mật khẩu mới không được trùng với mật khẩu cũ gần nhất.", Assert.Single(result.Errors));
+        Assert.Equal(hash, user.PasswordHash);
+        Assert.Equal(resetHash, user.PasswordResetTokenHash);
+        Assert.Equal(expires, user.PasswordResetExpiresAt);
+        Assert.Equal(version, user.TokenVersion);
+
+        var retry = await handler.Handle(new ResetPasswordCommand(
+            user.Email, FakePasswordResetTokenService.Token, "DifferentPassword123!"), CancellationToken.None);
+        Assert.True(retry.IsSuccess);
+        Assert.Equal(version + 1, user.TokenVersion);
+        Assert.Null(user.PasswordResetTokenHash);
+    }
+
+    [Fact]
+    public async Task ResetPassword_InvalidToken_DoesNotDisclosePasswordReuse()
+    {
+        var time = new StubTimeProvider();
+        await using var context = await SeedUserWithResetTokenAsync(time);
+        var user = Assert.Single(context.Users);
+        var result = await CreateResetHandler(context, time).Handle(new ResetPasswordCommand(
+            user.Email, "invalid-token", "CurrentPassword123!"), CancellationToken.None);
+
+        Assert.Equal(400, result.StatusCode);
+        Assert.Equal("Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.", Assert.Single(result.Errors));
+    }
+
+    [Fact]
+    public void ChangePasswordValidator_RejectsPasswordReuseOnNewPasswordField()
+    {
+        var result = new ChangePasswordCommandValidator().Validate(
+            new ChangePasswordCommand("CurrentPassword123!", "CurrentPassword123!"));
+        var error = Assert.Single(result.Errors);
+        Assert.Equal("NewPassword", error.PropertyName);
+        Assert.Equal("Mật khẩu mới không được trùng với mật khẩu hiện tại.", error.ErrorMessage);
+    }
+
+    [Theory]
+    [InlineData("short")]
+    [InlineData("lowercase123")]
+    [InlineData("UPPERCASE123")]
+    [InlineData("NoDigitsHere")]
+    public void PasswordValidators_RequireStrengthWithVietnameseMessages(string password)
+    {
+        const string message = "Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.";
+        var change = new ChangePasswordCommandValidator().Validate(new ChangePasswordCommand("CurrentPassword123!", password));
+        var reset = new ResetPasswordCommandValidator().Validate(new ResetPasswordCommand("person@example.com", "token", password));
+        var register = new OmniDoc.Application.Features.Auth.Commands.RegisterUser.RegisterUserCommandValidator()
+            .Validate(new OmniDoc.Application.Features.Auth.Commands.RegisterUser.RegisterUserCommand("person@example.com", password, "Người dùng"));
+        Assert.All(new[] { change, reset, register }, result =>
+        {
+            Assert.False(result.IsValid);
+            Assert.All(result.Errors, error => Assert.Equal(message, error.ErrorMessage));
+        });
+    }
+
+    [Fact]
     public async Task ForgotPassword_ForUnknownEmail_ReturnsNeutralSuccessWithoutOutbox()
     {
         await using var context = new TestApplicationDbContext();

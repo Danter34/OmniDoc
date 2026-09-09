@@ -18,12 +18,17 @@ public sealed class ChangePasswordCommandValidator
     public ChangePasswordCommandValidator()
     {
         RuleFor(command => command.CurrentPassword)
-            .NotEmpty()
-            .MaximumLength(128);
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
+            .MaximumLength(128).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.").WithName("Mật khẩu hiện tại");
         RuleFor(command => command.NewPassword)
-            .NotEmpty()
-            .MinimumLength(8)
-            .MaximumLength(128);
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
+            .MinimumLength(8).WithMessage("Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.")
+            .Matches("[A-Z]").WithMessage("Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.")
+            .Matches("[a-z]").WithMessage("Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.")
+            .Matches("[0-9]").WithMessage("Mật khẩu phải có tối thiểu 8 ký tự, gồm ít nhất 1 chữ hoa, 1 chữ thường và 1 số.")
+            .MaximumLength(128).WithMessage("{PropertyName} không được vượt quá {MaxLength} ký tự.")
+            .NotEqual(command => command.CurrentPassword)
+            .WithMessage("Mật khẩu mới không được trùng với mật khẩu hiện tại.").WithName("Mật khẩu mới");
     }
 }
 
@@ -57,7 +62,7 @@ public sealed class ChangePasswordCommandHandler
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
         {
             return Result<AuthResponseDto>.Failure(
-                "Authentication is required.",
+                "Bạn không có quyền thực hiện thao tác này.",
                 401);
         }
 
@@ -69,7 +74,7 @@ public sealed class ChangePasswordCommandHandler
         if (user is null)
         {
             return Result<AuthResponseDto>.Failure(
-                "The authenticated user was not found.",
+                "Không tìm thấy tài khoản người dùng.",
                 404);
         }
 
@@ -80,6 +85,12 @@ public sealed class ChangePasswordCommandHandler
             return Result<AuthResponseDto>.Failure(
                 "Mật khẩu hiện tại không chính xác.",
                 400);
+        }
+
+        if (_passwordHasher.VerifyPassword(request.NewPassword, user.PasswordHash))
+        {
+            return Result<AuthResponseDto>.Failure(
+                "Mật khẩu mới không được trùng với mật khẩu hiện tại.", 400);
         }
 
         user.ChangePassword(_passwordHasher.HashPassword(request.NewPassword));

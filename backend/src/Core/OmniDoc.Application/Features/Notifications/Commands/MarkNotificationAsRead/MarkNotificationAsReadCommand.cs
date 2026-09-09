@@ -32,7 +32,7 @@ public sealed class MarkNotificationAsReadCommandHandler
     {
         if (!_currentUser.IsAuthenticated || _currentUser.UserId is not { } userId)
         {
-            return Result<NotificationDto>.Failure("Authentication is required.", 401);
+            return Result<NotificationDto>.Failure("Bạn không có quyền thực hiện thao tác này.", 401);
         }
 
         var notification = await _context.Notifications
@@ -42,7 +42,7 @@ public sealed class MarkNotificationAsReadCommandHandler
 
         if (notification is null)
         {
-            return Result<NotificationDto>.Failure("Notification was not found.", 404);
+            return Result<NotificationDto>.Failure("Không tìm thấy thông báo.", 404);
         }
 
         if (notification.MarkAsRead(_timeProvider.GetUtcNow().UtcDateTime))

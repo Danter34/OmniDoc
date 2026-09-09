@@ -24,19 +24,19 @@ public class UploadDocumentCommandValidator : AbstractValidator<UploadDocumentCo
 
     public UploadDocumentCommandValidator()
     {
-        RuleFor(x => x.WorkspaceId).NotEmpty();
+        RuleFor(x => x.WorkspaceId).NotEmpty().WithMessage("{PropertyName} không được để trống.").WithName("Mã không gian làm việc");
 
         RuleFor(x => x.FileName)
-            .NotEmpty()
+            .NotEmpty().WithMessage("{PropertyName} không được để trống.")
             .Must(name => new[] { ".pdf", ".txt", ".md", ".markdown", ".docx", ".pptx" }.Contains(Path.GetExtension(name).ToLowerInvariant()))
             .WithMessage(command => Path.GetExtension(command.FileName).ToLowerInvariant() is ".csv" or ".xlsx"
                 ? "Định dạng bảng tính (CSV, Excel) tạm thời chưa được hỗ trợ trong phiên bản này."
-                : "Chỉ hỗ trợ tài liệu PDF, DOCX, PPTX, TXT và Markdown.");
+                : "Chỉ hỗ trợ tài liệu PDF, DOCX, PPTX, TXT và Markdown.").WithName("Tên tệp");
 
         RuleFor(x => x.FileSizeBytes)
-            .GreaterThan(0)
+            .GreaterThan(0).WithMessage("{PropertyName} phải lớn hơn {ComparisonValue}.")
             .LessThanOrEqualTo(MaxFileSizeBytes)
-            .WithMessage($"File size must not exceed {MaxFileSizeBytes / (1024 * 1024)} MB.");
+            .WithMessage($"Kích thước tệp không được vượt quá {MaxFileSizeBytes / (1024 * 1024)} MB.").WithName("Kích thước tệp");
     }
 }
 
