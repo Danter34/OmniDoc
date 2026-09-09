@@ -18,7 +18,7 @@ public sealed class ShowcaseSeederTests
         Enabled = true, SeedOnStartup = true,
         UserId = Guid.Parse("b4987f7e-48cc-4ba5-a117-10ac4cbced01"),
         WorkspaceId = Guid.Parse("b4987f7e-48cc-4ba5-a117-10ac4cbced02"),
-        Email = "recruiter@omnidoc.io", Password = "OmniDoc-Showcase2026!",
+        Email = "guest@omnidoc.io", Password = "OmniDoc-Showcase2026!",
         CorpusPath = Path.Combine(AppContext.BaseDirectory, "ShowcaseCorpus", "manifest.json")
     };
     private static AiSettings Ai() => new() { Provider = "Gemini", Gemini = new() { EmbeddingModel = "gemini-embedding-2" } };
@@ -37,6 +37,8 @@ public sealed class ShowcaseSeederTests
         Assert.True(user.EmailConfirmed);
         Assert.True(new PasswordHasher().VerifyPassword(settings.Password, user.PasswordHash));
         Assert.Equal(settings.UserId, user.Id);
+        Assert.Equal("guest@omnidoc.io", user.Email);
+        Assert.Equal("Khách trải nghiệm", user.FullName);
         Assert.Equal(settings.WorkspaceId, Assert.Single(db.Workspaces).Id);
         Assert.Equal(WorkspaceRole.Owner, Assert.Single(db.WorkspaceMembers).Role);
         Assert.Equal(2, await db.Documents.CountAsync());

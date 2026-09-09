@@ -60,12 +60,12 @@ public sealed class ShowcaseGuardTests
     public async Task PasswordRecovery_DoesNotIssueMailOrModifyToken(bool forgot)
     {
         await using var context = new TestApplicationDbContext();
-        var user = new User { Id = UserId, Email = "recruiter@omnidoc.io", PasswordHash = "original" };
+        var user = new User { Id = UserId, Email = "guest@omnidoc.io", PasswordHash = "original" };
         context.Users.Add(user);
         await context.SaveChangesAsync();
         if (forgot)
             await Assert.ThrowsAsync<ForbiddenException>(() => new ForgotPasswordCommandHandler(Policy(), context, null!, null!, null!, null!, TimeProvider.System)
-                .Handle(new(" RECRUITER@OMNIDOC.IO "), default));
+                .Handle(new(" GUEST@OMNIDOC.IO "), default));
         else
             await Assert.ThrowsAsync<ForbiddenException>(() => new ResetPasswordCommandHandler(Policy(), context, null!, null!, TimeProvider.System)
                 .Handle(new(user.Email, "token", "new-password"), default));

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 // This script never targets the normal application port or prints access tokens.
 const base = "http://127.0.0.1:5157/api";
 const workspace = "b4987f7e-48cc-4ba5-a117-10ac4cbced02";
-const credentials = { email: "recruiter@omnidoc.io", password: "OmniDoc-Showcase2026!" };
+const credentials = { email: "guest@omnidoc.io", password: "OmniDoc-Showcase2026!" };
 const call = (path, body, token, method = "POST") => fetch(base + path, {
   method,
   headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },

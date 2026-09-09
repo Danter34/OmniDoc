@@ -81,7 +81,7 @@ public sealed class ShowcaseSeeder(IApplicationDbContext context, IOptions<Showc
         {
             if (user is null)
             {
-                user = new User { Id = settings.UserId, Email = email, FullName = "OmniDoc Showcase", PasswordHash = hasher.HashPassword(settings.Password) };
+                user = new User { Id = settings.UserId, Email = email, FullName = "Khách trải nghiệm", PasswordHash = hasher.HashPassword(settings.Password) };
                 user.ConfirmEmail();
                 context.Users.Add(user);
             }

@@ -75,7 +75,7 @@ services:
       Showcase__SeedOnStartup: ${SHOWCASE_SEED_ON_STARTUP:-false}
       Showcase__UserId: ${SHOWCASE_USER_ID:-b4987f7e-48cc-4ba5-a117-10ac4cbced01}
       Showcase__WorkspaceId: ${SHOWCASE_WORKSPACE_ID:-b4987f7e-48cc-4ba5-a117-10ac4cbced02}
-      Showcase__Email: ${SHOWCASE_EMAIL:-recruiter@omnidoc.io}
+      Showcase__Email: ${SHOWCASE_EMAIL:-guest@omnidoc.io}
       Showcase__Password: ${SHOWCASE_PASSWORD:-OmniDoc-Showcase2026!}
       ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=${POSTGRES_DB:-omnidoc_db};Username=${POSTGRES_USER:-omnidoc};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       ConnectionStrings__RedisConnection: redis:6379
@@ -122,7 +122,7 @@ services:
         OMNIDOC_API_URL: http://backend:8080
         NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost}
         NEXT_PUBLIC_SHOWCASE_ENABLED: ${SHOWCASE_ENABLED:-false}
-        NEXT_PUBLIC_SHOWCASE_EMAIL: ${SHOWCASE_EMAIL:-recruiter@omnidoc.io}
+        NEXT_PUBLIC_SHOWCASE_EMAIL: ${SHOWCASE_EMAIL:-guest@omnidoc.io}
         NEXT_PUBLIC_SHOWCASE_PASSWORD: ${SHOWCASE_PASSWORD:-OmniDoc-Showcase2026!}
         NEXT_PUBLIC_SHOWCASE_WORKSPACE_ID: ${SHOWCASE_WORKSPACE_ID:-b4987f7e-48cc-4ba5-a117-10ac4cbced02}
     restart: unless-stopped

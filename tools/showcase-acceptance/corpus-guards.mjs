@@ -6,7 +6,7 @@ const base = "http://localhost/api";
 const wid = "b4987f7e-48cc-4ba5-a117-10ac4cbced02";
 const user = "b4987f7e-48cc-4ba5-a117-10ac4cbced01";
 const manifest = JSON.parse(readFileSync(new URL("../../backend/ShowcaseCorpus/manifest.json", import.meta.url)));
-const login = await fetch(base + "/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "recruiter@omnidoc.io", password: "OmniDoc-Showcase2026!" }) });
+const login = await fetch(base + "/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "guest@omnidoc.io", password: "OmniDoc-Showcase2026!" }) });
 assert.equal(login.status, 200);
 const { token } = await login.json();
 const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };

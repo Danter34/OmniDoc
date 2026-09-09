@@ -123,8 +123,8 @@ try {
   const documents = await (await api(`/workspaces/${wid}/documents`, undefined, token, "GET")).json();
   for (const [path, body, method] of [
     ["/auth/change-password", { currentPassword: "OmniDoc-Showcase2026!", newPassword: "Replacement-password!" }],
-    ["/auth/forgot-password", { email: "recruiter@omnidoc.io" }],
-    ["/auth/reset-password", { email: "recruiter@omnidoc.io", token: "invalid", newPassword: "Replacement-password!" }],
+    ["/auth/forgot-password", { email: "guest@omnidoc.io" }],
+    ["/auth/reset-password", { email: "guest@omnidoc.io", token: "invalid", newPassword: "Replacement-password!" }],
     ["/auth/send-verification-otp", {}],
     ["/workspaces", { name: "Blocked workspace" }],
     [`/workspaces/${wid}/invitations`, { email: "blocked@example.com", role: "Member" }],
@@ -172,7 +172,7 @@ try {
   results.checks.push("Chat budget exhausted: real HTTP 429 + Retry-After and friendly UI");
   let loginLimited = false;
   for (let i = 0; i < 6; i++) {
-    const response = await api("/auth/login", { email: "recruiter@omnidoc.io", password: "wrong" });
+    const response = await api("/auth/login", { email: "guest@omnidoc.io", password: "wrong" });
     if (response.status === 429) { loginLimited = true; break; }
     assert.equal(response.status, 401);
   }

@@ -59,7 +59,7 @@ export function DashboardHeader() {
                 >
                   <div className="border-b border-line-subtle px-3 py-2.5">
                     <p className="truncate text-sm font-medium text-content">
-                      {user?.fullName}
+                      {isShowcaseUser(user) ? "Khách trải nghiệm (Bạn)" : user?.fullName}
                     </p>
                     <p className="mt-0.5 truncate text-xs text-muted">
                       {user?.email}

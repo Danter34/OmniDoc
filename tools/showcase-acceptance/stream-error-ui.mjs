@@ -15,7 +15,7 @@ try {
   await page.route("**/api/**", async route => {
     const path = new URL(route.request().url()).pathname;
     let body = [];
-    if (path.endsWith("/auth/me")) body = { id: "user", email: "recruiter@omnidoc.io", fullName: "UI test", emailConfirmed: true };
+    if (path.endsWith("/auth/me")) body = { id: "user", email: "guest@omnidoc.io", fullName: "UI test", emailConfirmed: true };
     else if (path === "/api/workspaces") body = [{ id: wid, name: "Showcase", role: "Owner", documentCount: 1, createdAtUtc: new Date().toISOString() }];
     else if (path.endsWith("/documents")) body = [{ id: "pdf", workspaceId: wid, fileName: "report.pdf", title: "Report", status: "Indexed", detectedFormat: "Pdf", processingStage: "Indexed", progressPercentage: 100 }];
     else if (path.endsWith("/content")) return route.fulfill({ contentType: "application/pdf", body: readFileSync(new URL("../../backend/ShowcaseCorpus/northstar-report.pdf", import.meta.url)) });
