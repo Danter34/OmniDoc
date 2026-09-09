@@ -108,9 +108,9 @@ export function PortfolioLanding() {
               id="hero-title"
               className="max-w-5xl text-4xl font-semibold leading-[1.12] tracking-tight sm:text-6xl lg:text-7xl"
             >
-              OmniDoc{" "}
+              <span className="block">OmniDoc</span>
               {/* Matches --gradient-brand-text: cyan → blue-500 → violet-neon */}
-              <span className="bg-[linear-gradient(90deg,#00f0ff_0%,#3b82f6_45%,#a855f7_100%)] bg-clip-text text-transparent">
+              <span className="block bg-[linear-gradient(90deg,#00f0ff_0%,#3b82f6_45%,#a855f7_100%)] bg-clip-text text-transparent">
                 Enterprise RAG &amp; Document Intelligence
               </span>
             </h1>

@@ -27,11 +27,12 @@ interface FormErrors {
   fullName?: string;
   email?: string;
   password?: string;
+  confirmPassword?: string;
 }
 
 function validate(
   mode: AuthMode,
-  values: { fullName: string; email: string; password: string },
+  values: { fullName: string; email: string; password: string; confirmPassword: string },
 ) {
   const errors: FormErrors = {};
 
@@ -49,6 +50,14 @@ function validate(
     errors.password = "Vui lòng nhập mật khẩu.";
   } else if (mode === "register" && values.password.length < 8) {
     errors.password = "Mật khẩu cần có ít nhất 8 ký tự.";
+  }
+
+  if (mode === "register") {
+    if (!values.confirmPassword) {
+      errors.confirmPassword = "Vui lòng xác nhận mật khẩu.";
+    } else if (values.password !== values.confirmPassword) {
+      errors.confirmPassword = "Mật khẩu xác nhận không khớp.";
+    }
   }
 
   return errors;
@@ -70,10 +79,12 @@ export function AuthForm({
     fullName: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [requestError, setRequestError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showcaseFilled, setShowcaseFilled] = useState(false);
 
@@ -164,7 +175,7 @@ export function AuthForm({
             className={`mt-6 rounded-xl border border-line bg-surface-subtle p-4 ${highlightShowcase ? "ring-2 ring-focus-ring ring-offset-2 ring-offset-surface" : ""}`}
           >
             <p className="text-xs font-semibold text-accent">
-              Dành cho nhà tuyển dụng &amp; kiểm thử
+              Dành cho kiểm thử demo
             </p>
             <p className="mt-2 text-sm leading-6 text-content-secondary">
               Điền tài khoản mẫu, sau đó nhấn Đăng nhập để trải nghiệm.
@@ -223,7 +234,7 @@ export function AuthForm({
                       fullName: undefined,
                     }));
                   }}
-                  placeholder="Nguyễn Văn An"
+                  placeholder="Name"
                   value={values.fullName}
                 />
               </div>
@@ -257,7 +268,7 @@ export function AuthForm({
                     email: undefined,
                   }));
                 }}
-                placeholder="you@company.com"
+                placeholder="Email"
                 type="email"
                 value={values.email}
               />
@@ -322,6 +333,53 @@ export function AuthForm({
               </span>
             ) : null}
           </label>
+
+          {isRegister ? (
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-medium text-content-secondary">
+                Xác nhận mật khẩu
+              </span>
+              <div className="relative">
+                <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
+                <Input
+                  autoComplete="new-password"
+                  className="pl-10 pr-12"
+                  error={Boolean(errors.confirmPassword)}
+                  maxLength={128}
+                  onChange={(event) => {
+                    setValues((current) => ({
+                      ...current,
+                      confirmPassword: event.target.value,
+                    }));
+                    setErrors((current) => ({
+                      ...current,
+                      confirmPassword: undefined,
+                    }));
+                  }}
+                  placeholder="Nhập lại mật khẩu"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={values.confirmPassword}
+                />
+                <button
+                  aria-label={showConfirmPassword ? "Ẩn mật khẩu xác nhận" : "Hiện mật khẩu xác nhận"}
+                  className="absolute right-1 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-subtle hover:text-content-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                  onClick={() => setShowConfirmPassword((current) => !current)}
+                  type="button"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                </button>
+              </div>
+              {errors.confirmPassword ? (
+                <span className="mt-1.5 block text-xs text-danger">
+                  {errors.confirmPassword}
+                </span>
+              ) : null}
+            </label>
+          ) : null}
 
           <Button
             className="mt-2 w-full"
