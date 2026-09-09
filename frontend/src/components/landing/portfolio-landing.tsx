@@ -106,11 +106,11 @@ export function PortfolioLanding() {
             </p>
             <h1
               id="hero-title"
-              className="max-w-5xl text-4xl font-semibold leading-[1.12] tracking-tight sm:text-6xl lg:text-7xl"
+              className="max-w-5xl text-4xl font-semibold leading-[1.15] tracking-tight sm:text-6xl sm:leading-[1.15] lg:text-7xl lg:leading-[1.12]"
             >
               <span className="block">OmniDoc</span>
               {/* Matches --gradient-brand-text: cyan → blue-500 → violet-neon */}
-              <span className="block bg-[linear-gradient(90deg,#00f0ff_0%,#3b82f6_45%,#a855f7_100%)] bg-clip-text text-transparent">
+              <span className="block bg-[linear-gradient(90deg,#00f0ff_0%,#3b82f6_45%,#a855f7_100%)] bg-clip-text pb-2.5 text-transparent sm:pb-3 lg:pb-4">
                 Enterprise RAG &amp; Document Intelligence
               </span>
             </h1>
@@ -209,7 +209,7 @@ export function PortfolioLanding() {
           <div>
             {/* Footer brand: same fixed colours */}
             <p className="inline-flex items-baseline gap-1 text-slate-200">
-              <BrandMark /> · Portfolio Engineering Showcase
+              <BrandMark />
             </p>
             <p className="mt-2">© 2026 OmniDoc. Designed &amp; Engineered with .NET &amp; Next.js.</p>
           </div>
