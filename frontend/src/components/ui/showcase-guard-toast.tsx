@@ -1,8 +1,15 @@
-﻿import { AlertCircle, X } from "lucide-react";
+﻿"use client";
+
+import { AlertCircle, X } from "lucide-react";
+import { useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
+
+const emptySubscribe = () => () => {};
 
 /**
  * Fixed bottom-right toast for showcase guard intercepts.
- * Style matches the existing forbiddenToast in workspace-members-settings.tsx.
+ * Rendered via React Portal to document.body so it survives
+ * parent modal unmounts (e.g. ChangePasswordModal closing).
  */
 export function ShowcaseGuardToast({
   message,
@@ -11,9 +18,19 @@ export function ShowcaseGuardToast({
   message: string;
   onDismiss: () => void;
 }) {
-  return (
+  const isClient = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+
+  if (!isClient) {
+    return null;
+  }
+
+  return createPortal(
     <div
-      className="glass-panel fixed bottom-5 right-5 z-[80] flex w-[min(380px,calc(100vw-40px))] items-start gap-3 rounded-2xl border-warning p-4 text-sm text-content-secondary"
+      className="glass-panel fixed bottom-5 right-5 z-[200] flex w-[min(380px,calc(100vw-40px))] items-start gap-3 rounded-2xl border-warning p-4 text-sm text-content-secondary shadow-xl"
       role="alert"
     >
       <AlertCircle className="mt-0.5 size-5 shrink-0 text-warning" />
@@ -29,6 +46,7 @@ export function ShowcaseGuardToast({
       >
         <X className="size-4" />
       </button>
-    </div>
+    </div>,
+    document.body,
   );
 }

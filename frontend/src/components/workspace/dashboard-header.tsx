@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { KeyRound, LogOut } from "lucide-react";
 import { useState } from "react";
@@ -7,13 +7,16 @@ import { ChangePasswordModal } from "@/components/auth/change-password-modal";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Logo } from "@/components/ui/logo";
+import { ShowcaseGuardToast } from "@/components/ui/showcase-guard-toast";
 import { WorkspaceSelector } from "@/components/workspace/workspace-selector";
 import { useAuth } from "@/hooks/use-auth";
+import { useShowcaseGuard } from "@/hooks/use-showcase-guard";
 import { isShowcaseUser } from "@/lib/showcase";
 import { getInitials } from "@/lib/utils";
 
 export function DashboardHeader() {
   const { user, logout } = useAuth();
+  const { guardMessage, clearGuard } = useShowcaseGuard();
   const [profileOpen, setProfileOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
@@ -94,6 +97,9 @@ export function DashboardHeader() {
           isShowcase={isShowcaseUser(user)}
           onClose={() => setChangePasswordOpen(false)}
         />
+      ) : null}
+      {guardMessage ? (
+        <ShowcaseGuardToast message={guardMessage} onDismiss={clearGuard} />
       ) : null}
     </>
   );

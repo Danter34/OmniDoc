@@ -1,38 +1,55 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export const SHOWCASE_GUARD_MESSAGE =
   "Thao tác này không khả dụng ở tài khoản thử nghiệm.";
 
+let activeGuardMessage: string | null = null;
+const subscribers = new Set<(msg: string | null) => void>();
+let autoDismissTimer: number | null = null;
+
+export function fireShowcaseGuard(message = SHOWCASE_GUARD_MESSAGE) {
+  activeGuardMessage = message;
+  if (autoDismissTimer !== null) {
+    window.clearTimeout(autoDismissTimer);
+  }
+  autoDismissTimer = window.setTimeout(() => {
+    activeGuardMessage = null;
+    autoDismissTimer = null;
+    subscribers.forEach((notify) => notify(null));
+  }, 5000);
+
+  subscribers.forEach((notify) => notify(message));
+}
+
+export function clearShowcaseGuard() {
+  activeGuardMessage = null;
+  if (autoDismissTimer !== null) {
+    window.clearTimeout(autoDismissTimer);
+    autoDismissTimer = null;
+  }
+  subscribers.forEach((notify) => notify(null));
+}
+
 /** Shared toast state for intercepting mutations in showcase mode. */
 export function useShowcaseGuard() {
-  const [guardMessage, setGuardMessage] = useState<string | null>(null);
-  const timerRef = useRef<number | null>(null);
+  const [guardMessage, setGuardMessage] = useState<string | null>(activeGuardMessage);
 
-  // Auto-dismiss after 5 s, matching the existing forbiddenToast pattern.
   useEffect(() => {
-    if (!guardMessage) return;
-    timerRef.current = window.setTimeout(() => setGuardMessage(null), 5000);
+    const handler = (msg: string | null) => setGuardMessage(msg);
+    subscribers.add(handler);
     return () => {
-      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+      subscribers.delete(handler);
     };
-  }, [guardMessage]);
-
-  // Cleanup on unmount.
-  useEffect(
-    () => () => {
-      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-    },
-    [],
-  );
+  }, []);
 
   const fireGuard = useCallback(() => {
-    setGuardMessage(SHOWCASE_GUARD_MESSAGE);
+    fireShowcaseGuard(SHOWCASE_GUARD_MESSAGE);
   }, []);
 
   const clearGuard = useCallback(() => {
-    setGuardMessage(null);
+    clearShowcaseGuard();
   }, []);
 
   return { guardMessage, fireGuard, clearGuard };

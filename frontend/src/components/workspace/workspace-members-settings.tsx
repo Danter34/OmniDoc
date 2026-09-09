@@ -300,14 +300,9 @@ export function WorkspaceMembersSettings({ workspace, isShowcase = false }: { wo
   }
 
   function handleOpenInvite() {
-    if (!canInviteMembers) return;
+    if (!canInviteMembers && !isShowcase) return;
 
-    if (isShowcase) {
-      fireGuard();
-      return;
-    }
-
-    if (!user?.emailConfirmed) {
+    if (!isShowcase && !user?.emailConfirmed) {
       setShowInviteVerificationGate(true);
       return;
     }
@@ -371,7 +366,7 @@ export function WorkspaceMembersSettings({ workspace, isShowcase = false }: { wo
             Quản lý người có quyền truy cập vào {workspace.name}.
           </p>
         </div>
-        {canInviteMembers ? (
+        {canInviteMembers || isShowcase ? (
           <Button icon={<UserPlus className="size-4" />} onClick={handleOpenInvite}>
             Mời thành viên
           </Button>
