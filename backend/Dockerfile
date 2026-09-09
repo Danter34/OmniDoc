@@ -11,6 +11,7 @@ COPY src/Presentation/OmniDoc.API/OmniDoc.API.csproj src/Presentation/OmniDoc.AP
 COPY tests/OmniDoc.UnitTests/OmniDoc.UnitTests.csproj tests/OmniDoc.UnitTests/
 RUN dotnet restore OmniDoc.slnx
 
+ARG REBUILD_HASH=""
 COPY . .
 RUN dotnet publish src/Presentation/OmniDoc.API/OmniDoc.API.csproj \
     --configuration Release \

@@ -579,7 +579,7 @@ export function WorkspaceMembersSettings({ workspace, isShowcase = false }: { wo
               <Input
                 autoFocus
                 onChange={(event) => setInviteEmail(event.target.value)}
-                placeholder="colleague@company.com"
+                placeholder="email@example.com"
                 required
                 type="email"
                 value={inviteEmail}
@@ -593,11 +593,11 @@ export function WorkspaceMembersSettings({ workspace, isShowcase = false }: { wo
                 onChange={(event) => setInviteRole(event.target.value as WorkspaceRole)}
                 value={inviteRole}
               >
-                <option value="Member">Member — xem và cộng tác</option>
+                <option value="Member">Member: Xem và cộng tác</option>
                 {isOwner ? (
                   <>
-                    <option value="Admin">Admin — quản trị thành viên</option>
-                    <option value="Owner">Owner — toàn quyền quản trị</option>
+                    <option value="Admin">Admin: Quản trị thành viên</option>
+                    <option value="Owner">Owner: Toàn quyền quản trị</option>
                   </>
                 ) : null}
               </select>

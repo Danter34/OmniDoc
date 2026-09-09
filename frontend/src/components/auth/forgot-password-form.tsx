@@ -104,7 +104,7 @@ export function ForgotPasswordForm() {
                     autoFocus
                     className="pl-10"
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@company.com"
+                    placeholder="email@example.com"
                     required
                     type="email"
                     value={email}
