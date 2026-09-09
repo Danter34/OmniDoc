@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { AuthProvider } from "@/components/auth/auth-provider";
@@ -6,6 +7,12 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { SESSION_COOKIE, SESSION_COOKIE_MAX_AGE, TOKEN_STORAGE_KEY } from "@/lib/session";
 
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin", "vietnamese"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 // Migrate sessions created before server-readable cookies existed, before painting
 // the landing page. The subsequent server request still validates the token.
@@ -86,12 +93,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="vi" suppressHydrationWarning>
+    <html lang="vi" className={inter.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: sessionMigrationScript }} />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
-      <body className="ambient-bg">
+      <body className="ambient-bg font-sans antialiased">
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
         </ThemeProvider>
