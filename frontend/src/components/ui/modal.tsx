@@ -6,8 +6,10 @@ import {
   useEffectEvent,
   useId,
   useRef,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 
@@ -28,6 +30,11 @@ const FOCUSABLE_ELEMENTS = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
+// Delay the portal until hydration so initially open dialogs also render safely.
+const subscribeToHydration = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export function Modal({
   open,
   title,
@@ -39,9 +46,14 @@ export function Modal({
   const titleId = useId();
   const descriptionId = useId();
   const closeModal = useEffectEvent(onClose);
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getClientSnapshot,
+    getServerSnapshot,
+  );
 
   useEffect(() => {
-    if (!open) {
+    if (!open || !hydrated) {
       return;
     }
 
@@ -105,13 +117,13 @@ export function Modal({
       document.removeEventListener("keydown", handleKeyDown);
       previouslyFocused?.focus();
     };
-  }, [open]);
+  }, [open, hydrated]);
 
-  if (!open) {
+  if (!open || !hydrated) {
     return null;
   }
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-60 flex items-center justify-center bg-overlay p-4 backdrop-blur-md"
       role="presentation"
@@ -126,7 +138,7 @@ export function Modal({
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
-        className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-6 text-content"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl p-6 text-content"
         role="dialog"
         tabIndex={-1}
       >
@@ -156,6 +168,7 @@ export function Modal({
         </div>
         <div className="mt-6">{children}</div>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -39,7 +39,7 @@ export function WorkspaceNavigation() {
   return (
     <nav
       aria-label="Điều hướng Workspace"
-      className="glass-panel mb-5 flex w-fit items-center gap-1 rounded-xl p-1"
+      className="mb-5 flex w-fit items-center gap-1 rounded-lg border border-line-subtle bg-surface-subtle p-1"
     >
       {items.map((item) => {
         const Icon = item.icon;
