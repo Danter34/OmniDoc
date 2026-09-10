@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="frontend/public/images/logo-full.png" alt="OmniDoc Logo" width="450" />
+  <img src="frontend/public/images/logo-full.png" alt="OmniDoc Logo" width="350" />
 </p>
 
 <p align="center">
