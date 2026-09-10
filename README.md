@@ -4,7 +4,7 @@
 
 <p align="center">
   <strong>Enterprise Document Intelligence & Semantic RAG Platform</strong><br>
-  <em>Nền tảng RAG cho doanh nghiệp: upload tài liệu, đánh chỉ mục ngữ nghĩa và chat hỏi-đáp real-time.</em>
+  <em>A RAG platform for enterprises: upload documents, build semantic indexes, and chat/Q&A in real time.</em>
 </p>
 
 <p align="center">
@@ -20,188 +20,188 @@
 
 ---
 
-## 📑 Mục lục
+## 📑 Table of Contents
 
-- [Tổng quan dự án](#-tổng-quan-dự-án)
-- [Tính năng cốt lõi (Core Features)](#-tính-năng-cốt-lõi-core-features)
-- [Tech Stack Ma trận](#-tech-stack-ma-trận)
-- [Kiến trúc hệ thống & Luồng dữ liệu](#-kiến-trúc-hệ-thống--luồng-dữ-liệu)
-  - [1. Ingestion Pipeline (Nạp & Lập chỉ mục tài liệu)](#1-ingestion-pipeline-nạp--lập-chỉ-mục-tài-liệu)
-  - [2. RAG Query & Streaming Pipeline (Truy vấn & Trả lời ngữ nghĩa)](#2-rag-query--streaming-pipeline-truy-vấn--trả-lời-ngữ-nghĩa)
-  - [3. Cấu trúc thư mục Clean Architecture & App Router](#3-cấu-trúc-thư-mục-clean-architecture--app-router)
-- [Bảng ma trận biến môi trường (Environment Variables)](#-bảng-ma-trận-biến-môi-trường-environment-variables)
+- [Project Overview](#-project-overview)
+- [Core Features](#-core-features)
+- [Tech Stack Matrix](#-tech-stack-matrix)
+- [System Architecture & Data Flow](#-system-architecture--data-flow)
+  - [1. Ingestion Pipeline (Document Loading & Indexing)](#1-ingestion-pipeline-document-loading--indexing)
+  - [2. RAG Query & Streaming Pipeline (Semantic Query & Answer)](#2-rag-query--streaming-pipeline-semantic-query--answer)
+  - [3. Clean Architecture & App Router Folder Structure](#3-clean-architecture--app-router-folder-structure)
+- [Environment Variables Matrix](#-environment-variables-matrix)
 - [Quickstart Guide](#-quickstart-guide)
-  - [Yêu cầu tiên quyết (Prerequisites)](#yêu-cầu-tiên-quyết-prerequisites)
-  - [Bước 1: Clone mã nguồn](#bước-1-clone-mã-nguồn)
-  - [Bước 2: Chuẩn bị biến môi trường (.env)](#bước-2-chuẩn-bị-biến-môi-trường-env)
-  - [Cách 1: Khởi chạy trọn gói bằng Docker Compose (Khuyên dùng)](#cách-1-khởi-chạy-trọn-gói-bằng-docker-compose-khuyên-dùng)
-  - [Cách 2: Chế độ Hybrid Development (Chỉnh sửa mã nguồn trực tiếp)](#cách-2-chế-độ-hybrid-development-chỉnh-sửa-mã-nguồn-trực-tiếp)
-  - [Danh sách URL truy cập dịch vụ cục bộ](#-danh-sách-url-truy-cập-dịch-vụ-cục-bộ)
-- [Trải nghiệm hệ thống lần đầu (First-time Walkthrough)](#-trải-nghiệm-hệ-thống-lần-đầu-first-time-walkthrough)
-- [Chế độ Showcase & Dữ liệu mẫu (Demo Mode)](#-chế-độ-showcase--dữ-liệu-mẫu-demo-mode)
-- [Xử lý sự cố thường gặp ở Local (Troubleshooting)](#-xử-lý-sự-cố-thường-gặp-ở-local-troubleshooting)
+  - [Prerequisites](#prerequisites)
+  - [Step 1: Clone the Source Code](#step-1-clone-the-source-code)
+  - [Step 2: Prepare Environment Variables (.env)](#step-2-prepare-environment-variables-env)
+  - [Option 1: Launch Everything with Docker Compose (Recommended)](#option-1-launch-everything-with-docker-compose-recommended)
+  - [Option 2: Hybrid Development Mode (Edit Source Code Directly)](#option-2-hybrid-development-mode-edit-source-code-directly)
+  - [List of Local Service URLs](#-list-of-local-service-urls)
+- [First-time Walkthrough](#-first-time-walkthrough)
+- [Showcase Mode & Sample Data (Demo Mode)](#-showcase-mode--sample-data-demo-mode)
+- [Common Local Troubleshooting](#-common-local-troubleshooting)
 
 ---
 
-## 🌟 Tổng quan dự án
+## 🌟 Project Overview
 
-**OmniDoc** là một nền tảng RAG (Retrieval-Augmented Generation) tự host, giải quyết bài toán tải lên tài liệu đa định dạng, bóc tách nội dung, đánh chỉ mục ngữ nghĩa và chat hỏi-đáp trực tiếp với AI theo thời gian thực dựa trên ngữ cảnh tài liệu đó.
+**OmniDoc** is a self-hosted RAG (Retrieval-Augmented Generation) platform that solves the problem of uploading multi-format documents, extracting their content, building semantic indexes, and chatting/asking questions directly with an AI in real time based on the context of that document.
 
-Người dùng tạo Workspace, upload tài liệu (PDF, Word, Excel, Slide...), hệ thống tự bóc tách text, chia nhỏ thành các chunk, tính vector ngữ nghĩa và lưu vào database. Khi người dùng hỏi, hệ thống tìm các đoạn trích liên quan nhất, đưa vào ngữ cảnh cho LLM rồi stream câu trả lời kèm trích dẫn nguồn (số trang, đoạn văn) về giao diện theo thời gian thực.
+Users create a Workspace and upload documents (PDF, Word, Excel, Slides...). The system automatically extracts the text, splits it into chunks, computes semantic vectors, and stores them in the database. When a user asks a question, the system finds the most relevant excerpts, feeds them into the LLM's context, then streams the answer back to the UI in real time along with source citations (page numbers, passages).
 
-Hai điểm đáng chú ý: hệ thống tự động chuẩn hóa mọi định dạng tài liệu về Canonical PDF trước khi trích xuất (để trích dẫn luôn khớp đúng số trang gốc), và tầng AI được trừu tượng hóa qua interface nên có thể đổi qua lại giữa Google Gemini, OpenAI, Anthropic Claude, DeepSeek hoặc LLM chạy local qua Ollama mà không phải sửa code nghiệp vụ.
+Two notable points: the system automatically normalizes every document format into a Canonical PDF before extraction (so citations always match the original page numbers correctly), and the AI layer is abstracted behind an interface, allowing you to switch between Google Gemini, OpenAI, Anthropic Claude, DeepSeek, or a locally-run LLM via Ollama without touching any business logic code.
 
 ---
 
-## 🚀 Tính năng cốt lõi (Core Features)
+## 🚀 Core Features
 
-### 1. Document Ingestion Pipeline tự động & đa định dạng
-- **Định dạng hỗ trợ:** PDF (`.pdf`), Word (`.docx`), PowerPoint (`.pptx`), Excel (`.xlsx`), CSV (`.csv`), Markdown (`.md`), Plain Text (`.txt`).
-- **Chuẩn hóa qua Gotenberg:** Gotenberg v8 (engine LibreOffice và Chromium headless) chuyển mọi tài liệu văn phòng về PDF chuẩn hóa trước khi trích xuất, để PDF Viewer hiển thị đồng nhất bất kể định dạng gốc.
-- **Trích xuất phân trang:** `PdfPig` bóc tách text kèm tọa độ trang thực tế, không phụ thuộc Adobe SDK.
-- **Recursive Text Chunking:** Phân đoạn văn bản đệ quy, giữ ngữ cảnh câu/đoạn, có overlap giữa các chunk và lưu đúng `PageNumber` cho từng chunk.
-- **Theo dõi tiến trình real-time:** SignalR Hub (`DocumentProgressHub`) bắn trạng thái xử lý về UI qua các bước:
-  - `Validating` (5%) → `Normalizing` (30%) → `Extracting` (40-45%) → `Chunking` (50%) → `Embedding` (50-90%) → `Completed` (100%).
-  - Nếu lỗi, hệ thống ghi `FailureCode` kèm thông báo cụ thể để dễ debug hơn là chỉ báo "thất bại".
+### 1. Automatic, Multi-format Document Ingestion Pipeline
+- **Supported formats:** PDF (`.pdf`), Word (`.docx`), PowerPoint (`.pptx`), Excel (`.xlsx`), CSV (`.csv`), Markdown (`.md`), Plain Text (`.txt`).
+- **Normalization via Gotenberg:** Gotenberg v8 (using LibreOffice and headless Chromium engines) converts every office document into a normalized PDF before extraction, so the PDF Viewer displays content consistently regardless of the original format.
+- **Page-aware extraction:** `PdfPig` extracts text along with the actual page coordinates, without depending on the Adobe SDK.
+- **Recursive Text Chunking:** Recursively segments text, preserving sentence/paragraph context, with overlap between chunks, and stores the correct `PageNumber` for each chunk.
+- **Real-time progress tracking:** A SignalR Hub (`DocumentProgressHub`) pushes processing status to the UI through the following stages:
+  - `Validating` (5%) → `Normalizing` (30%) → `Extracting` (40–45%) → `Chunking` (50%) → `Embedding` (50–90%) → `Completed` (100%).
+  - On error, the system records a `FailureCode` with a specific message, making debugging easier than just reporting a generic "failure."
 
-### 2. Semantic Vector Search với PostgreSQL + pgvector
-- **Vector embedding 768 chiều**, mặc định tham chiếu theo `gemini-embedding-2`.
-- **Cosine Distance Search:** Dùng toán tử `<=>` của `pgvector` ngay trong PostgreSQL, lọc theo `1 - Distance >= MinSimilarityScore` để lấy các chunk gần nghĩa nhất — không cần vector DB riêng.
-- **Cô lập theo Workspace:** Mọi chunk gắn với `WorkspaceId`, nên dữ liệu giữa các tenant không lẫn vào nhau.
+### 2. Semantic Vector Search with PostgreSQL + pgvector
+- **768-dimensional vector embeddings**, defaulting to `gemini-embedding-2`.
+- **Cosine Distance Search:** Uses pgvector's `<=>` operator directly in PostgreSQL, filtering by `1 - Distance >= MinSimilarityScore` to retrieve the semantically closest chunks — no separate vector database required.
+- **Workspace isolation:** Every chunk is tied to a `WorkspaceId`, so data between tenants never mixes.
 
-### 3. Chat AI real-time kèm trích dẫn nguồn
-- **Streaming qua SSE:** API stream token trực tiếp về UI, tắt buffer (`X-Accel-Buffering: no`) để chữ hiện ra ngay khi model sinh ra, không bị giật cục.
-- **Citation State Machine:** `CitationStreamStateMachine` quét luồng token, phát hiện điểm trích dẫn và gắn thành các badge có thể bấm vào — xem tên tài liệu, số trang và đoạn trích (`Excerpt`) gốc.
-- **Lịch sử hội thoại đa lượt:** Lưu theo phiên, tự ghép ngữ cảnh các lượt trước vào prompt RAG để model không "quên" câu hỏi trước đó.
+### 3. Real-time AI Chat with Source Citations
+- **Streaming via SSE:** The API streams tokens directly to the UI with buffering disabled (`X-Accel-Buffering: no`), so text appears as soon as the model generates it, without stuttering.
+- **Citation State Machine:** `CitationStreamStateMachine` scans the token stream, detects citation points, and turns them into clickable badges — showing the document name, page number, and original excerpt.
+- **Multi-turn conversation history:** Stored per session, automatically appending previous turns into the RAG prompt so the model doesn't "forget" earlier questions.
 
-### 4. Kiến trúc AI pluggable, không khóa vào một nhà cung cấp
-- Tầng AI được trừu tượng qua interface `IChatCompletionService` và `IEmbeddingService`.
-- Tương thích sẵn với Microsoft Semantic Kernel và Microsoft.Extensions.AI.
-- Đổi provider chỉ qua biến môi trường, không cần sửa code:
-  - **Google Gemini API:** `gemini-3.6-flash` cho chat, `gemini-embedding-2` cho embedding (mặc định).
+### 4. Pluggable AI Architecture, No Vendor Lock-in
+- The AI layer is abstracted through the `IChatCompletionService` and `IEmbeddingService` interfaces.
+- Compatible out of the box with Microsoft Semantic Kernel and Microsoft.Extensions.AI.
+- Switch providers purely via environment variables, no code changes required:
+  - **Google Gemini API:** `gemini-3.6-flash` for chat, `gemini-embedding-2` for embeddings (default).
   - **Local LLM / OpenAI-compatible:** Ollama, vLLM, DeepSeek, Claude, GPT-4o.
-  - **Mock mode (`AI_PROVIDER=Mock`):** Dịch vụ giả lập offline — chạy thử toàn bộ hệ thống mà không tốn API key hay chi phí gọi model.
+  - **Mock mode (`AI_PROVIDER=Mock`):** A simulated offline service — run the entire system without needing an API key or incurring any model call costs.
 
-### 5. Multi-tenant Workspaces & bảo mật
+### 5. Multi-tenant Workspaces & Security
 - **RBAC:** `Owner`, `Admin`, `Member`.
-- **Mời thành viên qua email:** Token mời (`WorkspaceInvitation`) có thời hạn.
-- **JWT stateful qua TokenVersion:** Mỗi user có một trường `TokenVersion`. Đăng xuất hoặc đổi mật khẩu sẽ tăng giá trị này lên, khiến mọi token cũ (trên mọi thiết bị) hết hiệu lực ngay lập tức — không cần đợi JWT tự hết hạn.
-- **Bảo mật tài khoản:** Đăng ký yêu cầu OTP xác thực email, quên mật khẩu qua link có chữ ký (kiểm tra bằng Mailpit ở local).
+- **Invite members via email:** Invitation tokens (`WorkspaceInvitation`) with an expiration.
+- **Stateful JWT via TokenVersion:** Each user has a `TokenVersion` field. Logging out or changing a password increments this value, immediately invalidating all old tokens (across every device) — no need to wait for the JWT to naturally expire.
+- **Account security:** Registration requires email OTP verification; password reset via a signed link (verifiable through Mailpit locally).
 
 ---
 
-## 🛠 Tech Stack Ma trận
+## 🛠 Tech Stack Matrix
 
-| Phân tầng (Layer) | Công nghệ / Thư viện chính | Phiên bản | Vai trò & Mục đích sử dụng |
+| Layer | Technology / Main Library | Version | Role & Purpose |
 | :--- | :--- | :--- | :--- |
-| **Backend Framework** | .NET (C#) | `10.0` (`net10.0`) | Nền tảng thực thi Web API, lập trình bất đồng bộ |
-| **Kiến trúc ứng dụng** | Clean Architecture + CQRS | MediatR `14.2.0` | Tách ranh giới giữa Domain, Application, Infrastructure và Presentation |
-| **ORM & Data Access** | EF Core + Npgsql | `10.0.11` / `10.0.3` | Quản trị database quan hệ, chạy migrations tự động |
-| **Vector Database** | PostgreSQL + pgvector | PG `17` / pgvector `0.3.0` | Lưu dữ liệu hệ thống và bảng chỉ mục vector embedding 768 chiều |
-| **Background Processing** | Hangfire | `1.8.25` | Quản lý tác vụ chạy ngầm phân tán (Document Ingestion, Email Outbox) |
-| **Document Processing** | Gotenberg | `8.0` (Docker) | Chuyển DOCX, PPTX, XLSX, CSV, HTML sang Canonical PDF qua API |
-| **PDF Text Parsing** | PdfPig | `0.1.16` | Bóc tách text và tọa độ trang từ PDF, không phụ thuộc Adobe SDK |
-| **AI / Semantic Engine** | Semantic Kernel / Custom Clients | `1.80.0` | Trừu tượng hóa tầng AI; tích hợp mặc định Google Gemini API |
-| **Caching & Lock** | Redis | `7-alpine` | Cache dữ liệu, rate limiting và distributed lock |
-| **Realtime Gateway** | SignalR + SSE | ASP.NET Core SignalR | Bắn tiến trình xử lý tài liệu và stream tin nhắn chat |
-| **API Docs & Testing** | Scalar + OpenAPI | Scalar `2.17.1` | Tài liệu API tương tác chuẩn OpenAPI tại `/scalar/v1` |
-| **Email Mocking** | Mailpit | `latest` (Docker) | SMTP giả lập kèm Web UI xem email OTP tại cổng `8025` |
+| **Backend Framework** | .NET (C#) | `10.0` (`net10.0`) | Web API execution platform, asynchronous programming |
+| **Application Architecture** | Clean Architecture + CQRS | MediatR `14.2.0` | Separates boundaries between Domain, Application, Infrastructure, and Presentation |
+| **ORM & Data Access** | EF Core + Npgsql | `10.0.11` / `10.0.3` | Manages the relational database, runs automatic migrations |
+| **Vector Database** | PostgreSQL + pgvector | PG `17` / pgvector `0.3.0` | Stores system data and the 768-dimensional vector embedding index table |
+| **Background Processing** | Hangfire | `1.8.25` | Manages distributed background jobs (Document Ingestion, Email Outbox) |
+| **Document Processing** | Gotenberg | `8.0` (Docker) | Converts DOCX, PPTX, XLSX, CSV, HTML into a Canonical PDF via API |
+| **PDF Text Parsing** | PdfPig | `0.1.16` | Extracts text and page coordinates from PDFs, without depending on the Adobe SDK |
+| **AI / Semantic Engine** | Semantic Kernel / Custom Clients | `1.80.0` | Abstracts the AI layer; integrates with Google Gemini API by default |
+| **Caching & Lock** | Redis | `7-alpine` | Data caching, rate limiting, and distributed locking |
+| **Realtime Gateway** | SignalR + SSE | ASP.NET Core SignalR | Pushes document processing progress and streams chat messages |
+| **API Docs & Testing** | Scalar + OpenAPI | Scalar `2.17.1` | Interactive OpenAPI-compliant API documentation at `/scalar/v1` |
+| **Email Mocking** | Mailpit | `latest` (Docker) | Simulated SMTP with a Web UI for viewing OTP emails, on port `8025` |
 | **Frontend Framework** | Next.js (App Router) | `16.3.3` | React SSR/SSG, Server Actions |
-| **UI Library & Styling** | React + Tailwind CSS | React `19.2.8` / Tailwind `v4` | Giao diện responsive, dark mode |
-| **Reverse Proxy / Edge** | Nginx | `1.28-alpine` | Định tuyến `/api/`, `/hubs/`, `/` và xử lý SSE |
+| **UI Library & Styling** | React + Tailwind CSS | React `19.2.8` / Tailwind `v4` | Responsive UI, dark mode |
+| **Reverse Proxy / Edge** | Nginx | `1.28-alpine` | Routes `/api/`, `/hubs/`, `/` and handles SSE |
 
 ---
 
-## 🏗 Kiến trúc hệ thống & Luồng dữ liệu
+## 🏗 System Architecture & Data Flow
 
-### 1. Ingestion Pipeline (Nạp & Lập chỉ mục tài liệu)
+### 1. Ingestion Pipeline (Document Loading & Indexing)
 
 ```
-[Người dùng tải tệp lên]
+[User uploads a file]
         │ (PDF, Word, Excel, PowerPoint, Text, CSV)
         ▼
 [OmniDoc Web API (Upload Controller)]
-        │ 1. Lưu tệp gốc vào File Storage (/app/data/documents)
-        │ 2. Khởi tạo Document record (Status: Uploaded)
+        │ 1. Save the original file to File Storage (/app/data/documents)
+        │ 2. Initialize a Document record (Status: Uploaded)
         ▼
 [Hangfire Background Queue: DocumentProcessingJob]
         │
-        ├─► [Giai đoạn Validating - 5%]
-        │   Kiểm tra định dạng, dung lượng và tính toàn vẹn của tệp
+        ├─► [Validating stage - 5%]
+        │   Checks the file format, size, and integrity
         │
-        ├─► [Giai đoạn Normalizing - 30%]
-        │   Gửi tệp sang Gotenberg (Chromium/LibreOffice Engine)
-        │   ──► Sinh ra tệp chuẩn hóa: Canonical PDF
+        ├─► [Normalizing stage - 30%]
+        │   Sends the file to Gotenberg (Chromium/LibreOffice Engine)
+        │   ──► Produces a normalized file: Canonical PDF
         │
-        ├─► [Giai đoạn Extracting - 40~45%]
-        │   PdfPig bóc tách toàn bộ nội dung văn bản kèm số trang (PageNumber)
+        ├─► [Extracting stage - 40~45%]
+        │   PdfPig extracts all text content along with page numbers (PageNumber)
         │
-        ├─► [Giai đoạn Chunking - 50%]
-        │   RecursiveTextChunker phân đoạn đệ quy theo kích thước và độ gối đầu (Overlap)
+        ├─► [Chunking stage - 50%]
+        │   RecursiveTextChunker recursively segments text by size and overlap
         │
-        ├─► [Giai đoạn Embedding - 50~90%]
-        │   Gửi từng lô (Batch 16 chunks) sang IEmbeddingService (Gemini / Mock)
-        │   ──► Nhận về mảng Vector số thực 768 chiều
+        ├─► [Embedding stage - 50~90%]
+        │   Sends each batch (16 chunks) to IEmbeddingService (Gemini / Mock)
+        │   ──► Receives back a 768-dimensional floating-point vector array
         │
-        └─► [Giai đoạn Completed - 100%]
-            Lưu các DocumentChunks vào PostgreSQL (pgvector)
-            Cập nhật Document.Status = Indexed
-            Bắn sự kiện hoàn tất tới client qua SignalR DocumentProgressHub
+        └─► [Completed stage - 100%]
+            Saves the DocumentChunks to PostgreSQL (pgvector)
+            Updates Document.Status = Indexed
+            Fires a completion event to the client via SignalR DocumentProgressHub
 ```
 
-### 2. RAG Query & Streaming Pipeline (Truy vấn & Trả lời ngữ nghĩa)
+### 2. RAG Query & Streaming Pipeline (Semantic Query & Answer)
 
 ```
 [Client (Next.js Frontend)]
         │
-        │ POST /api/workspaces/{id}/chat/stream (Câu hỏi người dùng)
+        │ POST /api/workspaces/{id}/chat/stream (User's question)
         ▼
 [ChatController (StreamMessageQuery)]
         │
-        ├─► 1. Gọi IEmbeddingService sinh vector embedding cho câu hỏi
+        ├─► 1. Calls IEmbeddingService to generate a vector embedding for the question
         │
-        ├─► 2. Truy vấn Vector Database (PostgreSQL + pgvector):
-        │      Thực thi Cosine Distance: chunk.Embedding <=> QueryVector
-        │      Lọc theo: WorkspaceId == currentWorkspaceId
-        │      Lấy ra Top-K chunks phù hợp nhất có điểm tương đồng cao
+        ├─► 2. Queries the Vector Database (PostgreSQL + pgvector):
+        │      Executes a Cosine Distance query: chunk.Embedding <=> QueryVector
+        │      Filters by: WorkspaceId == currentWorkspaceId
+        │      Retrieves the Top-K most relevant chunks with the highest similarity score
         │
         ├─► 3. RagPromptBuilder:
-        │      Ghép nội dung trích xuất (Context Chunks) + Lịch sử hội thoại + Câu hỏi
+        │      Combines the extracted content (Context Chunks) + conversation history + the question
         │
-        ├─► 4. Gọi IChatCompletionService (Gemini / Mock / Local LLM)
-        │      Khởi tạo luồng sinh phản hồi (StreamResponseAsync)
+        ├─► 4. Calls IChatCompletionService (Gemini / Mock / Local LLM)
+        │      Initiates the response generation stream (StreamResponseAsync)
         │
         ├─► 5. CitationStreamStateMachine:
-        │      Quét token, phát hiện tham chiếu nguồn tài liệu
-        │      Chuyển đổi thành các Citation frame (DocumentTitle, PageNumber, Excerpt)
+        │      Scans tokens, detects source document references
+        │      Converts them into Citation frames (DocumentTitle, PageNumber, Excerpt)
         │
         ▼
 [Nginx Edge Proxy] (X-Accel-Buffering: no, Connection: keep-alive)
         │
         ▼
 [Client SSE Consumer (useChatStream hook)]
-        Render từng từ theo thời gian thực + Hiển thị thẻ trích dẫn tài liệu dẫn chứng
+        Renders each word in real time + displays supporting document citation badges
 ```
 
-### 3. Cấu trúc thư mục Clean Architecture & App Router
+### 3. Clean Architecture & App Router Folder Structure
 
 ```
 OmniDoc/
-├── backend/                              # Kiến trúc Clean Architecture .NET 10
+├── backend/                              # .NET 10 Clean Architecture
 │   ├── src/
 │   │   ├── Core/
-│   │   │   ├── OmniDoc.Domain/          # Thực thể lõi (Entities, Enums, Exceptions)
-│   │   │   │   ├── Entities/            # Document, DocumentChunk, Workspace, User, v.v.
+│   │   │   ├── OmniDoc.Domain/          # Core entities (Entities, Enums, Exceptions)
+│   │   │   │   ├── Entities/            # Document, DocumentChunk, Workspace, User, etc.
 │   │   │   │   └── Enums/               # DocumentFormat, ProcessingStage, WorkspaceRole
 │   │   │   └── OmniDoc.Application/     # Use Cases, CQRS (MediatR), Interfaces, DTOs
 │   │   │       ├── Common/              # Interfaces (IEmbeddingService, IChatCompletionService)
 │   │   │       └── Features/            # Auth, Chat, Documents, Invitations, Workspaces
 │   │   ├── Infrastructure/
 │   │   │   ├── OmniDoc.Persistence/     # Entity Framework Core, Migrations, pgvector configs
-│   │   │   │   ├── Configurations/      # Fluent API mappings (DocumentChunkConfiguration, v.v.)
+│   │   │   │   ├── Configurations/      # Fluent API mappings (DocumentChunkConfiguration, etc.)
 │   │   │   │   ├── Contexts/            # ApplicationDbContext
-│   │   │   │   └── Migrations/          # Các file EF Core Migration đã tạo
-│   │   │   └── OmniDoc.Infrastructure/  # Thực thi dịch vụ ngoại vi
+│   │   │   │   └── Migrations/          # Generated EF Core Migration files
+│   │   │   └── OmniDoc.Infrastructure/  # External service implementations
 │   │   │       ├── Jobs/                # DocumentProcessingJob, EmailOutboxDispatcher
 │   │   │       ├── Services/            # Gotenberg, PdfPig, RecursiveChunker, VectorRetrieval
 │   │   │       └── Services/Ai/         # GeminiChatCompletionService, GeminiEmbeddingService
@@ -209,85 +209,85 @@ OmniDoc/
 │   │       └── OmniDoc.API/             # REST API Controllers, SignalR Hubs, Middleware
 │   │           ├── Controllers/         # AuthController, ChatController, DocumentsController
 │   │           ├── Hubs/                # DocumentProgressHub, NotificationHub
-│   │           └── Program.cs           # Cấu hình DI, Middleware, Scalar API Docs, Hangfire
+│   │           └── Program.cs           # DI configuration, Middleware, Scalar API Docs, Hangfire
 │   └── tests/
-│       └── OmniDoc.UnitTests/           # Kiểm thử đơn vị cho toàn bộ các layer
+│       └── OmniDoc.UnitTests/           # Unit tests covering every layer
 │
-├── frontend/                             # Giao diện Next.js 16 (App Router) + React 19
-│   ├── public/images/                   # Logo, biểu tượng hệ thống (logo-full.png)
+├── frontend/                             # Next.js 16 (App Router) + React 19 UI
+│   ├── public/images/                   # Logo, system icons (logo-full.png)
 │   └── src/
 │       ├── app/                         # App Router Pages & Layouts
-│       │   ├── (auth)/                  # Đăng nhập, đăng ký, quên/đặt lại mật khẩu
-│       │   ├── (dashboard)/             # Quản lý không gian làm việc, tài liệu, cài đặt
-│       │   │   └── workspaces/[id]/chat # Giao diện Chat RAG tương tác thời gian thực
-│       │   ├── layout.tsx               # Root layout với ThemeProvider & AuthProvider
-│       │   └── page.tsx                 # Trang Landing Page giới thiệu giải pháp
-│       ├── components/                  # UI Components tách biệt theo module
-│       │   ├── auth/                    # Modal OTP, Form đăng nhập/đăng ký
-│       │   ├── chat/                    # Khung chat, Citation badges, Markdown renderer
-│       │   ├── document/                # Dropzone tải tài liệu, PDF Viewer, Progress badges
-│       │   └── workspace/               # Chuyển đổi workspace, quản lý thành viên
+│       │   ├── (auth)/                  # Login, register, forgot/reset password
+│       │   ├── (dashboard)/             # Workspace, document, and settings management
+│       │   │   └── workspaces/[id]/chat # Real-time interactive RAG chat interface
+│       │   ├── layout.tsx               # Root layout with ThemeProvider & AuthProvider
+│       │   └── page.tsx                 # Landing page introducing the solution
+│       ├── components/                  # UI components separated by module
+│       │   ├── auth/                    # OTP modal, login/register forms
+│       │   ├── chat/                    # Chat window, citation badges, Markdown renderer
+│       │   ├── document/                # Document upload dropzone, PDF Viewer, progress badges
+│       │   └── workspace/               # Workspace switcher, member management
 │       ├── hooks/                       # Custom hooks (useChatStream, useSignalR, useAuth)
-│       └── services/                    # Tầng giao tiếp HTTP API Client
+│       └── services/                    # HTTP API client layer
 │
-├── nginx/                               # Cấu hình Nginx Reverse Proxy (default.conf)
-├── tools/                               # Bộ công cụ kiểm thử tự động, dữ liệu mẫu
-├── docker-compose.yml                   # Khởi chạy toàn bộ hạ tầng chỉ với một lệnh
-├── .env.example                         # File mẫu cấu hình biến môi trường
-└── README.md                            # Tài liệu hướng dẫn hệ thống
+├── nginx/                               # Nginx Reverse Proxy configuration (default.conf)
+├── tools/                               # Automated testing toolkit, sample data
+├── docker-compose.yml                   # Launches the entire infrastructure with a single command
+├── .env.example                         # Sample environment variable configuration file
+└── README.md                            # System documentation
 ```
 
 ---
 
-## 🔐 Bảng ma trận biến môi trường (Environment Variables)
+## 🔐 Environment Variables Matrix
 
-Cấu hình nằm trong file `.env` ở thư mục gốc.
+Configuration lives in the `.env` file at the project root.
 
-| Tên biến môi trường | Giá trị mặc định | Bắt buộc / Tùy chọn | Giải thích kỹ thuật & Hướng dẫn thiết lập |
+| Environment Variable | Default Value | Required / Optional | Technical Explanation & Setup Guide |
 | :--- | :--- | :--- | :--- |
-| **`COMPOSE_PROJECT_NAME`** | `omnidoc` | Tùy chọn | Tên nhóm container trong Docker Compose. |
-| **`APP_URL`** | `http://localhost` | Khuyên dùng | Địa chỉ gốc truy cập ứng dụng từ trình duyệt. |
-| **`POSTGRES_DB`** | `omnidoc_db` | Bắt buộc | Tên database PostgreSQL. |
-| **`POSTGRES_USER`** | `omnidoc` | Bắt buộc | Tài khoản quản trị database. |
-| **`POSTGRES_PASSWORD`** | *(Trống)* | **Bắt buộc** | Mật khẩu database (ví dụ: `OmniDocDevSecret2026!`). |
-| **`JWT_SECRET`** | *(Trống)* | **Bắt buộc** | Khóa bí mật mã hóa JWT (tối thiểu 32 ký tự ngẫu nhiên). |
-| **`JWT_ISSUER`** | `OmniDocApi` | Tùy chọn | Tên đơn vị phát hành token JWT. |
-| **`JWT_AUDIENCE`** | `OmniDocClient` | Tùy chọn | Tên đối tượng nhận token JWT. |
-| **`JWT_EXPIRY_MINUTES`**| `1440` | Tùy chọn | Thời gian sống JWT (1440 phút = 24 giờ). |
-| **`AI_PROVIDER`** | `Gemini` | **Bắt buộc** | Chọn provider AI: `Gemini` hoặc `Mock` (offline). |
-| **`GEMINI_API_KEY`** | *(Trống)* | Bắt buộc nếu dùng Gemini | Lấy từ Google AI Studio (bỏ trống nếu `AI_PROVIDER=Mock`). |
-| **`GEMINI_CHAT_MODEL`** | `gemini-3.6-flash` | Tùy chọn | Model xử lý hội thoại RAG. |
-| **`GEMINI_EMBEDDING_MODEL`**| `gemini-embedding-2` | Tùy chọn | Model sinh vector embedding 768 chiều. |
-| **`GOTENBERG_BASE_URL`**| `http://gotenberg:3000`| Tùy chọn | Địa chỉ nội bộ tới dịch vụ Gotenberg. |
-| **`SMTP_HOST`** | `mailpit` | Tùy chọn | Máy chủ gửi email (`mailpit` trong Docker, `localhost` nếu chạy ngoài). |
-| **`SMTP_PORT`** | `1025` | Tùy chọn | Cổng SMTP của Mailpit. |
-| **`EMAIL_SHOW_DEMO_OTP`**| `false` | Tùy chọn | Đặt `true` để API trả thẳng mã OTP trong response, tiện test nhanh. |
-| **`SHOWCASE_ENABLED`** | `false` | Tùy chọn | Bật chế độ Demo Showcase. |
-| **`SHOWCASE_SEED_ON_STARTUP`**| `false` | Tùy chọn | Tự nạp tài liệu mẫu và tài khoản demo khi API khởi động. |
-| **`NEXT_PUBLIC_SHOWCASE_ENABLED`**| `false` | Tùy chọn | Cờ phía frontend để hiện nút đăng nhập demo nhanh. |
+| **`COMPOSE_PROJECT_NAME`** | `omnidoc` | Optional | Container group name in Docker Compose. |
+| **`APP_URL`** | `http://localhost` | Recommended | The root address for accessing the app from a browser. |
+| **`POSTGRES_DB`** | `omnidoc_db` | Required | PostgreSQL database name. |
+| **`POSTGRES_USER`** | `omnidoc` | Required | Database admin account. |
+| **`POSTGRES_PASSWORD`** | *(empty)* | **Required** | Database password (e.g., `OmniDocDevSecret2026!`). |
+| **`JWT_SECRET`** | *(empty)* | **Required** | Secret key used to sign the JWT (at least 32 random characters). |
+| **`JWT_ISSUER`** | `OmniDocApi` | Optional | Name of the JWT issuing authority. |
+| **`JWT_AUDIENCE`** | `OmniDocClient` | Optional | Name of the JWT's intended audience. |
+| **`JWT_EXPIRY_MINUTES`**| `1440` | Optional | JWT lifetime (1440 minutes = 24 hours). |
+| **`AI_PROVIDER`** | `Gemini` | **Required** | Selects the AI provider: `Gemini` or `Mock` (offline). |
+| **`GEMINI_API_KEY`** | *(empty)* | Required if using Gemini | Obtained from Google AI Studio (leave blank if `AI_PROVIDER=Mock`). |
+| **`GEMINI_CHAT_MODEL`** | `gemini-3.6-flash` | Optional | Model used for RAG conversation handling. |
+| **`GEMINI_EMBEDDING_MODEL`**| `gemini-embedding-2` | Optional | Model used to generate 768-dimensional embeddings. |
+| **`GOTENBERG_BASE_URL`**| `http://gotenberg:3000`| Optional | Internal address of the Gotenberg service. |
+| **`SMTP_HOST`** | `mailpit` | Optional | Mail server (`mailpit` in Docker, `localhost` if running externally). |
+| **`SMTP_PORT`** | `1025` | Optional | Mailpit's SMTP port. |
+| **`EMAIL_SHOW_DEMO_OTP`**| `false` | Optional | Set to `true` to have the API return the OTP code directly in the response, for quick testing. |
+| **`SHOWCASE_ENABLED`** | `false` | Optional | Enables Demo Showcase mode. |
+| **`SHOWCASE_SEED_ON_STARTUP`**| `false` | Optional | Automatically loads sample documents and demo accounts on API startup. |
+| **`NEXT_PUBLIC_SHOWCASE_ENABLED`**| `false` | Optional | Frontend flag to show the quick demo login button. |
 
 > [!TIP]
-> **Lấy Google Gemini API Key miễn phí:**
-> 1. Vào [Google AI Studio](https://aistudio.google.com/).
-> 2. Đăng nhập bằng tài khoản Google, nhấn **Get API Key**.
-> 3. Tạo key mới, dán vào `GEMINI_API_KEY` trong `.env`.
-> 
-> *Không muốn xin API key hoặc không có mạng? Đặt `AI_PROVIDER=Mock` là chạy được ngay.*
+> **Get a free Google Gemini API Key:**
+> 1. Go to [Google AI Studio](https://aistudio.google.com/).
+> 2. Sign in with your Google account and click **Get API Key**.
+> 3. Create a new key and paste it into `GEMINI_API_KEY` in `.env`.
+>
+> *Don't want to request an API key, or have no internet access? Just set `AI_PROVIDER=Mock` and you're ready to go.*
 
 ---
 
 ## 💻 (Quickstart Guide)
 
-### Yêu cầu tiên quyết (Prerequisites)
-- **Git** ([Tải Git](https://git-scm.com/)).
-- **Docker & Docker Desktop:** cần Docker Engine hỗ trợ Compose v2 ([Tải Docker Desktop](https://www.docker.com/products/docker-desktop/)). Đảm bảo Docker Desktop đang chạy.
-- *(Chỉ cần cho Cách 2 - Hybrid Dev):*
-  - **.NET 10 SDK** ([Tải .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0))
-  - **Node.js 20+** và **npm** ([Tải Node.js](https://nodejs.org/))
+### Prerequisites
+- **Git** ([Download Git](https://git-scm.com/)).
+- **Docker & Docker Desktop:** requires a Docker Engine that supports Compose v2 ([Download Docker Desktop](https://www.docker.com/products/docker-desktop/)). Make sure Docker Desktop is running.
+- *(Only needed for Option 2 - Hybrid Dev):*
+  - **.NET 10 SDK** ([Download .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0))
+  - **Node.js 20+** and **npm** ([Download Node.js](https://nodejs.org/))
 
 ---
 
-### Bước 1: Clone mã nguồn
+### Step 1: Clone the Source Code
 
 ```bash
 git clone https://github.com/Danter34/OmniDoc.git
@@ -296,212 +296,212 @@ cd OmniDoc
 
 ---
 
-### Bước 2: Chuẩn bị biến môi trường (.env)
+### Step 2: Prepare Environment Variables (.env)
 
-Tạo `.env` từ file mẫu `.env.example`:
+Create a `.env` file from the `.env.example` template:
 
-**Trên Linux / macOS:**
+**On Linux / macOS:**
 ```bash
 cp .env.example .env
 ```
 
-**Trên Windows (PowerShell):**
+**On Windows (PowerShell):**
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Mở `.env` và cập nhật tối thiểu:
+Open `.env` and update at minimum:
 ```ini
-# Đặt mật khẩu tùy ý cho database
+# Set any password for the database
 POSTGRES_PASSWORD=OmniDocPassword2026!
 
-# Sinh một chuỗi ngẫu nhiên tối thiểu 32 ký tự làm JWT Secret
+# Generate a random string of at least 32 characters as the JWT Secret
 JWT_SECRET=super-secret-key-with-at-least-32-characters-long!
 
-# Cấu hình AI: Điền Gemini API Key hoặc chọn chế độ Mock
+# AI configuration: Fill in the Gemini API Key or choose Mock mode
 AI_PROVIDER=Gemini
 GEMINI_API_KEY=AIzaSyYourActualGeminiApiKeyHere...
-# (Nếu không có key, đổi thành: AI_PROVIDER=Mock)
+# (If you don't have a key, change it to: AI_PROVIDER=Mock)
 ```
 
 ---
 
-### Cách 1: Khởi chạy trọn gói bằng Docker Compose (Khuyên dùng)
+### Option 1: Launch Everything with Docker Compose (Recommended)
 
-Đơn giản nhất — mọi dịch vụ (PostgreSQL pgvector, Redis, Gotenberg, Mailpit, backend .NET, frontend Next.js, Nginx) chạy trong container.
+The simplest option — every service (PostgreSQL pgvector, Redis, Gotenberg, Mailpit, .NET backend, Next.js frontend, Nginx) runs in a container.
 
-#### 1. Khởi động các dịch vụ hạ tầng:
+#### 1. Start the infrastructure services:
 ```bash
 docker compose up -d db redis gotenberg mailpit
 ```
 
-#### 2. Khởi tạo schema database qua migration:
+#### 2. Initialize the database schema via migration:
 ```bash
 docker compose run --rm --no-deps backend --migrate-only=true
 ```
-*Chạy một container backend tạm để EF Core thực thi migration lên PostgreSQL (bật pgvector extension và tạo bảng).*
+*Runs a temporary backend container so EF Core can execute the migration against PostgreSQL (enabling the pgvector extension and creating the tables).*
 
-#### 3. Khởi chạy toàn bộ hệ thống:
+#### 3. Launch the entire system:
 ```bash
 docker compose up -d --build
 ```
-*Build image backend, image frontend, khởi chạy Nginx tại cổng 80.*
+*Builds the backend image, the frontend image, and starts Nginx on port 80.*
 
 > [!NOTE]
-> Theo dõi trạng thái khởi động:
+> Check startup status:
 > ```bash
 > docker compose ps
 > ```
-> Khi các container ở trạng thái `healthy` hoặc `running`, hệ thống sẵn sàng.
+> Once all containers show `healthy` or `running`, the system is ready.
 
 ---
 
-### Cách 2: Chế độ Hybrid Development (Chỉnh sửa mã nguồn trực tiếp)
+### Option 2: Hybrid Development Mode (Edit Source Code Directly)
 
-Dành cho ai muốn debug hoặc sửa code Backend / Frontend trực tiếp trên máy.
+For anyone who wants to debug or edit the Backend / Frontend code directly on their machine.
 
-#### Bước 2.1: Chạy hạ tầng phụ trợ bằng Docker
+#### Step 2.1: Run supporting infrastructure via Docker
 ```bash
 docker compose up -d db redis gotenberg mailpit
 ```
 
-#### Bước 2.2: Khởi chạy Backend (.NET 10 API)
-1. Terminal thứ nhất:
+#### Step 2.2: Launch the Backend (.NET 10 API)
+1. First terminal:
    ```bash
    cd backend
    ```
-2. Cập nhật database:
+2. Update the database:
    ```bash
    dotnet ef database update --project src/Infrastructure/OmniDoc.Persistence --startup-project src/Presentation/OmniDoc.API
    ```
-3. Chạy API:
+3. Run the API:
    ```bash
    dotnet run --project src/Presentation/OmniDoc.API
    ```
-   *Backend lắng nghe tại `http://localhost:5151` (và `https://localhost:7157`). Scalar API Docs tại `http://localhost:5151/scalar/v1`.*
+   *The backend listens on `http://localhost:5151` (and `https://localhost:7157`). Scalar API Docs are available at `http://localhost:5151/scalar/v1`.*
 
-#### Bước 2.3: Khởi chạy Frontend (Next.js)
-1. Terminal thứ hai:
+#### Step 2.3: Launch the Frontend (Next.js)
+1. Second terminal:
    ```bash
    cd frontend
    ```
-2. Cài dependencies:
+2. Install dependencies:
    ```bash
    npm install
    ```
-3. Chạy dev server:
+3. Run the dev server:
    ```bash
    npm run dev
    ```
-   *Frontend chạy tại `http://localhost:3000`, tự kết nối backend tại `http://localhost:5151`.*
+   *The frontend runs at `http://localhost:3000` and automatically connects to the backend at `http://localhost:5151`.*
 
 ---
 
-### 🌐 Danh sách URL truy cập dịch vụ cục bộ
+### 🌐 List of Local Service URLs
 
-| Dịch vụ | Docker Compose (Cách 1) | Hybrid Dev (Cách 2) | Mục đích & Tài khoản mẫu |
+| Service | Docker Compose (Option 1) | Hybrid Dev (Option 2) | Purpose & Sample Account |
 | :--- | :--- | :--- | :--- |
-| **Web UI (Frontend)** | `http://localhost` (Port 80) | `http://localhost:3000` | Giao diện chính của OmniDoc |
-| **API Health Check** | `http://localhost/api/health` | `http://localhost:5151/api/health` | Kiểm tra Backend API còn sống |
-| **Interactive API Docs**| `http://localhost/scalar/v1` | `http://localhost:5151/scalar/v1` | Thử API qua giao diện Scalar |
-| **Hangfire Dashboard** | *(Chỉ bật ở Dev)* | `http://localhost:5151/hangfire` | Quản lý Background Jobs |
-| **Mailpit Web UI** | `http://localhost:8025` | `http://localhost:8025` | Hộp thư giả lập, đọc **mã OTP đăng ký** |
-| **PostgreSQL Port** | `localhost:5432` | `localhost:5432` | Kết nối CSDL (`User: omnidoc`, `DB: omnidoc_db`) |
+| **Web UI (Frontend)** | `http://localhost` (Port 80) | `http://localhost:3000` | OmniDoc's main interface |
+| **API Health Check** | `http://localhost/api/health` | `http://localhost:5151/api/health` | Checks whether the Backend API is alive |
+| **Interactive API Docs**| `http://localhost/scalar/v1` | `http://localhost:5151/scalar/v1` | Try out the API via the Scalar interface |
+| **Hangfire Dashboard** | *(Dev mode only)* | `http://localhost:5151/hangfire` | Manage background jobs |
+| **Mailpit Web UI** | `http://localhost:8025` | `http://localhost:8025` | Simulated inbox, for reading **registration OTP codes** |
+| **PostgreSQL Port** | `localhost:5432` | `localhost:5432` | Database connection (`User: omnidoc`, `DB: omnidoc_db`) |
 
 ---
 
-## 🎯 Trải nghiệm hệ thống lần đầu (First-time Walkthrough)
+## 🎯 First-time Walkthrough
 
-1. **Mở trình duyệt:** vào `http://localhost` (hoặc `http://localhost:3000` nếu chạy Hybrid).
-2. **Đăng ký tài khoản:**
-   - Nhấn **Bắt đầu ngay** hoặc **Đăng ký**.
-   - Nhập Tên, Email, Mật khẩu (tối thiểu 8 ký tự, có chữ hoa, số và ký tự đặc biệt).
-   - Hệ thống gửi mã OTP 6 số để xác thực.
-3. **Lấy mã OTP:**
-   - Mở tab mới, vào **Mailpit Web UI**: `http://localhost:8025`.
-   - Mở email mới nhất từ OmniDoc, copy mã OTP.
-   - Quay lại trang đăng ký, nhập mã để kích hoạt tài khoản.
-4. **Tạo Workspace:**
-   - Đặt tên (ví dụ: *Dự Án Nghiên Cứu AI*).
-5. **Upload tài liệu:**
-   - Kéo thả PDF, Word hoặc Markdown vào vùng tải tệp.
-   - Theo dõi tiến trình real-time (Validating → Normalizing → Extracting → Chunking → Embedding → Hoàn tất).
-6. **Chat với AI:**
-   - Chuyển sang tab **Trò chuyện (Chat)**.
-   - Hỏi các câu liên quan đến nội dung vừa upload.
-   - Xem câu trả lời gõ chữ theo thời gian thực, bấm vào thẻ trích dẫn (Citations) để đối chiếu nguồn kèm số trang gốc.
+1. **Open your browser:** go to `http://localhost` (or `http://localhost:3000` if running in Hybrid mode).
+2. **Register an account:**
+   - Click **Get Started** or **Sign Up**.
+   - Enter your Name, Email, and Password (at least 8 characters, with an uppercase letter, a number, and a special character).
+   - The system sends a 6-digit OTP code to verify your email.
+3. **Get the OTP code:**
+   - Open a new tab and go to the **Mailpit Web UI**: `http://localhost:8025`.
+   - Open the latest email from OmniDoc and copy the OTP code.
+   - Return to the registration page and enter the code to activate your account.
+4. **Create a Workspace:**
+   - Give it a name (e.g., *AI Research Project*).
+5. **Upload a document:**
+   - Drag and drop a PDF, Word, or Markdown file into the upload area.
+   - Watch the real-time progress (Validating → Normalizing → Extracting → Chunking → Embedding → Completed).
+6. **Chat with the AI:**
+   - Switch to the **Chat** tab.
+   - Ask questions related to the content you just uploaded.
+   - Watch the answer being typed out in real time, and click on the citation badges to cross-reference the source along with the original page number.
 
 ---
 
-## 🎪 Chế độ Showcase & Dữ liệu mẫu (Demo Mode)
+## 🎪 Showcase Mode & Sample Data (Demo Mode)
 
-OmniDoc đi kèm sẵn một bộ dữ liệu mẫu về tài chính khu vực (*Báo cáo Ổn định Tài chính ASEAN+3 2024 - AMRO*) cùng vector embedding đã tính sẵn, để bạn thử hệ thống mà không cần đăng ký hay tự upload tài liệu:
+OmniDoc comes with a built-in sample regional finance dataset (*ASEAN+3 Financial Stability Report 2024 - AMRO*) along with pre-computed vector embeddings, so you can try out the system without registering or uploading your own documents:
 
-1. Trong `.env`, bật các cờ:
+1. In `.env`, enable the following flags:
    ```ini
    SHOWCASE_ENABLED=true
    SHOWCASE_SEED_ON_STARTUP=true
    NEXT_PUBLIC_SHOWCASE_ENABLED=true
    ```
-2. Khởi động lại:
+2. Restart:
    ```bash
    docker compose up -d --build
    ```
-3. Trên trang đăng nhập sẽ có nút **Trải nghiệm nhanh với tài khoản Demo**:
+3. The login page will show a **Try the Quick Demo Account** button:
    - **Email:** `guest@omnidoc.io`
-   - **Mật khẩu:** `OmniDoc-Showcase2026!`
-   - Đăng nhập xong là có sẵn một Workspace với tài liệu đã lập chỉ mục, chat được ngay.
+   - **Password:** `OmniDoc-Showcase2026!`
+   - Once logged in, you'll immediately have a Workspace with an already-indexed document, ready to chat with.
 
 ---
 
-## 🔧 Xử lý sự cố thường gặp ở Local (Troubleshooting)
+## 🔧 Common Local Troubleshooting
 
-### 1. Lỗi xung đột cổng (Port Conflict)
-- **Triệu chứng:** Container không bind được vào cổng `5432`, `80` hoặc `8025`.
-- **Nguyên nhân:** Máy bạn đã có PostgreSQL hoặc web server khác (IIS, Apache, Skype) chiếm cổng đó.
-- **Cách khắc phục:**
-  - Kiểm tra cổng đang bị chiếm (Windows PowerShell):
+### 1. Port Conflict Errors
+- **Symptom:** A container fails to bind to port `5432`, `80`, or `8025`.
+- **Cause:** Your machine already has PostgreSQL or another web server (IIS, Apache, Skype) occupying that port.
+- **Fix:**
+  - Check which process is using the port (Windows PowerShell):
     ```powershell
     Get-NetTCPConnection -LocalPort 5432, 80, 8025 -ErrorAction SilentlyContinue
     ```
-  - Tạm dừng dịch vụ PostgreSQL cục bộ (`services.msc`) hoặc đổi cổng ánh xạ trong `docker-compose.yml` (ví dụ `"80:80"` → `"8088:80"`).
+  - Temporarily stop the local PostgreSQL service (`services.msc`) or change the port mapping in `docker-compose.yml` (e.g., `"80:80"` → `"8088:80"`).
 
-### 2. Lỗi Quota / Rate-limit khi gọi Gemini API (HTTP 429)
-- **Triệu chứng:** Tài liệu lỗi ở giai đoạn `Embedding`, hoặc chat báo lỗi từ AI provider.
-- **Nguyên nhân:** Gemini API key free chạm giới hạn số lượt gọi/phút.
-- **Cách khắc phục:**
-  - Chuyển tạm sang Mock mode trong `.env`:
+### 2. Gemini API Quota / Rate-limit Errors (HTTP 429)
+- **Symptom:** A document fails at the `Embedding` stage, or the chat reports an error from the AI provider.
+- **Cause:** The free Gemini API key hit its calls-per-minute limit.
+- **Fix:**
+  - Temporarily switch to Mock mode in `.env`:
     ```ini
     AI_PROVIDER=Mock
     ```
-  - Restart backend: `docker compose restart backend`. Hệ thống chạy tiếp với câu trả lời giả lập.
+  - Restart the backend: `docker compose restart backend`. The system will continue running with simulated responses.
 
-### 3. Không nhận được email OTP đăng ký
-- **Nguyên nhân:** Chưa mở Mailpit hoặc cấu hình SMTP sai.
-- **Cách khắc phục:**
-  - Vào `http://localhost:8025` — mọi email OmniDoc gửi đi đều nằm ở đây.
-  - Hoặc bật `EMAIL_SHOW_DEMO_OTP=true` trong `.env` để API trả thẳng mã OTP ra UI.
+### 3. Not Receiving the Registration OTP Email
+- **Cause:** Mailpit isn't open, or the SMTP configuration is wrong.
+- **Fix:**
+  - Go to `http://localhost:8025` — every email OmniDoc sends lands here.
+  - Or enable `EMAIL_SHOW_DEMO_OTP=true` in `.env` so the API returns the OTP code directly in the UI.
 
-### 4. Xem logs chi tiết
+### 4. View Detailed Logs
 ```bash
-# Log Backend API
+# Backend API logs
 docker compose logs -f backend
 
-# Log Frontend Next.js
+# Next.js Frontend logs
 docker compose logs -f frontend
 
-# Log Gotenberg
+# Gotenberg logs
 docker compose logs -f gotenberg
 
-# Log PostgreSQL
+# PostgreSQL logs
 docker compose logs -f db
 ```
 
-### 5. Reset toàn bộ môi trường
-Xóa sạch dữ liệu, volumes và làm lại từ đầu:
+### 5. Reset the Entire Environment
+Wipe all data and volumes, and start fresh:
 ```bash
-# Dừng và xóa sạch volume dữ liệu
+# Stop and remove all data volumes
 docker compose down -v
 
-# Rồi làm lại từ Bước 1
+# Then start over from Step 1
 ```
