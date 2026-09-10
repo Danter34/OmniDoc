@@ -32,15 +32,18 @@ public sealed class LoginUserCommandHandler
     private readonly IApplicationDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _tokenGenerator;
+    private readonly IShowcasePolicy? _showcasePolicy;
 
     public LoginUserCommandHandler(
         IApplicationDbContext context,
         IPasswordHasher passwordHasher,
-        IJwtTokenGenerator tokenGenerator)
+        IJwtTokenGenerator tokenGenerator,
+        IShowcasePolicy? showcasePolicy = null)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _tokenGenerator = tokenGenerator;
+        _showcasePolicy = showcasePolicy;
     }
 
     public async Task<Result<AuthResponseDto>> Handle(
@@ -56,6 +59,18 @@ public sealed class LoginUserCommandHandler
             !_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
         {
             return Result<AuthResponseDto>.Failure("Email hoặc mật khẩu không chính xác.", 401);
+        }
+
+        if (_showcasePolicy is not null)
+        {
+            try
+            {
+                _showcasePolicy.EnsureCanSignIn(user.Id, user.Email);
+            }
+            catch (Common.Exceptions.ForbiddenException ex)
+            {
+                return Result<AuthResponseDto>.Failure(ex.Message, 403);
+            }
         }
 
         return Result<AuthResponseDto>.Success(

@@ -29,7 +29,7 @@ if (app.Configuration.GetValue<bool>("migrate-only"))
 app.UseExceptionHandler();
 app.UseForwardedHeaders();
 
-if (app.Configuration.GetValue<bool>("Showcase:SeedOnStartup"))
+if (app.Configuration.GetValue<bool>("Showcase:Enabled") && app.Configuration.GetValue<bool>("Showcase:SeedOnStartup"))
 {
     await using var scope = app.Services.CreateAsyncScope();
     await scope.ServiceProvider.GetRequiredService<OmniDoc.Infrastructure.Services.ShowcaseSeeder>()

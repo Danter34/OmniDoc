@@ -126,4 +126,41 @@ public sealed class RegisterAndLoginTests
         Assert.Equal(401, result.StatusCode);
         Assert.Equal("Email hoặc mật khẩu không chính xác.", result.Error);
     }
+
+    [Fact]
+    public async Task Login_ReturnsForbiddenForShowcaseAccountWhenShowcaseDisabled()
+    {
+        await using var context = new TestApplicationDbContext();
+        var showcaseUserId = Guid.NewGuid();
+        context.Users.Add(new User
+        {
+            Id = showcaseUserId,
+            Email = "guest@omnidoc.io",
+            FullName = "Showcase Guest",
+            PasswordHash = "hashed::ShowcasePassword123!"
+        });
+        await context.SaveChangesAsync();
+
+        var disabledPolicy = new OmniDoc.Infrastructure.Services.Security.ShowcasePolicy(
+            Microsoft.Extensions.Options.Options.Create(new OmniDoc.Infrastructure.Common.Settings.ShowcaseSettings
+            {
+                Enabled = false,
+                UserId = showcaseUserId,
+                Email = "guest@omnidoc.io"
+            }));
+
+        var handler = new LoginUserCommandHandler(
+            context,
+            new FakePasswordHasher(),
+            new FakeJwtTokenGenerator(),
+            disabledPolicy);
+
+        var result = await handler.Handle(
+            new LoginUserCommand("guest@omnidoc.io", "ShowcasePassword123!"),
+            CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(403, result.StatusCode);
+        Assert.Equal("Tài khoản trải nghiệm đã bị vô hiệu hóa.", result.Error);
+    }
 }

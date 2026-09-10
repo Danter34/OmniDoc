@@ -3,7 +3,7 @@ services:
     image: pgvector/pgvector:pg17
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-omnidoc_db}
       POSTGRES_USER: ${POSTGRES_USER:-omnidoc}
@@ -121,7 +121,7 @@ services:
       args:
         OMNIDOC_API_URL: http://backend:8080
         NEXT_PUBLIC_APP_URL: ${APP_URL:-http://localhost}
-        NEXT_PUBLIC_SHOWCASE_ENABLED: ${SHOWCASE_ENABLED:-false}
+        NEXT_PUBLIC_SHOWCASE_ENABLED: ${NEXT_PUBLIC_SHOWCASE_ENABLED:-${SHOWCASE_ENABLED:-false}}
         NEXT_PUBLIC_SHOWCASE_EMAIL: ${SHOWCASE_EMAIL:-guest@omnidoc.io}
         NEXT_PUBLIC_SHOWCASE_PASSWORD: ${SHOWCASE_PASSWORD:-OmniDoc-Showcase2026!}
         NEXT_PUBLIC_SHOWCASE_WORKSPACE_ID: ${SHOWCASE_WORKSPACE_ID:-b4987f7e-48cc-4ba5-a117-10ac4cbced02}
@@ -149,6 +149,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       backend:
         condition: service_started

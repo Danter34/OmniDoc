@@ -59,6 +59,23 @@ public sealed class AuthController : BaseApiController
         return HandleResult(await Sender.Send(command, cancellationToken));
     }
 
+    [AllowAnonymous]
+    [HttpPost("showcase-login")]
+    [EnableRateLimiting(ApiRateLimits.LoginPolicy)]
+    public async Task<ActionResult<AuthResponseDto>> ShowcaseLogin(
+        [FromServices] Microsoft.Extensions.Options.IOptions<OmniDoc.Infrastructure.Common.Settings.ShowcaseSettings> showcaseOptions,
+        CancellationToken cancellationToken)
+    {
+        var settings = showcaseOptions.Value;
+        if (!settings.Enabled)
+        {
+            return NotFound(new { errors = new[] { "Tính năng tài khoản demo đã bị vô hiệu hóa." }, errorCode = "SHOWCASE_DISABLED" });
+        }
+
+        var command = new LoginUserCommand(settings.Email, settings.Password);
+        return HandleResult(await Sender.Send(command, cancellationToken));
+    }
+
     [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<UserDto>> Me(CancellationToken cancellationToken)

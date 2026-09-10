@@ -127,4 +127,21 @@ public sealed class ShowcaseGuardTests
         Assert.True((await service.AuthorizeAsync(WorkspaceId, WorkspacePermission.ViewWorkspace)).IsSuccess);
         Assert.Equal(403, (await service.AuthorizeAsync(Guid.NewGuid(), WorkspacePermission.ViewWorkspace)).StatusCode);
     }
+
+    [Fact]
+    public void Policy_EnsureCanSignIn_DeniesShowcaseIdentityWhenDisabled()
+    {
+        var enabledPolicy = Policy(true);
+        enabledPolicy.EnsureCanSignIn(UserId);
+        enabledPolicy.EnsureCanSignIn(Guid.NewGuid(), "guest@omnidoc.io");
+
+        var disabledPolicy = Policy(false);
+        var ex1 = Assert.Throws<ForbiddenException>(() => disabledPolicy.EnsureCanSignIn(UserId));
+        Assert.Equal(ShowcasePolicy.ShowcaseDisabledLoginMessage, ex1.Message);
+
+        var ex2 = Assert.Throws<ForbiddenException>(() => disabledPolicy.EnsureCanSignIn(Guid.NewGuid(), "guest@omnidoc.io"));
+        Assert.Equal(ShowcasePolicy.ShowcaseDisabledLoginMessage, ex2.Message);
+
+        disabledPolicy.EnsureCanSignIn(Guid.NewGuid(), "normal@example.com");
+    }
 }
